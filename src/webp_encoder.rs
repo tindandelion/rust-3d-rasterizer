@@ -27,9 +27,9 @@ impl WebpEncoder {
         })
     }
 
-    pub fn add_frame(&mut self, rgba: &[u8]) -> Result<(), Error> {
+    pub fn add_frame(&mut self, rgba: impl AsRef<[u8]>) -> Result<(), Error> {
         let ts = self.next_timestamp_ms;
-        self.encoder.add_frame(rgba, ts)?;
+        self.encoder.add_frame(rgba.as_ref(), ts)?;
         self.next_timestamp_ms = ts.saturating_add(1);
         Ok(())
     }
