@@ -2,22 +2,11 @@
 
 This document describes how I plan to approach the project iteratively.
 
-**Global defaults** (from the detailed plan):
-
-- **Rust**, single crate to start,
-- **`glam`** for linear algebra,
-- **Raster output**, fixed framebuffer **`800×600`**, encoded for the **web**:
-  - **Stills:** single **lossless `.webp`** per milestone until animation lands (same RGBA buffer path as motion—only one frame in the container).
-  - **Animation:** one **lossless animated `.webp`** (multi-frame, timing metadata)—browser-playable without exporting PNG folders or ffmpeg **unless you choose that later for debugging**.
-- **single-threaded** CPU raster until correctness is solid.
-
----
-
 ## Iterations
 
 ### [ ] Base WebP (still)
 
-- **Goal:** Learn to produce a valid **lossless WebP** from raw **RGBA** pixel data (browser-displayable artifact).
+- **Goal:** Learn to produce a valid **lossless WebP** from raw **RGB** pixel data (browser-displayable artifact).
 - **Outcome:** An **800×600** **still `.webp`** with a **single blue pixel** at the center (sanity-check stride, origin corner, and **`webp-animation`** / libwebp encode path).
 
 ### [ ] Drawing lines
@@ -89,6 +78,6 @@ This document describes how I plan to approach the project iteratively.
 
 ## Notes / deferred
 
-- **Golden image regression tests:** add when eyeballing saturates—decode `.webp` to RGBA and compare, or compare raw framebuffer bytes **before** encode (still vs animated).
+- **Golden image regression tests:** add when eyeballing saturates — decode `.webp` to RGB and compare, or compare raw framebuffer bytes **before** encode (still vs animated).
 - **Live window** (`winit` + framebuffer blit): optional after disk-export workflow is boring—pairs naturally with animation (**real-time** rotation instead of writing WebPs).
 - **PNG / ffmpeg:** optional escape hatches for tooling compatibility or pixel-diff tooling that prefers PNG—**not** the default deliverable.

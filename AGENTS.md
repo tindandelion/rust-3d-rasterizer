@@ -15,8 +15,6 @@ When behavior or scope is unclear, **prefer the planning docs** over guessing.
 
 - **Language:** Rust (see `Cargo.toml` for `edition` and package name).
 - **Layout:** Single Cargo crate for now; introduce modules as needed (e.g. `raster`, `mesh`, export/WebP). Split into a workspace only if maintainability demands it.
-- **Linear algebra:** Plan is to use **`glam`** once math code lands; verify projection/view conventions against the spec—do not assume every helper matches the chosen spaces.
-- **Output:** Fixed **800×600** RGBA framebuffer; encode **lossless WebP** (`webp-animation` + native **libwebp** toolchain when that milestone ships).
 
 ## Conventions to preserve
 

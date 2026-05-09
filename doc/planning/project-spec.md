@@ -84,7 +84,7 @@ Phase 1 milestone ambition (from earlier discussion): interpolated vertex attrib
 
 ### Parallel raster approaches
 
-- **Half-space / scanline** filled rasterization: **both remain mentally allowed**, but treat as **sequential experiments** — avoid maintaining two full pipelines forever. Prefer **one path to export parity** (RGBA framebuffer → WebP), optionally second raster implementation behind a trait later.
+- **Half-space / scanline** filled rasterization: **both remain mentally allowed**, but treat as **sequential experiments** — avoid maintaining two full pipelines forever. Prefer **one path to export parity** (RGB framebuffer → WebP), optionally second raster implementation behind a trait later.
 
 ### Threading
 
@@ -101,8 +101,9 @@ Phase 1 milestone ambition (from earlier discussion): interpolated vertex attrib
 
 ## Output & debugging
 
-- **WebP-first (lossless), browser-friendly:** fixed framebuffer **`800×600`**, **still `.webp`** milestones until animation scaffolding lands, then **animated `.webp`** for motion (single file per clip).
-- **Golden image regression tests:** intentionally **deferred**; rely on **eyes-only** review **for a while**. When added, compare decoded RGBA or raw framebuffer bytes **before** encode—animated tests are heavier than stills.
+- **Framebuffer:** fixed **`800×600`**, **RGB** only (three `u8` channels per pixel); **no alpha**.
+- **WebP-first (lossless), browser-friendly:** **still `.webp`** milestones until animation scaffolding lands, then **animated `.webp`** for motion (single file per clip).
+- **Golden image regression tests:** intentionally **deferred**; rely on **eyes-only** review **for a while**. When added, compare decoded RGB or raw framebuffer bytes **before** encode—animated tests are heavier than stills.
 - **Live window** (`winit` + `pixels` / `softbuffer` or similar): **possible later**; same framebuffer, different presentation.
 
 ---
