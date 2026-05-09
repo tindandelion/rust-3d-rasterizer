@@ -3,5 +3,5 @@
 version = 4
 
 [[package]]
-name = "main"
+name = "rust-3d-rasterizer"
 version = "0.1.0"
