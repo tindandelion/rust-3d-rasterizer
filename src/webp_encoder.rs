@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 
-use webp_animation::{Encoder, EncoderOptions, EncodingConfig, EncodingType, Error};
+use webp_animation::{ColorMode, Encoder, EncoderOptions, EncodingConfig, EncodingType, Error};
 
 pub struct WebpEncoder {
     encoder: Encoder,
@@ -17,6 +17,7 @@ impl WebpEncoder {
                     encoding_type: EncodingType::Lossless,
                     ..Default::default()
                 }),
+                color_mode: ColorMode::Rgb,
                 ..Default::default()
             },
         )?;
@@ -27,9 +28,9 @@ impl WebpEncoder {
         })
     }
 
-    pub fn add_frame(&mut self, rgba: impl AsRef<[u8]>) -> Result<(), Error> {
+    pub fn add_frame(&mut self, rgb: impl AsRef<[u8]>) -> Result<(), Error> {
         let ts = self.next_timestamp_ms;
-        self.encoder.add_frame(rgba.as_ref(), ts)?;
+        self.encoder.add_frame(rgb.as_ref(), ts)?;
         self.next_timestamp_ms = ts.saturating_add(1);
         Ok(())
     }

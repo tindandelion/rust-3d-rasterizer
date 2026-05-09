@@ -16,13 +16,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let out_path = output_file_name();
 
     let pixel_count = SCENE_WIDTH as usize * SCENE_HEIGHT as usize;
-    let mut rgba = vec![0u8; pixel_count * 4];
-    for px in rgba.chunks_exact_mut(4) {
-        px[3] = 255;
-    }
+    let rgb = vec![0u8; pixel_count * 3];
 
     let mut encoder = WebpEncoder::new(SCENE_WIDTH, SCENE_HEIGHT)?;
-    encoder.add_frame(&rgba)?;
+    encoder.add_frame(&rgb)?;
     encoder.write(Path::new(&out_path))?;
 
     println!(
