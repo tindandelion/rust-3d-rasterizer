@@ -1,11 +1,13 @@
 //! Minimal export: one opaque-black frame as lossless WebP (project target size 800×600).
 
+mod framebuffer;
 mod webp_encoder;
 
 use std::env;
 use std::ffi::OsString;
 use std::path::Path;
 
+use framebuffer::FrameBuffer;
 use webp_encoder::WebpEncoder;
 
 const SCENE_WIDTH: u32 = 800;
@@ -15,11 +17,10 @@ const DEFAULT_OUT_PATH: &str = "scene.webp";
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let out_path = output_file_name();
 
-    let pixel_count = SCENE_WIDTH as usize * SCENE_HEIGHT as usize;
-    let rgb = vec![0u8; pixel_count * 3];
-
+    let framebuffer = FrameBuffer::new(SCENE_WIDTH, SCENE_HEIGHT);
     let mut encoder = WebpEncoder::new(SCENE_WIDTH, SCENE_HEIGHT)?;
-    encoder.add_frame(&rgb)?;
+
+    encoder.add_frame(&framebuffer)?;
     encoder.write(Path::new(&out_path))?;
 
     println!(
