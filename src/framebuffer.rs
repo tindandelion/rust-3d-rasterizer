@@ -105,18 +105,11 @@ mod tests {
 
         #[rustfmt::skip]
         let expected = [
-            0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0,            0,            0,            0, 0, 0, 0,
             0, 0, 0, Rgb::WHITE.0, Rgb::WHITE.1, Rgb::WHITE.2, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0,            0,            0,            0, 0, 0, 0,
         ];
         assert_eq!(fb.as_ref(), expected.as_slice());
-    }
-
-    #[test]
-    fn get_pixel_out_of_bounds_returns_black() {
-        let fb = FrameBuffer::new(2, 2);
-        assert_eq!(fb.get_pixel(9, 0), Rgb::BLACK);
-        assert_eq!(fb.get_pixel(0, 9), Rgb::BLACK);
     }
 
     #[test]
@@ -208,7 +201,7 @@ mod tests {
     }
 
     impl FrameBuffer {
-        pub fn get_pixel(&self, x: u32, y: u32) -> Rgb {
+        fn get_pixel(&self, x: u32, y: u32) -> Rgb {
             let Some(i) = self.pixel_offset(x, y) else {
                 return Rgb::BLACK;
             };
@@ -216,7 +209,7 @@ mod tests {
         }
 
         /// Row-major text: row 0, then row 1, … with no separators. `' '` matches `Rgb::BLACK`, `'+'` any other color.
-        pub fn to_ascii_art(&self) -> String {
+        fn to_ascii_art(&self) -> String {
             let mut out = String::with_capacity((self.height * self.width) as usize);
 
             for y in 0..self.height {
