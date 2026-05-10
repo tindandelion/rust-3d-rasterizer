@@ -46,34 +46,32 @@ impl FrameBuffer {
         self.rgb[i + 2] = color.2;
     }
 
-    /// Endpoint-inclusive segment (`pt1`–`pt2`). Integer **Bresenham**; pixels outside the buffer are skipped (`set_pixel` guards).
+    /// Endpoint-inclusive segment (`pt1`–`pt2`). **DDA-style:** parameter `t` in `[0, 1]` with
+    /// `steps = max(|Δx|, |Δy|)` and floating drift along the segment; samples are rounded to
+    /// integer pixels. Pixels outside the buffer are skipped (`set_pixel` guards).
     pub fn draw_line(&mut self, pt1: Point, pt2: Point, color: Rgb) {
-        let mut x0 = pt1.0 as i32;
-        let mut y0 = pt1.1 as i32;
-        let x1 = pt2.0 as i32;
-        let y1 = pt2.1 as i32;
+        let x0 = pt1.0 as f64;
+        let y0 = pt1.1 as f64;
+        let dx = pt2.0 as f64 - x0;
+        let dy = pt2.1 as f64 - y0;
 
-        let dx = (x1 - x0).abs();
-        let sx = if x0 < x1 { 1 } else { -1 };
-        let dy = -(y1 - y0).abs();
-        let sy = if y0 < y1 { 1 } else { -1 };
-        let mut err = dx + dy;
+        let dx_i = pt2.0 as i64 - pt1.0 as i64;
+        let dy_i = pt2.1 as i64 - pt1.1 as i64;
+        let nx = dx_i.unsigned_abs();
+        let ny = dy_i.unsigned_abs();
+        let steps = nx.max(ny);
 
-        loop {
-            self.set_pixel(x0 as u32, y0 as u32, color);
+        for i in 0..=steps {
+            let t = if steps == 0 {
+                0.0
+            } else {
+                i as f64 / steps as f64
+            };
+            let px = (x0 + dx * t).round();
+            let py = (y0 + dy * t).round();
 
-            if x0 == x1 && y0 == y1 {
-                break;
-            }
-
-            let e2 = err * 2;
-            if e2 >= dy {
-                err += dy;
-                x0 += sx;
-            }
-            if e2 <= dx {
-                err += dx;
-                y0 += sy;
+            if px >= 0.0 && py >= 0.0 {
+                self.set_pixel(px as u32, py as u32, color);
             }
         }
     }

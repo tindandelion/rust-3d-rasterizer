@@ -26,6 +26,7 @@ When behavior or scope is unclear, **prefer the planning docs** over guessing.
 
 - Run **`cargo build`**, **`cargo test`**, **`cargo fmt`**, and **`cargo clippy`** after substantive changes when applicable.
 - Prefer **small, focused changes** that match existing style and module boundaries.
+- **Commits:** Use a **brief message** (about **one or two lines**) that captures the **essence** of what changed—avoid long bullet lists or full change logs in the subject body unless truly necessary.
 - Do **not** expand scope (new dependencies, large refactors, unrelated features) without a clear ask or alignment with the planning docs.
 
 ## Cursor-specific notes

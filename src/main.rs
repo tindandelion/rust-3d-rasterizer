@@ -1,9 +1,10 @@
-//! Minimal export: one lossless WebP frame (800×600) — centered rectangle (400×200 px) with diagonal cross.
+//! Minimal export: one lossless WebP frame (800×600) — radial “flower” from the center.
 
 mod framebuffer;
 mod webp_encoder;
 
 use std::env;
+use std::f64::consts::TAU;
 use std::ffi::OsString;
 use std::path::Path;
 
@@ -12,15 +13,15 @@ use webp_encoder::WebpEncoder;
 
 const SCENE_WIDTH: u32 = 800;
 const SCENE_HEIGHT: u32 = 600;
-const RECT_WIDTH: u32 = 400;
-const RECT_HEIGHT: u32 = 200;
+/// Spokes around the circle; higher counts give a smoother outline.
+const FLOWER_RAY_COUNT: u32 = 48;
 const DEFAULT_OUT_PATH: &str = "scene.webp";
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let out_path = output_file_name();
 
     let mut framebuffer = FrameBuffer::new(SCENE_WIDTH, SCENE_HEIGHT);
-    draw_rectangle(&mut framebuffer, Rgb::WHITE);
+    draw_flower(&mut framebuffer, Rgb::WHITE);
 
     let mut encoder = WebpEncoder::new(SCENE_WIDTH, SCENE_HEIGHT)?;
     encoder.add_frame(&framebuffer)?;
@@ -34,29 +35,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn draw_rectangle(fb: &mut FrameBuffer, color: Rgb) {
+fn draw_flower(fb: &mut FrameBuffer, color: Rgb) {
     let cx = SCENE_WIDTH / 2;
     let cy = SCENE_HEIGHT / 2;
-    let half_w = RECT_WIDTH / 2;
-    let half_h = RECT_HEIGHT / 2;
-    let left = cx.saturating_sub(half_w);
-    let top = cy.saturating_sub(half_h);
+    let center = Point(cx, cy);
 
-    let tl = Point(left, top);
-    let right = left + RECT_WIDTH - 1;
-    let bottom = top + RECT_HEIGHT - 1;
+    let max_r = cx
+        .min(SCENE_WIDTH - 1 - cx)
+        .min(cy.min(SCENE_HEIGHT - 1 - cy));
+    let radius = max_r.saturating_sub(8) as f64;
 
-    let tr = Point(right, top);
-    let br = Point(right, bottom);
-    let bl = Point(left, bottom);
+    let cx_f = cx as f64;
+    let cy_f = cy as f64;
+    let n = FLOWER_RAY_COUNT as f64;
 
-    fb.draw_line(tl, tr, color);
-    fb.draw_line(tr, br, color);
-    fb.draw_line(br, bl, color);
-    fb.draw_line(bl, tl, color);
-
-    fb.draw_line(tl, br, color);
-    fb.draw_line(tr, bl, color);
+    for i in 0..FLOWER_RAY_COUNT {
+        let theta = TAU * (i as f64) / n;
+        let end_x = (cx_f + radius * theta.cos()).round() as u32;
+        let end_y = (cy_f + radius * theta.sin()).round() as u32;
+        fb.draw_line(center, Point(end_x, end_y), color);
+    }
 }
 
 fn output_file_name() -> OsString {
