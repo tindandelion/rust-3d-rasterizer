@@ -1,0 +1,20 @@
+# Site settings — Jekyll + Minima, published via GitHub Pages (gh-pages branch).
+
+title: 3D Rasterizer in Rust
+email: s.moshnikov@gmail.com
+description: >-
+  A personal learning project: a 3D software rasterizer in Rust (CPU first, optional wgpu later).
+  This diary covers progress, experiments, and what I learn along the way.
+baseurl: "/rust-3d-rasterizer"
+url: "https://tindandelion.com"
+github_username: tindandelion
+
+markdown: kramdown
+theme: minima
+plugins:
+  - jekyll-feed
+
+show_excerpts: true
+
+include:
+  - _pages
