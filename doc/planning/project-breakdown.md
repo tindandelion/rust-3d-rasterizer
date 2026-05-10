@@ -9,10 +9,10 @@ This document describes how I plan to approach the project iteratively.
 - **Goal:** Learn to produce a valid **lossless WebP** from raw **RGB** pixel data (browser-displayable artifact).
 - **Outcome:** An **800×600** **still `.webp`** with a **single white pixel** at the center (sanity-check stride, origin corner, and **`webp-animation`** / libwebp encode path).
 
-### [ ] Drawing lines
+### [x] Drawing lines
 
 - **Goal:** Implement the simplest practical line rasterization (**DDA-style** stepping).
-- **Outcome:** An **800×600** **still `.webp`** showing a **crossed square** (two rectangles sharing edges—or another simple 2D line exercise you can eyeball for gaps/overdraw).
+- **Outcome:** An **800×600** **still `.webp`** built from many **spokes**: radial segments from the scene center to a circle, so gaps, endpoint inclusivity, and **`set_pixel`** skipping are easy to eyeball. (A **crossed square**—two rectangles sharing edges—remains a fine alternative scene if you want a grid-aligned regression image later.)
 
 ### [ ] Cube: orthographic projection
 
