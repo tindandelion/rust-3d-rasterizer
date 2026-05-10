@@ -4,7 +4,7 @@ A personal learning project: a 3D software rasterizer implemented in Rust, devel
 
 ## Current progress
 
-![Current render output](doc/output/base-webp-still.webp)
+![Current render output](doc/output/current.webp)
 
 ## Project plans
 

@@ -1,0 +1,2 @@
+[alias]
+update-doc = "run -- doc/output/current.webp"
