@@ -1,4 +1,4 @@
-//! Minimal export: one lossless WebP frame (project target size 800×600) with a blue center pixel.
+//! Minimal export: one lossless WebP frame (project target size 800×600) with a white center pixel.
 
 mod framebuffer;
 mod webp_encoder;
@@ -18,7 +18,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let out_path = output_file_name();
 
     let mut framebuffer = FrameBuffer::new(SCENE_WIDTH, SCENE_HEIGHT);
-    framebuffer.set_pixel(SCENE_WIDTH / 2, SCENE_HEIGHT / 2, Rgb(0, 0, 255));
+    framebuffer.set_pixel(SCENE_WIDTH / 2, SCENE_HEIGHT / 2, Rgb(255, 255, 255));
 
     let mut encoder = WebpEncoder::new(SCENE_WIDTH, SCENE_HEIGHT)?;
     encoder.add_frame(&framebuffer)?;

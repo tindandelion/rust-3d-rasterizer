@@ -4,10 +4,10 @@ This document describes how I plan to approach the project iteratively.
 
 ## Iterations
 
-### [ ] Base WebP (still)
+### [x] Base WebP (still)
 
 - **Goal:** Learn to produce a valid **lossless WebP** from raw **RGB** pixel data (browser-displayable artifact).
-- **Outcome:** An **800×600** **still `.webp`** with a **single blue pixel** at the center (sanity-check stride, origin corner, and **`webp-animation`** / libwebp encode path).
+- **Outcome:** An **800×600** **still `.webp`** with a **single white pixel** at the center (sanity-check stride, origin corner, and **`webp-animation`** / libwebp encode path).
 
 ### [ ] Drawing lines
 
