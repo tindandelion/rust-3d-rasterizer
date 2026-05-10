@@ -18,3 +18,6 @@ show_excerpts: true
 
 include:
   - _pages
+
+exclude:
+  - AGENTS.md
