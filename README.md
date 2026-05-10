@@ -10,3 +10,7 @@ A personal learning project: a 3D software rasterizer implemented in Rust, devel
 
 - [`doc/planning/project-spec.md`](doc/planning/project-spec.md) — goals, math, dependencies, coordinate conventions, raster strategy
 - [`doc/planning/project-breakdown.md`](doc/planning/project-breakdown.md) — iterative milestones and expected artifacts
+
+## Project diary
+
+Progress and write-ups live on the [project diary](https://www.tindandelion.com/rust-3d-rasterizer/), published from the `gh-pages` branch (Jekyll + GitHub Pages), similar to the [BitTorrent client diary](https://www.tindandelion.com/rust-bittorrent-client/).
