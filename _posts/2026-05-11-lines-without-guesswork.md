@@ -133,7 +133,7 @@ The original plan, a crossed square, would not give us enough visual feedback on
 This release does not yet include projection, meshes, or triangle filling. But it gives us a dependable primitive that all of that will rely on. The next milestone is orthographic cube projection, where this line path becomes the first wireframe backbone instead of a standalone demo.
 
 [version-0-0-2]: https://github.com/tindandelion/rust-3d-rasterizer/tree/0.0.2
-[source-draw-line]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.2/src/framebuffer.rs#L47-L70
-[source-set-pixel]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.2/src/framebuffer.rs#L37-L45
-[source-draw-flower]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.2/src/main.rs#L38-L59
+[source-draw-line]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.2/src/framebuffer.rs#L52
+[source-set-pixel]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.2/src/framebuffer.rs#L39
+[source-draw-flower]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.2/src/main.rs#L38
 [tau-docs]: https://doc.rust-lang.org/std/f64/consts/constant.TAU.html

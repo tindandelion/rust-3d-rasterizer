@@ -72,13 +72,13 @@ For code references:
 
 - Link symbols, modules, tests, constants, and APIs to GitHub source on `main` or the relevant version tag.
 - Link a given source-code reference only on its first meaningful mention; later mentions can stay as plain backticked text.
-- Prefer line anchors when they help the reader land on the exact code.
+- Prefer single-line anchors (`#L<start>`) over line ranges (`#Lx-Ly`) for source links.
 - Example:
 
 ```markdown
 [`FrameBuffer`][source-framebuffer]
 
-[source-framebuffer]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/src/framebuffer.rs#L6-L38
+[source-framebuffer]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/src/framebuffer.rs#L6
 ```
 
 For common knowledge:
