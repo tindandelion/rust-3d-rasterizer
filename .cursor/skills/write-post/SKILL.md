@@ -53,6 +53,7 @@ The tag scheme is plain `x.x.x`, not `vx.x.x`.
 - Keep milestone scope honest; do not overclaim beyond current code.
 - Prefer concrete examples from the session logs over generic summaries.
 - Mention next steps when they naturally follow from `project-breakdown.md`.
+- Use sentence-style capitalization for section/subsection headers inside posts (for example, `## Why the new output uses radial spokes`, not title case). Post titles may still use title case.
 
 ## Links And References
 

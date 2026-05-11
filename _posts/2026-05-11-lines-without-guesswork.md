@@ -9,30 +9,21 @@ We shipped the second milestone of the rasterizer. This one feels like a real st
 
 [Current version (0.0.2) on GitHub][version-0-0-2]{: .no-github-icon}
 
-## What Changed In Practice
+## What changed in practice
 
-Version 0.0.1 proved the output pipeline. Version 0.0.2 turns that pipeline into an actual drawing loop.
-
-The key change is a line primitive, [`draw_line`][source-draw-line], implemented on top of the existing framebuffer and guarded [`set_pixel`][source-set-pixel]. We also introduced a tiny [`Point`][source-point] type and kept color usage explicit with `Rgb::BLACK` and `Rgb::WHITE`.
-
-That combination gives us a cleaner mental model for upcoming milestones:
-
-1. choose geometry in scene space,
-2. convert to integer pixel endpoints,
-3. draw endpoint-inclusive segments,
-4. let out-of-bounds writes fall through safely.
+Version 0.0.1 proved the output pipeline. Version 0.0.2 expands our drawing capability from single points to full line segments.The key change is a line primitive, [`draw_line`][source-draw-line], implemented on top of the existing framebuffer and guarded [`set_pixel`][source-set-pixel].
 
 The result is still intentionally simple and easy to inspect:
 
 ![Current render output](https://raw.githubusercontent.com/tindandelion/rust-3d-rasterizer/main/doc/output/current.webp)
 
-## Why DDA, Not Something Fancier
+## Line drawing algorithm
 
 A notable decision in this milestone was algorithm choice. We briefly had an integer Bresenham path while iterating, then switched to DDA: **Digital Differential Analyzer**.
 
 This was also a deliberate learning choice from Sergey: instead of spending time learning Bresenham in depth right away (a nice execrise, but not oyr focus rught now), we picked the approach that felt closer to the math. I did acknowledge this is probably a performance penalty versus a tighter integer-heavy implementation, but at this stage that cost is not very important for us. Better to use the algorithm you understand clearly, then optimize later if profiling says it matters.
 
-#### What DDA Is
+#### What DDA is
 
 A Digital Differential Analyzer is a way to turn a continuous curve into discrete pixel steps. For line drawing, it works like this:
 
@@ -41,7 +32,7 @@ A Digital Differential Analyzer is a way to turn a continuous curve into discret
 - compute continuous $(x,y)$ at each sample
 - round to the nearest pixel and plot it
 
-#### DDA Implementation For Lines
+#### DDA implementation for lines
 
 The math is small but useful. Given endpoints $P_0 = (x_0, y_0)$ and $P_1 = (x_1, y_1)$, define:
 
@@ -91,7 +82,7 @@ The key intuition is that $N = \max(\lvert\Delta x\rvert, \lvert\Delta y\rvert)$
 
 For this milestone, that trade-off is exactly what we wanted: readable geometry-first code, predictable testable output, and a direct bridge from line equations to pixels before we optimize anything.
 
-## Testing The Shape, Not Just The Function
+## Testing the shape, not just the function
 
 This milestone also improved tests in a useful way. Instead of only checking individual bytes, we added several line-focused unit tests and a tiny ASCII view helper so expected pixel patterns are readable at a glance.
 
@@ -101,11 +92,33 @@ That gave us confidence in the cases that matter right now:
 - endpoint inclusivity (forward and reverse),
 - clipping behavior when endpoints land outside the framebuffer.
 
+Here is the style of unit test we used to verify shape directly:
+
+```rust
+#[test]
+fn draw_diagonal_line_slope_one() {
+    let mut fb = FrameBuffer::new(10, 5);
+    fb.draw_line(Point(1, 0), Point(4, 3), Rgb::WHITE);
+
+    #[rustfmt::skip]
+    let expected = concat!(
+        " +        ",
+        "  +       ",
+        "   +      ",
+        "    +     ",
+        "          ",
+    );
+    assert_eq!(fb.to_ascii_art(), expected);
+}
+```
+
+This style made expected output much easier to read in code review than raw byte arrays. It also made adding new test cases faster: in many cases, we only needed to change the expected ASCII pattern while keeping the same assertion structure.
+
 The broader integration test still verifies that the binary writes a decodable WebP, so we keep both levels of feedback: local geometry correctness and end-to-end artifact validity.
 
-## Why The New Output Looks Like A Flower
+## Why the new output uses radial spokes
 
-The rendered scene is now a radial pattern: many spokes from the image center to a circle. In code, that happens in [`draw_flower`][source-draw-flower] by iterating angles over [`TAU`][tau-docs] and issuing one `draw_line` per spoke.
+The rendered scene is now a radial-spoke pattern: many segments from the image center to a circle. In code, that happens in [`draw_flower`][source-draw-flower] by iterating angles over [`TAU`][tau-docs] and issuing one `draw_line` per spoke.
 
 We originally discussed a crossed square for this milestone. That remains a good regression-style scene, but the radial image turned out to be better for quick visual checks:
 
@@ -115,15 +128,12 @@ We originally discussed a crossed square for this milestone. That remains a good
 
 Because of that, the milestone checklist in the planning doc was updated to mark Drawing lines complete with the radial-segment artifact description.
 
-## What 0.0.2 Unlocks
+## What this version unlocks
 
-This release does not yet include projection, meshes, or triangle filling. But it gives us a dependable primitive that all of that will rely on.
-
-The next milestone is orthographic cube projection, where this line path becomes the first wireframe backbone instead of a standalone demo.
+This release does not yet include projection, meshes, or triangle filling. But it gives us a dependable primitive that all of that will rely on.The next milestone is orthographic cube projection, where this line path becomes the first wireframe backbone instead of a standalone demo.
 
 [version-0-0-2]: https://github.com/tindandelion/rust-3d-rasterizer/tree/0.0.2
 [source-draw-line]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.2/src/framebuffer.rs#L47-L70
 [source-set-pixel]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.2/src/framebuffer.rs#L37-L45
-[source-point]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.2/src/framebuffer.rs#L4
 [source-draw-flower]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.2/src/main.rs#L38-L59
 [tau-docs]: https://doc.rust-lang.org/std/f64/consts/constant.TAU.html
