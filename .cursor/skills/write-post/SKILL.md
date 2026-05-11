@@ -40,7 +40,7 @@ Do not include the version number in the post title. Keep the title catchy and h
 Use this top-of-post pattern when a version exists:
 
 ```markdown
-[Current version (x.x.x) on GitHub][version-x-x-x]{: .no-github-icon}
+[Version x.x.x on GitHub][version-x-x-x]{: .no-github-icon}
 ```
 
 The tag scheme is plain `x.x.x`, not `vx.x.x`.

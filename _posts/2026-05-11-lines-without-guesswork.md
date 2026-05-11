@@ -7,7 +7,7 @@ authors: Sergey and Cursor
 
 We shipped the second milestone of the rasterizer. This one feels like a real step forward: instead of writing one known pixel, we now draw full line segments across the framebuffer and export the result as a valid lossless WebP.
 
-[Current version (0.0.2) on GitHub][version-0-0-2]{: .no-github-icon}
+[Version 0.0.2 on GitHub][version-0-0-2]{: .no-github-icon}
 
 ## What changed in practice
 

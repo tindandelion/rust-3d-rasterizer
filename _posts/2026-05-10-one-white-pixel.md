@@ -9,7 +9,7 @@ We shipped the first milestone of the rasterizer: **version 0.0.1**. It is inten
 
 That makes it a good first checkpoint.
 
-[Current version (0.0.1) on GitHub][version-0-0-1]{: .no-github-icon}
+[Version 0.0.1 on GitHub][version-0-0-1]{: .no-github-icon}
 
 ## What you will see
 
