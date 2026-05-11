@@ -9,7 +9,7 @@ We shipped the first milestone of the rasterizer: **version 0.0.1**. It is inten
 
 That makes it a good first checkpoint.
 
-[Current version (0.0.1) on GitHub][version-0-0-1]
+[Current version (0.0.1) on GitHub][version-0-0-1]{: .no-github-icon}
 
 ## What you will see
 
@@ -129,10 +129,10 @@ Next up: [drawing lines][post-lines-without-guesswork]. The next milestone is a 
 [rasterisation]: https://en.wikipedia.org/wiki/Rasterisation
 [webp-animation]: https://crates.io/crates/webp-animation
 [source-main]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/src/main.rs
-[source-framebuffer]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/src/framebuffer.rs#L6-L38
-[source-rgb]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/src/framebuffer.rs#L3-L4
-[source-set-pixel]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/src/framebuffer.rs#L22-L31
-[source-webp-encoder]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/src/webp_encoder.rs#L6-L42
-[source-integration-test]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/tests/binary_writes_valid_webp.rs#L27-L42
-[source-binary-path]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/tests/binary_writes_valid_webp.rs#L12-L25
+[source-framebuffer]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/src/framebuffer.rs#L6
+[source-rgb]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/src/framebuffer.rs#L3
+[source-set-pixel]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/src/framebuffer.rs#L22
+[source-webp-encoder]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/src/webp_encoder.rs#L6
+[source-integration-test]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/tests/binary_writes_valid_webp.rs#L27
+[source-binary-path]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/tests/binary_writes_valid_webp.rs#L12
 [post-lines-without-guesswork]: {{site.baseurl}}/{% post_url 2026-05-11-lines-without-guesswork %}
