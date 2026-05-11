@@ -20,6 +20,7 @@ Gather context before writing:
   - `README.md`
 - Check relevant source files on `main` and link code references to GitHub.
 - Check version tags with `git ls-remote --tags origin '<version>'` when the post references a release.
+- Use `git diff` between current version and previous version (versions are tagged x.x.x) to figure out what changes have been made.
 
 ## Post Requirements
 
@@ -39,7 +40,7 @@ Do not include the version number in the post title. Keep the title catchy and h
 Use this top-of-post pattern when a version exists:
 
 ```markdown
-[Current version (x.x.x) on GitHub][version-x-x-x]
+[Current version (x.x.x) on GitHub][version-x-x-x]{: .no-github-icon}
 ```
 
 The tag scheme is plain `x.x.x`, not `vx.x.x`.
