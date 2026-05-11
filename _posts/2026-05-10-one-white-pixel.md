@@ -120,7 +120,7 @@ Most importantly, it gives us a visible artifact:
 
 That pixel is the first sign that bytes are flowing through the whole pipeline correctly.
 
-Next up: drawing lines. The next milestone is a crossed square, which should turn `set_pixel` from a sanity-check helper into the foundation for the first real rasterization algorithm.
+Next up: [drawing lines][post-lines-without-guesswork]. The next milestone is a crossed square, which should turn `set_pixel` from a sanity-check helper into the foundation for the first real rasterization algorithm.
 
 [project-spec]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/doc/planning/project-spec.md
 [project-breakdown]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/doc/planning/project-breakdown.md
@@ -135,3 +135,4 @@ Next up: drawing lines. The next milestone is a crossed square, which should tur
 [source-webp-encoder]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/src/webp_encoder.rs#L6-L42
 [source-integration-test]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/tests/binary_writes_valid_webp.rs#L27-L42
 [source-binary-path]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/tests/binary_writes_valid_webp.rs#L12-L25
+[post-lines-without-guesswork]: {{site.baseurl}}/{% post_url 2026-05-11-lines-without-guesswork %}

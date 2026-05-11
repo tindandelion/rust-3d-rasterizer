@@ -58,6 +58,15 @@ The tag scheme is plain `x.x.x`, not `vx.x.x`.
 
 Use reference-style Markdown links.
 
+For links between diary posts:
+
+- After creating a new post, update the immediately previous related post to include a natural inline "next step" link to the new post (keep the original narrative voice smooth; do not turn it into a retrospective rewrite).
+- Use Jekyll post links in reference definitions (not hardcoded absolute URLs):
+
+```markdown
+[post-some-title]: {{site.baseurl}}/{% post_url YYYY-MM-DD-slug %}
+```
+
 For code references:
 
 - Link symbols, modules, tests, constants, and APIs to GitHub source on `main` or the relevant version tag.
