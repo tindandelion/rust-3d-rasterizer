@@ -11,7 +11,7 @@ We shipped the second milestone of the rasterizer. This one feels like a real st
 
 ## What changed in practice
 
-Version 0.0.1 proved the output pipeline. Version 0.0.2 expands our drawing capability from single points to full line segments.The key change is a line primitive, [`draw_line`][source-draw-line], implemented on top of the existing framebuffer and guarded [`set_pixel`][source-set-pixel].
+Version 0.0.1 proved the output pipeline. Version 0.0.2 expands our drawing capability from single points to full line segments. The key change is a line primitive, [`draw_line`][source-draw-line], implemented on top of the existing framebuffer and guarded [`set_pixel`][source-set-pixel].
 
 The result is still intentionally simple and easy to inspect:
 
@@ -19,9 +19,9 @@ The result is still intentionally simple and easy to inspect:
 
 ## Line drawing algorithm
 
-A notable decision in this milestone was algorithm choice. We briefly had an integer Bresenham path while iterating, then switched to DDA: **Digital Differential Analyzer**.
+A notable decision in this milestone was the line algorithm itself. We briefly had an integer Bresenham path while iterating, then switched to DDA: **Digital Differential Analyzer**.
 
-This was also a deliberate learning choice from Sergey: instead of spending time learning Bresenham in depth right away (a nice execrise, but not oyr focus rught now), we picked the approach that felt closer to the math. I did acknowledge this is probably a performance penalty versus a tighter integer-heavy implementation, but at this stage that cost is not very important for us. Better to use the algorithm you understand clearly, then optimize later if profiling says it matters.
+This was also a deliberate learning choice from Sergey: instead of spending time learning Bresenham in depth right away (a nice exercise, but not our focus right now), we picked the approach that felt closer to the math. We acknowledged this is likely a performance penalty versus a tighter integer-heavy implementation, but at this stage that cost is not very important for us. Better to use an algorithm we understand clearly, then optimize later if profiling says it matters.
 
 #### What DDA is
 
@@ -42,16 +42,16 @@ $$
 N = \max(\lvert\Delta x\rvert, \lvert\Delta y\rvert).
 $$
 
-Here, $N$ is the number of equal sampling intervals we use along the segment (so we evaluate $N+1$ points including both endpoints). But we need to choose our $N$ value depending on the _dominant axis_.
+Here, $N$ is the number of equal sampling intervals we use along the segment (so we evaluate $N+1$ points including both endpoints). We choose $N$ based on the _dominant axis_.
 
-By dominant axis, we mean the coordinate that changes more over the whole segment: 
+By dominant axis, we mean the coordinate that changes more over the whole segment:
 
-* if $\lvert\Delta x\rvert \ge \lvert\Delta y\rvert$, the line is more horizontal, so $x$ is dominant
-* if $\lvert\Delta y\rvert > \lvert\Delta x\rvert$, the line is more vertical, so $y$ is dominant. 
+- if $\lvert\Delta x\rvert \ge \lvert\Delta y\rvert$, the line is more horizontal, so $x$ is dominant
+- if $\lvert\Delta y\rvert > \lvert\Delta x\rvert$, the line is more vertical, so $y$ is dominant.
 
 For example, from $(2,3)$ to $(12,7)$ we have $\Delta x=10$ and $\Delta y=4$, so $x$ is dominant and we use $N=10$. From $(5,1)$ to $(8,13)$ we have $\Delta x=3$ and $\Delta y=12$, so $y$ is dominant and we use $N=12$.
 
-First, write the segment in parametric form, separating coordinates:
+First, let's write the segment in parametric form for each coordinate:
 
 $$
 \begin{cases}
@@ -78,7 +78,7 @@ $$
 
 Those integer $(p^x_i, p^y_i)$ coordinates are what [`set_pixel`][source-set-pixel] writes. Because $i$ runs from $0$ through $N$, the segment is endpoint-inclusive by construction.
 
-The key intuition is that $N = \max(\lvert\Delta x\rvert, \lvert\Delta y\rvert)$ guarantees we advance no more than one pixel per step along the dominant axis, which avoids visible gaps for this stage of the project. If a rounded sample lands outside the framebuffer, `set_pixel` safely ignores it, so we get simple clipping behavior without a separate clipping algorithm yet.
+The key intuition is that $N = \max(\lvert\Delta x\rvert, \lvert\Delta y\rvert)$ guarantees we advance no more than one pixel per step along the dominant axis, which avoids visible gaps in the rasterized line. If a rounded sample lands outside the framebuffer, `set_pixel` safely ignores it, so we get simple clipping behavior without a separate clipping algorithm yet.
 
 For this milestone, that trade-off is exactly what we wanted: readable geometry-first code, predictable testable output, and a direct bridge from line equations to pixels before we optimize anything.
 
@@ -118,7 +118,7 @@ The broader integration test still verifies that the binary writes a decodable W
 
 ## Why the new output uses radial spokes
 
-The rendered scene is now a radial-spoke pattern: many segments from the image center to a circle. In code, that happens in [`draw_flower`][source-draw-flower] by iterating angles over [`TAU`][tau-docs] and issuing one `draw_line` per spoke.
+The rendered scene is now a radial-spoke pattern: many segments from the image center to a circle. In code, that happens in [`draw_flower`][source-draw-flower] by iterating angles over the entire circle and issuing one `draw_line` per spoke.
 
 We originally discussed a crossed square for this milestone. That remains a good regression-style scene, but the radial image turned out to be better for quick visual checks:
 
@@ -126,11 +126,11 @@ We originally discussed a crossed square for this milestone. That remains a good
 - endpoint handling is easier to spot,
 - small directional asymmetries stand out immediately.
 
-Because of that, the milestone checklist in the planning doc was updated to mark Drawing lines complete with the radial-segment artifact description.
+The original plan, a crossed square, would not give us enough visual feedback on line quality. A few simple vertical, horizontal, and diagonal lines provide less information than many radial directions. So Sergey chose to switch the output to radial spokes.
 
 ## What this version unlocks
 
-This release does not yet include projection, meshes, or triangle filling. But it gives us a dependable primitive that all of that will rely on.The next milestone is orthographic cube projection, where this line path becomes the first wireframe backbone instead of a standalone demo.
+This release does not yet include projection, meshes, or triangle filling. But it gives us a dependable primitive that all of that will rely on. The next milestone is orthographic cube projection, where this line path becomes the first wireframe backbone instead of a standalone demo.
 
 [version-0-0-2]: https://github.com/tindandelion/rust-3d-rasterizer/tree/0.0.2
 [source-draw-line]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.2/src/framebuffer.rs#L47-L70
