@@ -33,8 +33,9 @@ When behavior or scope is unclear, **prefer the planning docs** over guessing.
 **AI assistants:** Treat this section as **mandatory**, not optional workflow polish.
 
 - Use a **brief message** (about **one or two lines**) that captures the **essence** of what changed—avoid long bullet lists or full change logs in the subject body unless truly necessary.
-- **Never run `git commit` until this step is done:** propose the **exact** commit message (final wording, as it would appear on the commit). Ask whether **that wording** is acceptable—**do not infer consent** from phrases like “commit”, “let’s commit”, or “save progress” alone.
-- Only after the user **explicitly approves** that proposed message (or sends back edited wording you then adopt), run **`git add`** / **`git commit`** with **that** message.
+- **Never run `git commit` (or `git add` + `git commit`) in the same turn as the proposal.** First output the **exact** final message (wording as it will appear on the commit), then **stop** and wait for the user’s reply.
+- **Do not infer consent** from vague intent—“commit”, “let’s commit”, “save”, or “ship it” only mean the user wants a commit **someday**; they are **not** approval of **your** proposed message until they say so (or send edited wording to use verbatim).
+- Only after the user **explicitly approves** that message—or sends **replacement wording** you then use—run **`git add`** / **`git commit`** with **that** message only.
 
 ## Cursor-specific notes
 
