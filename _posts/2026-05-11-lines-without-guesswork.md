@@ -28,16 +28,68 @@ The result is still intentionally simple and easy to inspect:
 
 ## Why DDA, Not Something Fancier
 
-A notable decision in this milestone was algorithm choice. We briefly had an integer Bresenham path while iterating, then switched to a DDA-style implementation because it better matches the project plan and is easier to reason about while we are still building fundamentals.
+A notable decision in this milestone was algorithm choice. We briefly had an integer Bresenham path while iterating, then switched to DDA: **Digital Differential Analyzer**.
 
-In code, that means:
+This was also a deliberate learning choice from Sergey: instead of spending time learning Bresenham in depth right away (a nice execrise, but not oyr focus rught now), we picked the approach that felt closer to the math. I did acknowledge this is probably a performance penalty versus a tighter integer-heavy implementation, but at this stage that cost is not very important for us. Better to use the algorithm you understand clearly, then optimize later if profiling says it matters.
 
-- `steps = max(|dx|, |dy|)`,
-- walk `t` from `0` to `1`,
-- interpolate floating-point coordinates,
-- round to nearest integer pixel.
+#### What DDA Is
 
-For this stage, that trade-off is exactly what we wanted: prioritize readability and predictable behavior over micro-optimizing the inner loop before profiling says it matters.
+A Digital Differential Analyzer is a way to turn a continuous curve into discrete pixel steps. For line drawing, it works like this:
+
+- treat the segment as a parametric function over $t \in [0,1]$
+- sample $t$ at evenly spaced values
+- compute continuous $(x,y)$ at each sample
+- round to the nearest pixel and plot it
+
+#### DDA Implementation For Lines
+
+The math is small but useful. Given endpoints $P_0 = (x_0, y_0)$ and $P_1 = (x_1, y_1)$, define:
+
+$$
+\Delta x = x_1 - x_0,\quad
+\Delta y = y_1 - y_0,\quad
+N = \max(\lvert\Delta x\rvert, \lvert\Delta y\rvert).
+$$
+
+Here, $N$ is the number of equal sampling intervals we use along the segment (so we evaluate $N+1$ points including both endpoints). But we need to choose our $N$ value depending on the _dominant axis_.
+
+By dominant axis, we mean the coordinate that changes more over the whole segment: 
+
+* if $\lvert\Delta x\rvert \ge \lvert\Delta y\rvert$, the line is more horizontal, so $x$ is dominant
+* if $\lvert\Delta y\rvert > \lvert\Delta x\rvert$, the line is more vertical, so $y$ is dominant. 
+
+For example, from $(2,3)$ to $(12,7)$ we have $\Delta x=10$ and $\Delta y=4$, so $x$ is dominant and we use $N=10$. From $(5,1)$ to $(8,13)$ we have $\Delta x=3$ and $\Delta y=12$, so $y$ is dominant and we use $N=12$.
+
+First, write the segment in parametric form, separating coordinates:
+
+$$
+\begin{cases}
+x(t) = x_0 + \Delta x\,t \\
+y(t) = y_0 + \Delta y\,t
+\end{cases}
+\qquad t \in [0,1].
+$$
+
+Then sample:
+
+$$
+t_i = \frac{i}{N}\ \text{for}\ i = 0,1,\dots,N\ \ (\text{so } t_i \in [0,1]),\qquad
+x_i = x_0 + \Delta x \cdot t_i,\qquad
+y_i = y_0 + \Delta y \cdot t_i.
+$$
+
+Each $(x_i, y_i)$ is still continuous (floating point), so rasterization needs one more decision: map to a pixel center. Here we use rounding:
+
+$$
+p^x_i = \operatorname{round}(x_i),\qquad
+p^y_i = \operatorname{round}(y_i).
+$$
+
+Those integer $(p^x_i, p^y_i)$ coordinates are what [`set_pixel`][source-set-pixel] writes. Because $i$ runs from $0$ through $N$, the segment is endpoint-inclusive by construction.
+
+The key intuition is that $N = \max(\lvert\Delta x\rvert, \lvert\Delta y\rvert)$ guarantees we advance no more than one pixel per step along the dominant axis, which avoids visible gaps for this stage of the project. If a rounded sample lands outside the framebuffer, `set_pixel` safely ignores it, so we get simple clipping behavior without a separate clipping algorithm yet.
+
+For this milestone, that trade-off is exactly what we wanted: readable geometry-first code, predictable testable output, and a direct bridge from line equations to pixels before we optimize anything.
 
 ## Testing The Shape, Not Just The Function
 
