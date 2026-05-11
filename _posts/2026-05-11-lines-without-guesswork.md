@@ -11,7 +11,7 @@ We shipped the second milestone of the rasterizer. This one feels like a real st
 
 ## What changed in practice
 
-Version 0.0.1 proved the output pipeline. Version 0.0.2 expands our drawing capability from single points to full line segments. The key change is a line primitive, [`draw_line`][source-draw-line], implemented on top of the existing framebuffer and guarded [`set_pixel`][source-set-pixel].
+[Version 0.0.1][prev-post] proved the output pipeline. Version 0.0.2 expands our drawing capability from single points to full line segments. The key change is a line primitive, [`draw_line`][source-draw-line], implemented on top of the existing framebuffer and guarded [`set_pixel`][source-set-pixel].
 
 The result is still intentionally simple and easy to inspect:
 
@@ -133,6 +133,7 @@ The original plan, a crossed square, would not give us enough visual feedback on
 This release does not yet include projection, meshes, or triangle filling. But it gives us a dependable primitive that all of that will rely on. The next milestone is orthographic cube projection, where this line path becomes the first wireframe backbone instead of a standalone demo.
 
 [version-0-0-2]: https://github.com/tindandelion/rust-3d-rasterizer/tree/0.0.2
+[prev-post]: {{site.baseurl}}/{% post_url 2026-05-10-one-white-pixel %}
 [source-draw-line]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.2/src/framebuffer.rs#L52
 [source-set-pixel]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.2/src/framebuffer.rs#L39
 [source-draw-flower]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.2/src/main.rs#L38
