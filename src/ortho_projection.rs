@@ -21,10 +21,13 @@
 //!
 //! - **Full surface:** **`width × height`** only — there is **no** inset viewport or sub-rectangle API.
 //! - **Pixel grid:** **`(0, 0)`** is **top-left**, **+x** right, **+y** **down** (bitmap style).
-//! - **NDC vs bitmap Y:** In view/NDC, **+y** is **up**; framebuffer **+y** is **down**, so the map uses
-//!   **`(−world_y + 1)`** (same effect as flipping **NDC y**).
-//! - **Span:** **`[-1, 1]`** on each raster axis maps to **pixel centers** at **`0`** and **`width - 1`**
-//!   / **`height − 1`** using factors **`(width − 1)`** and **`(height − 1)`**.
+//! - **NDC vs bitmap Y:** In view/NDC, **+y** is **up**; framebuffer **+y** is **down**, so **y** uses
+//!   **`px_y = −world_y * scale + c_y`** (same flip as **`(−world_y + 1)`** when **scale** matches the
+//!   vertical span).
+//! - **Aspect ratio:** **x** and **y** share one scale **`(min(width, height) − 1) / 2`**, centered in the
+//!   bitmap (**letterboxing** / **pillarboxing** when **`width ≠ height`**). A world **`[-1, 1]²`** square
+//!   maps to a **square** patch of pixels; corners **`(±1, ±1)`** touch the **shorter** image side’s edges
+//!   and sit inset on the longer side.
 //!
 //! # What we are *not* doing (yet)
 //!
@@ -47,14 +50,29 @@ use glam::{UVec2, Vec3};
 /// Uses **`world_point.x`** and **`world_point.y`** as **NDC-style coordinates in `[-1, 1]`** for
 /// well-behaved in-bounds output; **`world_point.z`** is **ignored**.
 ///
+/// **x** / **y** use the **same** world-to-pixel scale so a square in **`xy`** stays **square** on
+/// non-square viewports (content centered; bars on the long side).
+///
 /// Internally this is **linear map → `f32::round` → `as u32`** on each axis (no separate float-pixel type
 /// exposed). Does **not** clamp to **`0 … width - 1`** / **`0 … height - 1`** before the **`u32`** cast;
-/// clip beforehand if you require in-bounds indices.
+/// clip beforehand if you require in-bounds indices. If **`width == 0`** or **`height == 0`**, returns
+/// **`(0, 0)`**.
 pub fn project(world_point: Vec3, width: u32, height: u32) -> UVec2 {
-    let ndc_x = (world_point.x + 1.0) * (width - 1) as f32 / 2.0;
-    let ndc_y = (-world_point.y + 1.0) * (height - 1) as f32 / 2.0;
+    if width == 0 || height == 0 {
+        return UVec2::ZERO;
+    }
 
-    UVec2::new(ndc_x.round() as u32, ndc_y.round() as u32)
+    let max_x = (width - 1) as f32;
+    let max_y = (height - 1) as f32;
+    let dim_minus_1 = max_x.min(max_y);
+    let scale = dim_minus_1 / 2.0;
+    let cx = max_x / 2.0;
+    let cy = max_y / 2.0;
+
+    let px = world_point.x * scale + cx;
+    let py = -world_point.y * scale + cy;
+
+    UVec2::new(px.round() as u32, py.round() as u32)
 }
 
 #[cfg(test)]
@@ -70,19 +88,19 @@ mod tests {
 
         assert_eq!(
             project(Vec3::new(-1.0, -1.0, 0.0), width, height),
-            UVec2::new(0, height - 1),
+            UVec2::new(25, height - 1),
         );
         assert_eq!(
             project(Vec3::new(1.0, 1.0, 0.0), width, height),
-            UVec2::new(width - 1, 0),
+            UVec2::new(75, 0),
         );
         assert_eq!(
             project(Vec3::new(-1.0, 1.0, 0.0), width, height),
-            UVec2::new(0, 0),
+            UVec2::new(25, 0),
         );
         assert_eq!(
             project(Vec3::new(1.0, -1.0, 0.0), width, height),
-            UVec2::new(width - 1, height - 1),
+            UVec2::new(75, height - 1),
         );
 
         assert_eq!(
@@ -92,8 +110,29 @@ mod tests {
 
         assert_eq!(
             project(Vec3::new(-0.5, 1.0, 0.0), width, height),
-            UVec2::new(25, 0),
+            UVec2::new(38, 0),
         );
+    }
+
+    #[test]
+    fn square_viewport_corners_touch_frame_edges() {
+        let n = 51_u32;
+        let h = n - 1;
+
+        assert_eq!(project(Vec3::new(-1.0, -1.0, 0.0), n, n), UVec2::new(0, h),);
+        assert_eq!(project(Vec3::new(1.0, 1.0, 0.0), n, n), UVec2::new(h, 0),);
+    }
+
+    #[test]
+    fn non_square_viewport_preserves_equal_axis_span_in_pixels() {
+        let w = 800_u32;
+        let h = 600_u32;
+        let left = project(Vec3::new(-1.0, 0.0, 0.0), w, h).x;
+        let right = project(Vec3::new(1.0, 0.0, 0.0), w, h).x;
+        let top = project(Vec3::new(0.0, 1.0, 0.0), w, h).y;
+        let bottom = project(Vec3::new(0.0, -1.0, 0.0), w, h).y;
+
+        assert_eq!(right - left, bottom - top);
     }
 
     #[test]

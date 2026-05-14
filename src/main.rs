@@ -8,7 +8,7 @@ use std::env;
 use std::ffi::OsString;
 use std::path::Path;
 
-use glam::Vec3;
+use glam::{Mat3, Vec3};
 
 use framebuffer::{FrameBuffer, Point, Rgb};
 use ortho_projection::project;
@@ -69,12 +69,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn draw_cube_wireframe(fb: &mut FrameBuffer, color: Rgb) {
-    // Axis-aligned cube, viewing along **±Z** (`project` uses **xy** only). Front and back faces share
-    // the same outline; depth-only edges collapse to the square’s corners.
+    // `project` uses **xy** only (`z` dropped). Tilt **π/4** about **Y** then **X** so depth shows up on
+    // screen instead of faces stacking in projection.
+    let tilt = std::f32::consts::FRAC_PI_4;
+    let rot = Mat3::from_rotation_x(tilt) * Mat3::from_rotation_y(tilt);
+    let verts: [Vec3; 8] = CUBE_VERTS.map(|v| rot * v);
 
     for &(i, j) in &CUBE_EDGES {
-        let a = project(CUBE_VERTS[i], SCENE_WIDTH, SCENE_HEIGHT);
-        let b = project(CUBE_VERTS[j], SCENE_WIDTH, SCENE_HEIGHT);
+        let a = project(verts[i], SCENE_WIDTH, SCENE_HEIGHT);
+        let b = project(verts[j], SCENE_WIDTH, SCENE_HEIGHT);
         fb.draw_line(Point(a.x, a.y), Point(b.x, b.y), color);
     }
 }
