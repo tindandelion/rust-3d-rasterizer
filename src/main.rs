@@ -1,6 +1,7 @@
 //! Minimal export: one lossless WebP frame (800×600) — radial “flower” from the center.
 
 mod framebuffer;
+mod ortho_projection;
 mod webp_encoder;
 
 use std::env;
