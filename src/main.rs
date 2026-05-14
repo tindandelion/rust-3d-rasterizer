@@ -1,7 +1,7 @@
 //! Lossless WebP still: wireframe **cube** with edge length **0.5** in world space.
 
 mod framebuffer;
-mod ortho_projection;
+mod ortho_camera;
 mod webp_encoder;
 
 use std::env;
@@ -11,7 +11,7 @@ use std::path::Path;
 use glam::{Mat3, Vec3};
 
 use framebuffer::{FrameBuffer, Rgb};
-use ortho_projection::project;
+use ortho_camera::Camera;
 use webp_encoder::WebpEncoder;
 
 const SCENE_WIDTH: u32 = 800;
@@ -54,7 +54,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let out_path = output_file_name();
 
     let mut framebuffer = FrameBuffer::new(SCENE_WIDTH, SCENE_HEIGHT);
-    draw_cube_wireframe(&mut framebuffer, Rgb::WHITE);
+    let camera = Camera::new(SCENE_WIDTH, SCENE_HEIGHT);
+    draw_cube_wireframe(&mut framebuffer, &camera, Rgb::WHITE);
 
     let mut encoder = WebpEncoder::new(SCENE_WIDTH, SCENE_HEIGHT)?;
     encoder.add_frame(&framebuffer)?;
@@ -68,16 +69,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn draw_cube_wireframe(fb: &mut FrameBuffer, color: Rgb) {
-    // `project` uses **xy** only (`z` dropped). Tilt **π/4** about **Y** then **X** so depth shows up on
+fn draw_cube_wireframe(fb: &mut FrameBuffer, camera: &Camera, color: Rgb) {
+    // `Camera::transform` uses **xy** only (`z` dropped). Tilt **π/4** about **Y** then **X** so depth shows up on
     // screen instead of faces stacking in projection.
     let tilt = std::f32::consts::FRAC_PI_4;
     let rot = Mat3::from_rotation_x(tilt) * Mat3::from_rotation_y(tilt);
     let verts: [Vec3; 8] = CUBE_VERTS.map(|v| rot * v);
 
     for &(i, j) in &CUBE_EDGES {
-        let a = project(verts[i], SCENE_WIDTH, SCENE_HEIGHT);
-        let b = project(verts[j], SCENE_WIDTH, SCENE_HEIGHT);
+        let a = camera.transform(verts[i]);
+        let b = camera.transform(verts[j]);
         fb.draw_line(a, b, color);
     }
 }

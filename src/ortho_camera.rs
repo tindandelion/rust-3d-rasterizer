@@ -3,14 +3,15 @@
 //!
 //! # Public API
 //!
-//! The **`pub fn`** surface is **`project`** only. Unit tests live in the **`tests`** submodule below.
+//! **`[`Camera`]`** holds viewport dimensions at construction; **`[`Camera::transform`]** maps **`Vec3`** to
+//! **`UVec2`** pixels. Unit tests live in the **`tests`** submodule below.
 //!
 //! # Conventions (aligned with repo planning docs)
 //!
 //! - **Handedness / axes:** **Left-handed** scene, **+Y up**, **+Z forward** (Unity-style intuition).
 //! - **Fixed camera:** **`eye = (0, 0, −1)`** in world space, looking at **`(0, 0, 0)`**, **`up = +Y`**.
 //!   With translation-only view, **`view_xy = world_xy`** (the eye has no **x** / **y** offset), and
-//!   **`view_z = world_z + 1`**. This module uses **`world_point.x`** and **`world_point.y`** as the
+//!   **`view_z = world_z + 1`**. **`Camera::transform`** uses **`world_point.x`** and **`world_point.y`** as the
 //!   values that feed the raster mapping — equivalent to **NDC `xy` in `[-1, 1]`** after the fixed camera
 //!   for geometry lying in the **`z = 0`** plane used in these tests.
 //! - **Projection:** **`Proj`** is **identity** (no extra ortho scale / no **`vmin` / `vmax`** frustum
@@ -31,7 +32,7 @@
 //!
 //! # What we are *not* doing (yet)
 //!
-//! - **Depth:** **`world_point.z`** does **not** affect **`project`** — it is ignored for **xy** (see test
+//! - **Depth:** **`world_point.z`** does **not** affect **`Camera::transform`** — it is ignored for **`xy`** (see test
 //!   **`world_z_shift_does_not_change_screen_xy`**). No **z-buffer**, **`linear01`**, or **`u16`** depth
 //!   packing here.
 //! - **Border clamp:** Out-of-range **`xy`** is **not** clamped to the image. Values outside **`[-1, 1]`**
@@ -43,104 +44,109 @@
 //! - **Moving / rotating camera:** No **`look_at`**, no **`Mat4`** view matrix in this module — a
 //!   different **`eye`** or orientation would require extending or replacing this API.
 
-use glam::{UVec2, Vec3};
+use glam::{Mat4, UVec2, Vec3};
 
-/// Map a **world-space** point to an **integer pixel** in a **`width × height`** framebuffer.
+/// Fixed orthographic **`Vec3`** → framebuffer pixel mapping for one **`width × height`** raster target.
 ///
-/// Uses **`world_point.x`** and **`world_point.y`** as **NDC-style coordinates in `[-1, 1]`** for
-/// well-behaved in-bounds output; **`world_point.z`** is **ignored**.
-///
-/// **x** / **y** use the **same** world-to-pixel scale so a square in **`xy`** stays **square** on
-/// non-square viewports (content centered; bars on the long side).
-///
-/// Internally this is **linear map → `f32::round` → `as u32`** on each axis (no separate float-pixel type
-/// exposed). Does **not** clamp to **`0 … width - 1`** / **`0 … height - 1`** before the **`u32`** cast;
-/// clip beforehand if you require in-bounds indices. If **`width == 0`** or **`height == 0`**, returns
-/// **`(0, 0)`**.
-pub fn project(world_point: Vec3, width: u32, height: u32) -> UVec2 {
-    if width == 0 || height == 0 {
-        return UVec2::ZERO;
+/// Holds a precomputed **`Mat4`** (**NDC `xy`** + **`z`** through scale part → pixel space before **`round`**).
+#[derive(Clone, Copy, Debug)]
+pub struct Camera {
+    transform_matrix: Mat4,
+}
+
+impl Camera {
+    /// Builds a camera for a **`width × height`** framebuffer.
+    ///
+    /// # Panics
+    ///
+    /// **`width`** and **`height`** must both be **non-zero**. Otherwise **`panic!`**s via **`assert!`**.
+    pub fn new(viewport_width: u32, viewport_height: u32) -> Self {
+        assert!(viewport_width > 0 && viewport_height > 0);
+
+        Self {
+            transform_matrix: ndc_viewport_matrix(viewport_width, viewport_height),
+        }
     }
 
+    /// **`world_point.x`** / **`y`** are NDC-style **`[-1, 1]`** for in-bounds framing; **`z`** does not affect **`xy`**.
+    pub fn transform(&self, world_point: Vec3) -> UVec2 {
+        let p = self.transform_matrix * world_point.extend(1.0);
+        UVec2::new(p.x.round() as u32, p.y.round() as u32)
+    }
+}
+
+/// Builds **NDC `xy`** → homogeneous pixel coordinates (**before** `round` / `as u32`).
+///
+/// **Requires:** **`width > 0`** and **`height > 0`**.
+fn ndc_viewport_matrix(width: u32, height: u32) -> Mat4 {
     let max_x = (width - 1) as f32;
     let max_y = (height - 1) as f32;
-    let dim_minus_1 = max_x.min(max_y);
-    let scale = dim_minus_1 / 2.0;
+    let scale_dimension = max_x.min(max_y);
+    let scale = scale_dimension / 2.0;
     let cx = max_x / 2.0;
     let cy = max_y / 2.0;
 
-    let px = world_point.x * scale + cx;
-    let py = -world_point.y * scale + cy;
-
-    UVec2::new(px.round() as u32, py.round() as u32)
+    // Column vectors: `(T * S) * v` scales first, then translates so
+    // `x' = scale * x + cx`, `y' = -scale * y + cy` (bitmap **+y** down).
+    Mat4::from_translation(Vec3::new(cx, cy, 0.0)) * Mat4::from_scale(Vec3::new(scale, -scale, 1.0))
 }
 
 #[cfg(test)]
 mod tests {
-    //! Covers **[`super::project`]** on **`z = 0`** NDC corners/interior unless **`z`** independence is the point.
+    //! Covers **`Camera::transform`** on **`z = 0`** NDC corners/interior unless **`z`** independence is the point.
 
     use super::*;
 
     #[test]
-    fn corners_map_to_expected_pixels() {
-        let width = 101_u32;
-        let height = 51_u32;
-
+    fn world_center_maps_to_viewport_center() {
+        let camera = Camera::new(101, 51);
         assert_eq!(
-            project(Vec3::new(-1.0, -1.0, 0.0), width, height),
-            UVec2::new(25, height - 1),
-        );
-        assert_eq!(
-            project(Vec3::new(1.0, 1.0, 0.0), width, height),
-            UVec2::new(75, 0),
-        );
-        assert_eq!(
-            project(Vec3::new(-1.0, 1.0, 0.0), width, height),
-            UVec2::new(25, 0),
-        );
-        assert_eq!(
-            project(Vec3::new(1.0, -1.0, 0.0), width, height),
-            UVec2::new(75, height - 1),
-        );
-
-        assert_eq!(
-            project(Vec3::new(0.0, 0.0, 0.0), width, height),
+            camera.transform(Vec3::new(0.0, 0.0, 0.0)),
             UVec2::new(50, 25),
-        );
-
-        assert_eq!(
-            project(Vec3::new(-0.5, 1.0, 0.0), width, height),
-            UVec2::new(38, 0),
         );
     }
 
     #[test]
-    fn square_viewport_corners_touch_frame_edges() {
-        let n = 51_u32;
-        let h = n - 1;
+    fn corners_map_to_expected_pixels() {
+        let camera = Camera::new(101, 51);
 
-        assert_eq!(project(Vec3::new(-1.0, -1.0, 0.0), n, n), UVec2::new(0, h),);
-        assert_eq!(project(Vec3::new(1.0, 1.0, 0.0), n, n), UVec2::new(h, 0),);
+        assert_eq!(
+            camera.transform(Vec3::new(-1.0, -1.0, 0.0)),
+            UVec2::new(25, 50),
+        );
+        assert_eq!(
+            camera.transform(Vec3::new(1.0, 1.0, 0.0)),
+            UVec2::new(75, 0),
+        );
+        assert_eq!(
+            camera.transform(Vec3::new(-1.0, 1.0, 0.0)),
+            UVec2::new(25, 0),
+        );
+        assert_eq!(
+            camera.transform(Vec3::new(1.0, -1.0, 0.0)),
+            UVec2::new(75, 50),
+        );
     }
 
     #[test]
     fn non_square_viewport_preserves_equal_axis_span_in_pixels() {
         let w = 800_u32;
         let h = 600_u32;
-        let left = project(Vec3::new(-1.0, 0.0, 0.0), w, h).x;
-        let right = project(Vec3::new(1.0, 0.0, 0.0), w, h).x;
-        let top = project(Vec3::new(0.0, 1.0, 0.0), w, h).y;
-        let bottom = project(Vec3::new(0.0, -1.0, 0.0), w, h).y;
+        let camera = Camera::new(w, h);
+
+        let left = camera.transform(Vec3::new(-1.0, 0.0, 0.0)).x;
+        let right = camera.transform(Vec3::new(1.0, 0.0, 0.0)).x;
+        let top = camera.transform(Vec3::new(0.0, 1.0, 0.0)).y;
+        let bottom = camera.transform(Vec3::new(0.0, -1.0, 0.0)).y;
 
         assert_eq!(right - left, bottom - top);
     }
 
     #[test]
     fn world_z_shift_does_not_change_screen_xy() {
-        let w = 640_u32;
-        let h = 480_u32;
+        let camera = Camera::new(640, 480);
         let a = Vec3::new(0.12, -0.34, 5.0);
         let b = Vec3::new(0.12, -0.34, -900.0);
-        assert_eq!(project(a, w, h), project(b, w, h));
+        assert_eq!(camera.transform(a), camera.transform(b));
     }
 }
