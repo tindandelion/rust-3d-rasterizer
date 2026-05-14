@@ -1,28 +1,60 @@
-//! Minimal export: one lossless WebP frame (800×600) — radial “flower” from the center.
+//! Lossless WebP still: wireframe **cube** with edge length **0.5** in world space.
 
 mod framebuffer;
 mod ortho_projection;
 mod webp_encoder;
 
 use std::env;
-use std::f64::consts::TAU;
 use std::ffi::OsString;
 use std::path::Path;
 
+use glam::Vec3;
+
 use framebuffer::{FrameBuffer, Point, Rgb};
+use ortho_projection::project;
 use webp_encoder::WebpEncoder;
 
 const SCENE_WIDTH: u32 = 800;
 const SCENE_HEIGHT: u32 = 600;
-/// Spokes around the circle; higher counts give a smoother outline.
-const FLOWER_RAY_COUNT: u32 = 48;
+
+/// Half of the cube edge length (`0.5 / 2`) in world coordinates.
+const CUBE_HALF_EXTENT: f32 = 0.25;
+
 const DEFAULT_OUT_PATH: &str = "scene.webp";
+
+/// Axis-aligned cube, centered at the origin, edge length `2 * CUBE_HALF_EXTENT`.
+const CUBE_VERTS: [Vec3; 8] = [
+    Vec3::new(-CUBE_HALF_EXTENT, -CUBE_HALF_EXTENT, -CUBE_HALF_EXTENT),
+    Vec3::new(CUBE_HALF_EXTENT, -CUBE_HALF_EXTENT, -CUBE_HALF_EXTENT),
+    Vec3::new(CUBE_HALF_EXTENT, CUBE_HALF_EXTENT, -CUBE_HALF_EXTENT),
+    Vec3::new(-CUBE_HALF_EXTENT, CUBE_HALF_EXTENT, -CUBE_HALF_EXTENT),
+    Vec3::new(-CUBE_HALF_EXTENT, -CUBE_HALF_EXTENT, CUBE_HALF_EXTENT),
+    Vec3::new(CUBE_HALF_EXTENT, -CUBE_HALF_EXTENT, CUBE_HALF_EXTENT),
+    Vec3::new(CUBE_HALF_EXTENT, CUBE_HALF_EXTENT, CUBE_HALF_EXTENT),
+    Vec3::new(-CUBE_HALF_EXTENT, CUBE_HALF_EXTENT, CUBE_HALF_EXTENT),
+];
+
+/// Vertex index pairs for the twelve undirected edges.
+const CUBE_EDGES: [(usize, usize); 12] = [
+    (0, 1),
+    (1, 2),
+    (2, 3),
+    (3, 0),
+    (4, 5),
+    (5, 6),
+    (6, 7),
+    (7, 4),
+    (0, 4),
+    (1, 5),
+    (2, 6),
+    (3, 7),
+];
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let out_path = output_file_name();
 
     let mut framebuffer = FrameBuffer::new(SCENE_WIDTH, SCENE_HEIGHT);
-    draw_flower(&mut framebuffer, Rgb::WHITE);
+    draw_cube_wireframe(&mut framebuffer, Rgb::WHITE);
 
     let mut encoder = WebpEncoder::new(SCENE_WIDTH, SCENE_HEIGHT)?;
     encoder.add_frame(&framebuffer)?;
@@ -36,31 +68,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn draw_flower(fb: &mut FrameBuffer, color: Rgb) {
-    let cx = SCENE_WIDTH / 2;
-    let cy = SCENE_HEIGHT / 2;
-    let center = Point(cx, cy);
+fn draw_cube_wireframe(fb: &mut FrameBuffer, color: Rgb) {
+    // Axis-aligned cube, viewing along **±Z** (`project` uses **xy** only). Front and back faces share
+    // the same outline; depth-only edges collapse to the square’s corners.
 
-    let max_r = cx
-        .min(SCENE_WIDTH - 1 - cx)
-        .min(cy.min(SCENE_HEIGHT - 1 - cy));
-    let radius = max_r.saturating_sub(8) as f64;
-
-    let cx_f = cx as f64;
-    let cy_f = cy as f64;
-    let n = FLOWER_RAY_COUNT as f64;
-
-    for i in 0..FLOWER_RAY_COUNT {
-        let theta = TAU * (i as f64) / n;
-        let end_x = (cx_f + radius * theta.cos()).round() as u32;
-        let end_y = (cy_f + radius * theta.sin()).round() as u32;
-        fb.draw_line(center, Point(end_x, end_y), color);
+    for &(i, j) in &CUBE_EDGES {
+        let a = project(CUBE_VERTS[i], SCENE_WIDTH, SCENE_HEIGHT);
+        let b = project(CUBE_VERTS[j], SCENE_WIDTH, SCENE_HEIGHT);
+        fb.draw_line(Point(a.x, a.y), Point(b.x, b.y), color);
     }
 }
 
 fn output_file_name() -> OsString {
-    let out_path: OsString = env::args_os()
+    env::args_os()
         .nth(1)
-        .unwrap_or_else(|| DEFAULT_OUT_PATH.into());
-    out_path
+        .unwrap_or_else(|| DEFAULT_OUT_PATH.into())
 }
