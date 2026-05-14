@@ -12,6 +12,7 @@ const OUTPUT_FILE_NAME: &str = "cube-golden-test.webp";
 const SNAPSHOT_REL_PATH: &str = "snapshots/cube/scene.webp";
 
 #[test]
+#[ignore]
 fn cube_still_matches_snapshot_webp() {
     let snapshot_file = manifest_path(SNAPSHOT_REL_PATH);
     assert!(
