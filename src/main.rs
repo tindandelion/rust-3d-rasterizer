@@ -10,7 +10,7 @@ use std::path::Path;
 
 use glam::{Mat3, Vec3};
 
-use framebuffer::{FrameBuffer, Point, Rgb};
+use framebuffer::{FrameBuffer, Rgb};
 use ortho_projection::project;
 use webp_encoder::WebpEncoder;
 
@@ -78,7 +78,7 @@ fn draw_cube_wireframe(fb: &mut FrameBuffer, color: Rgb) {
     for &(i, j) in &CUBE_EDGES {
         let a = project(verts[i], SCENE_WIDTH, SCENE_HEIGHT);
         let b = project(verts[j], SCENE_WIDTH, SCENE_HEIGHT);
-        fb.draw_line(Point(a.x, a.y), Point(b.x, b.y), color);
+        fb.draw_line(a, b, color);
     }
 }
 
