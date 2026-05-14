@@ -20,4 +20,5 @@ Use this skill when:
 
 - Export the current session into a file under "doc/diary" directory in Markdown format.
 - Preserve as much information as possible.
-- The file name should be "session-<timestamp>", where <timestamp> is a human-readable date and time, e.g. "2026-05-09T11".
+- The file name should be "session-<timestamp>", where <timestamp> is a human-readable date and time, e.g. "2026-05-09T11-05-21".
+- Use `date` Bash command to obtain the current timestamp.
