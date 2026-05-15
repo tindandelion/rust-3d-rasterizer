@@ -1,5 +1,5 @@
-//! Orthographic **screen mapping** for this phase of the rasterizer (`src/ortho_projection.rs`, wired from
-//! **`main.rs`** as **`mod ortho_projection`**).
+//! Orthographic **screen mapping** for this phase of the rasterizer (`src/ortho_camera.rs`, wired from
+//! **`main.rs`** as **`mod ortho_camera`**).
 //!
 //! # Public API
 //!

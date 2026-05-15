@@ -14,7 +14,7 @@ This document describes how I plan to approach the project iteratively.
 - **Goal:** Implement the simplest practical line rasterization (**DDA-style** stepping).
 - **Outcome:** An **800×600** **still `.webp`** built from many **spokes**: radial segments from the scene center to a circle, so gaps, endpoint inclusivity, and **`set_pixel`** skipping are easy to eyeball. (A **crossed square**—two rectangles sharing edges—remains a fine alternative scene if you want a grid-aligned regression image later.)
 
-### [ ] Cube: orthographic projection
+### [x] Cube: orthographic projection
 
 - **Goal:** Learn the math for **orthographic** projection and viewport mapping (**Unity-ish LH / +Y up / +Z forward** in world terms; clip/screen mapping stays pragmatic until the wgpu checkpoint).
 - **Outcome:** A **single still** **800×600** **`.webp`**: **wireframe** cube, **all twelve edges**, **fixed camera**, **one chosen model orientation** (rotate the cube “just enough” in that frame so it reads as a cube in 3D). Triangle soup is fine. No time loop yet—this milestone is projection correctness, not animation plumbing.
