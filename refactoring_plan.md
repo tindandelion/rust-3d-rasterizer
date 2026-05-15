@@ -12,7 +12,7 @@ Add `src/lib.rs` that exposes `framebuffer`, `ortho_camera`, and `webp_encoder` 
 
 ### [x] 2. Move scene data and drawing out of the default binary
 
-Relocate cube geometry and wireframe drawing into a dedicated module (`scene/cube.rs`). **`still-cube`** builds framebuffer + camera, calls `scene::cube::draw_wireframe`, then encodes.
+Relocate cube geometry into a dedicated module (`scene/cube.rs`: **`Cube`**, **`Edge`**, **`UNIT_VERTS`**). **`still-cube`** sets `Cube`'s **`Mat4`**, runs wireframe raster (camera + framebuffer) there, then encodes.
 
 **Why:** Upcoming milestones (animation loop, more meshes) should not grow the bin into a grab bag.
 

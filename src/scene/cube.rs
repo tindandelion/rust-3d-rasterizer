@@ -1,25 +1,31 @@
-//! Axis-aligned unit-scale cube at the origin: eight vertices, twelve edges, wireframe draw.
+//! Axis-aligned **unit cube** (edge length **1**, centered at the origin): eight vertices, twelve edges.
 
-use glam::{Mat3, Vec3};
+use glam::{Mat4, Vec3};
 
-use crate::{Camera, FrameBuffer, Rgb};
+/// One undirected segment as two **already-transformed** model-space endpoints.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Edge(pub Vec3, pub Vec3);
 
-/// Half of the cube edge length (`0.5 / 2`) in world coordinates.
-const HALF_EXTENT: f32 = 0.25;
+/// Unit cube (**[`UNIT_VERTS`]**) plus a **`Mat4`** model → world-style transform (`set_transform`).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Cube {
+    transform: Mat4,
+}
 
-const VERTS: [Vec3; 8] = [
-    Vec3::new(-HALF_EXTENT, -HALF_EXTENT, -HALF_EXTENT),
-    Vec3::new(HALF_EXTENT, -HALF_EXTENT, -HALF_EXTENT),
-    Vec3::new(HALF_EXTENT, HALF_EXTENT, -HALF_EXTENT),
-    Vec3::new(-HALF_EXTENT, HALF_EXTENT, -HALF_EXTENT),
-    Vec3::new(-HALF_EXTENT, -HALF_EXTENT, HALF_EXTENT),
-    Vec3::new(HALF_EXTENT, -HALF_EXTENT, HALF_EXTENT),
-    Vec3::new(HALF_EXTENT, HALF_EXTENT, HALF_EXTENT),
-    Vec3::new(-HALF_EXTENT, HALF_EXTENT, HALF_EXTENT),
+/// Corners of the axis-aligned unit cube, edge length **1**, half-extent **0.5**.
+/// Ordering matches connectivity used by [`Cube::edges`].
+pub const UNIT_VERTS: [Vec3; 8] = [
+    Vec3::new(-0.5, -0.5, -0.5),
+    Vec3::new(0.5, -0.5, -0.5),
+    Vec3::new(0.5, 0.5, -0.5),
+    Vec3::new(-0.5, 0.5, -0.5),
+    Vec3::new(-0.5, -0.5, 0.5),
+    Vec3::new(0.5, -0.5, 0.5),
+    Vec3::new(0.5, 0.5, 0.5),
+    Vec3::new(-0.5, 0.5, 0.5),
 ];
 
-/// Vertex index pairs for the twelve undirected edges.
-const EDGES: [(usize, usize); 12] = [
+const EDGE_INDICES: [(usize, usize); 12] = [
     (0, 1),
     (1, 2),
     (2, 3),
@@ -34,17 +40,30 @@ const EDGES: [(usize, usize); 12] = [
     (3, 7),
 ];
 
-/// Wireframe of the stock cube: fixed **π/4** tilt about **Y** then **X** so **xy** projection shows depth.
-///
-/// `Camera::transform` uses **xy** only (**z** dropped); without this tilt, faces stack in ortho **xy**.
-pub fn draw_wireframe(fb: &mut FrameBuffer, camera: &Camera, color: Rgb) {
-    let tilt = std::f32::consts::FRAC_PI_4;
-    let rot = Mat3::from_rotation_x(tilt) * Mat3::from_rotation_y(tilt);
-    let verts: [Vec3; 8] = VERTS.map(|v| rot * v);
+impl Cube {
+    pub fn new() -> Self {
+        Self {
+            transform: Mat4::IDENTITY,
+        }
+    }
 
-    for &(i, j) in &EDGES {
-        let a = camera.transform(verts[i]);
-        let b = camera.transform(verts[j]);
-        fb.draw_line(a, b, color);
+    pub fn set_transform(&mut self, transform: Mat4) {
+        self.transform = transform;
+    }
+
+    /// The twelve cube edges **after** applying this cube's transform to **`UNIT_VERTS`**.
+    pub fn edges(&self) -> impl Iterator<Item = Edge> + '_ {
+        EDGE_INDICES.iter().copied().map(move |(i, j)| {
+            Edge(
+                self.transform.transform_point3(UNIT_VERTS[i]),
+                self.transform.transform_point3(UNIT_VERTS[j]),
+            )
+        })
+    }
+}
+
+impl Default for Cube {
+    fn default() -> Self {
+        Self::new()
     }
 }
