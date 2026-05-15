@@ -15,6 +15,7 @@ When behavior or scope is unclear, **prefer the planning docs** over guessing.
 
 - **Language:** Rust (see `Cargo.toml` for `edition` and package name).
 - **Layout:** Single Cargo crate for now; introduce modules as needed (e.g. `raster`, `mesh`, export/WebP). Split into a workspace only if maintainability demands it.
+- **Modules:** Prefer the post-2018 layout for directory modules: **`parent.rs` + `parent/child.rs`** (e.g. `scene.rs` and `scene/cube.rs`). Avoid adding new `mod.rs` files unless there is a compelling reason; **`mod.rs`** remains valid Rust but is no longer the idiomatic default here.
 
 ## Conventions to preserve
 

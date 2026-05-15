@@ -1,26 +1,26 @@
 # Refactoring plan
 
-This document captures proposed refactorings given the current codebase layout (`main.rs`, `framebuffer`, `ortho_camera`, `webp_encoder`, integration tests that run the package binary). Order is **suggested priority**; adjust to taste.
+This document captures proposed refactorings given the current codebase layout (`src/lib.rs`, `scene.rs`, `scene/`, `src/bin/still-cube.rs`, framebuffer, ortho_camera, webp_encoder, integration tests). Order is **suggested priority**; adjust to taste.
 
 ## High leverage, low ceremony
 
-### 1. Library + thin binary
+### [x] 1. Library + thin binary
 
-Add `src/lib.rs` that exposes `framebuffer`, `ortho_camera`, and `webp_encoder` (public or `pub(crate)` as appropriate). Keep `main.rs` as argument handling, wiring, and `main` only.
+Add `src/lib.rs` that exposes `framebuffer`, `ortho_camera`, and `webp_encoder` (public or `pub(crate)` as appropriate). Entry binaries live under `src/bin/` with thin wiring only.
 
-**Why:** Enables unit and integration tests that call the raster path **without** spawning the binary via `std::process::Command`, and shares types with future examples or benchmarks.
+**Why:** Enables unit and integration tests that call the raster path **without** spawning a binary via `std::process::Command`, and shares types with future examples or benchmarks.
 
-### 2. Move scene data and drawing out of `main.rs`
+### [x] 2. Move scene data and drawing out of the default binary
 
-Relocate cube geometry (`CUBE_VERTS`, `CUBE_EDGES`) and `draw_cube_wireframe` into a dedicated module (e.g. `scene/cube.rs` or `mesh/cube.rs`). `main` should build framebuffer + camera, invoke a small “render this frame” entry point, then encode.
+Relocate cube geometry and wireframe drawing into a dedicated module (`scene/cube.rs`). **`still-cube`** builds framebuffer + camera, calls `scene::cube::draw_wireframe`, then encodes.
 
-**Why:** Upcoming milestones (animation loop, more meshes) should not grow `main.rs` into a grab bag.
+**Why:** Upcoming milestones (animation loop, more meshes) should not grow the bin into a grab bag.
 
 ### 3. Single place for scene dimensions and defaults
 
 Centralize canvas size (e.g. 800×600), default output path, and any other shared render defaults in one module (e.g. `config` or `constants`).
 
-**Why:** Reduces drift between `main`, tests, and golden snapshots when those values must stay aligned.
+**Why:** Reduces drift between binaries, tests, and golden snapshots when those values must stay aligned.
 
 ## Medium leverage (as the pipeline grows)
 
@@ -63,9 +63,8 @@ Defer renaming `ortho_camera` until a second projection exists, or rename in the
 
 ## Suggested sequencing
 
-1. Library split + extract cube/scene from `main.rs` (best maintainability per line changed, aligns with animation and shared encode loop).
-2. Shared dimensions/defaults + generic wireframe helper as new scenes appear.
-3. Error typing and framebuffer API tweaks when pain appears.
+1. ~~Library split~~ **done** · ~~extract cube/scene from bin~~ **done** · next: shared dimensions (#3), then generic wireframe (#5) as new scenes appear.
+2. Error typing and framebuffer API tweaks when pain appears.
 
 ## References
 

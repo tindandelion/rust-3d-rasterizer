@@ -2,6 +2,7 @@
 
 pub mod framebuffer;
 pub mod ortho_camera;
+pub mod scene;
 pub mod webp_encoder;
 
 pub use framebuffer::{FrameBuffer, Rgb};
