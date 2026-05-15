@@ -10,11 +10,7 @@ use std::process::Command;
 use tempfile::TempDir;
 use webp_animation::{ColorMode, Decoder};
 
-/// `src/bin/still-cube.rs` — default integration harness binary (`run_package_binary`).
-const INTEGRATION_TEST_BIN: &str = "still-cube";
-
-/// Decoded first frame of a **WebP** still (**RGBA** pixels, same decoder path as
-/// [`run_package_binary`] output).
+/// Decoded first frame of a **WebP** still (**RGBA** pixels; same **`webp_animation`** path as spawned-bin output via [`RenderedWebp`]).
 pub struct WebpImage {
     pub dimensions: (u32, u32),
     pub rgba: Vec<u8>,
@@ -30,7 +26,7 @@ impl WebpImage {
     }
 }
 
-/// Result of [`run_package_binary`]: absolute path to the **`.webp`** inside a temp directory.
+/// Result of [`run_integration_binary`]: absolute path to the **`.webp`** inside a temp directory.
 /// Keep this value alive until you finish reading the file; dropping it removes the directory.
 pub struct RenderedWebp {
     _temp_dir: TempDir,
@@ -69,11 +65,6 @@ pub fn run_integration_binary(
         _temp_dir: dir,
         output_path: path,
     }
-}
-
-/// Runs **`still-cube`** ([`INTEGRATION_TEST_BIN`]). See **[`run_integration_binary`]**.
-pub fn run_package_binary(output_relative_to_temp: impl AsRef<Path>) -> RenderedWebp {
-    run_integration_binary(INTEGRATION_TEST_BIN, output_relative_to_temp)
 }
 
 /// Joins `relative` to the crate root (`CARGO_MANIFEST_DIR`).
