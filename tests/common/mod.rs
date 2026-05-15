@@ -10,7 +10,7 @@ use std::process::Command;
 use tempfile::TempDir;
 use webp_animation::{ColorMode, Decoder};
 
-/// `src/bin/still-cube.rs` — integration tests spawn this target (not necessarily same as `CARGO_PKG_NAME`).
+/// `src/bin/still-cube.rs` — default integration harness binary (`run_package_binary`).
 const INTEGRATION_TEST_BIN: &str = "still-cube";
 
 /// Decoded first frame of a **WebP** still (**RGBA** pixels, same decoder path as
@@ -37,9 +37,9 @@ pub struct RenderedWebp {
     pub output_path: PathBuf,
 }
 
-/// Resolves `CARGO_BIN_EXE_<name>` for [`INTEGRATION_TEST_BIN`] (same layout as `cargo test`).
-fn package_binary_path() -> PathBuf {
-    let key = format!("CARGO_BIN_EXE_{INTEGRATION_TEST_BIN}");
+/// Resolves `CARGO_BIN_EXE_<binary_name>` where **`binary_name`** is the hyphenated Cargo target (**`still-cube`**, **`animated-cube`**, …).
+fn cargo_bin_exe_path(binary_name: &str) -> PathBuf {
+    let key = format!("CARGO_BIN_EXE_{binary_name}");
     std::env::var_os(&key)
         .map(PathBuf::from)
         .unwrap_or_else(|| {
@@ -50,22 +50,30 @@ fn package_binary_path() -> PathBuf {
         })
 }
 
-/// Creates a temp workspace, runs **`still-cube`** once (**`current_dir`** = that directory,
-/// single CLI arg = relative **`.webp`** path), and returns the **absolute** path to the file.
-pub fn run_package_binary(output_relative_to_temp: impl AsRef<Path>) -> RenderedWebp {
+/// Creates a temp workspace, runs **`binary_name`** (**`still-cube`**, **`animated-cube`**, …)
+/// once with **`current_dir`** = that directory and a single CLI arg = relative **`.webp`** path.
+pub fn run_integration_binary(
+    binary_name: &str,
+    output_relative_to_temp: impl AsRef<Path>,
+) -> RenderedWebp {
     let dir = tempfile::tempdir().expect("temp directory");
     let rel = output_relative_to_temp.as_ref();
-    let status = Command::new(package_binary_path())
+    let status = Command::new(cargo_bin_exe_path(binary_name))
         .current_dir(dir.path())
         .arg(rel)
         .status()
         .expect("spawn binary");
-    assert!(status.success(), "binary exited with {status}");
+    assert!(status.success(), "{binary_name} exited with {status}");
     let path = dir.path().join(rel);
     RenderedWebp {
         _temp_dir: dir,
         output_path: path,
     }
+}
+
+/// Runs **`still-cube`** ([`INTEGRATION_TEST_BIN`]). See **[`run_integration_binary`]**.
+pub fn run_package_binary(output_relative_to_temp: impl AsRef<Path>) -> RenderedWebp {
+    run_integration_binary(INTEGRATION_TEST_BIN, output_relative_to_temp)
 }
 
 /// Joins `relative` to the crate root (`CARGO_MANIFEST_DIR`).

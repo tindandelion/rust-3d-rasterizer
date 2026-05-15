@@ -9,6 +9,9 @@ pub const SCENE_HEIGHT: u32 = 600;
 
 pub const DEFAULT_OUT_PATH: &str = "scene.webp";
 
+/// Frame count for the **`animated-cube`** lossless WebP (integration tests must agree).
+pub const ANIMATED_CUBE_FRAME_COUNT: u32 = 360;
+
 pub mod framebuffer;
 pub mod ortho_camera;
 pub mod scene;

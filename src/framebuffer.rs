@@ -27,6 +27,10 @@ impl FrameBuffer {
         }
     }
 
+    pub fn clear_black(&mut self) {
+        self.rgb.fill(0);
+    }
+
     fn pixel_offset(&self, x: u32, y: u32) -> Option<usize> {
         if x >= self.width || y >= self.height {
             None
