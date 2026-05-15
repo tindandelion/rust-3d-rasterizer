@@ -1,6 +1,6 @@
 # Refactoring plan
 
-This document captures proposed refactorings given the current codebase layout (`src/lib.rs`, `scene.rs`, `scene/`, `src/bin/still-cube.rs`, framebuffer, ortho_camera, webp_encoder, integration tests). Order is **suggested priority**; adjust to taste.
+This document captures proposed refactorings given the current codebase layout (`src/lib.rs` crate-root constants, `scene.rs`, `scene/`, `src/bin/still-cube.rs`, framebuffer, ortho_camera, webp_encoder, integration tests). Order is **suggested priority**; adjust to taste.
 
 ## High leverage, low ceremony
 
@@ -16,9 +16,9 @@ Relocate cube geometry into a dedicated module (`scene/cube.rs`: **`Cube`**, **`
 
 **Why:** Upcoming milestones (animation loop, more meshes) should not grow the bin into a grab bag.
 
-### 3. Single place for scene dimensions and defaults
+### [x] 3. Single place for scene dimensions and defaults
 
-Centralize canvas size (e.g. 800×600), default output path, and any other shared render defaults in one module (e.g. `config` or `constants`).
+Centralize canvas size (e.g. 800×600), default output path, and other shared raster defaults as **`pub const`** on **`thorus_forge`** (**`src/lib.rs`**) unless a **`config`** module is needed later.
 
 **Why:** Reduces drift between binaries, tests, and golden snapshots when those values must stay aligned.
 
@@ -63,7 +63,7 @@ Defer renaming `ortho_camera` until a second projection exists, or rename in the
 
 ## Suggested sequencing
 
-1. ~~Library split~~ **done** · ~~extract cube/scene from bin~~ **done** · next: shared dimensions (#3), then generic wireframe (#5) as new scenes appear.
+1. ~~Library split~~ **done** · ~~extract cube/scene from bin~~ **done** · ~~shared dimensions / defaults (#3)~~ **done** · next: generic wireframe (#5) as new scenes appear.
 2. Error typing and framebuffer API tweaks when pain appears.
 
 ## References

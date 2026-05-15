@@ -130,9 +130,7 @@ mod tests {
 
     #[test]
     fn non_square_viewport_preserves_equal_axis_span_in_pixels() {
-        let w = 800_u32;
-        let h = 600_u32;
-        let camera = Camera::new(w, h);
+        let camera = Camera::new(crate::SCENE_WIDTH, crate::SCENE_HEIGHT);
 
         let left = camera.transform(Vec3::new(-1.0, 0.0, 0.0)).x;
         let right = camera.transform(Vec3::new(1.0, 0.0, 0.0)).x;

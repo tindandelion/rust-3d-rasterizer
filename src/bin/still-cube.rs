@@ -7,12 +7,9 @@ use std::path::Path;
 use glam::{Mat3, Mat4, Vec3};
 
 use thorus_forge::scene::cube::{Cube, Edge};
-use thorus_forge::{Camera, FrameBuffer, Rgb, WebpEncoder};
-
-const SCENE_WIDTH: u32 = 800;
-const SCENE_HEIGHT: u32 = 600;
-
-const DEFAULT_OUT_PATH: &str = "scene.webp";
+use thorus_forge::{
+    Camera, DEFAULT_OUT_PATH, FrameBuffer, Rgb, SCENE_HEIGHT, SCENE_WIDTH, WebpEncoder,
+};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let out_path = output_file_name();

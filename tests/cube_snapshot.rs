@@ -7,6 +7,7 @@
 mod common;
 
 use common::{WebpImage, manifest_path, run_package_binary};
+use thorus_forge::{SCENE_HEIGHT, SCENE_WIDTH};
 
 const OUTPUT_FILE_NAME: &str = "cube-golden-test.webp";
 const SNAPSHOT_REL_PATH: &str = "snapshots/cube/scene.webp";
@@ -21,9 +22,15 @@ fn cube_still_matches_snapshot_webp() {
         SNAPSHOT_REL_PATH
     );
 
+    let expected = WebpImage::read(&snapshot_file);
+    assert_eq!(
+        expected.dimensions,
+        (SCENE_WIDTH, SCENE_HEIGHT),
+        "golden snapshot canvas must match crate-root SCENE_WIDTH × SCENE_HEIGHT"
+    );
+
     let render_result = run_package_binary(OUTPUT_FILE_NAME);
 
-    let expected = WebpImage::read(&snapshot_file);
     let actual = WebpImage::read(render_result.output_path);
 
     assert_eq!(
