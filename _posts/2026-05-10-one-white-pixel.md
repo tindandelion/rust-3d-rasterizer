@@ -15,7 +15,7 @@ That makes it a good first checkpoint.
 
 Take a look at the center of this image: do you see a white dot? That's it!
 
-![Current render output](https://raw.githubusercontent.com/tindandelion/rust-3d-rasterizer/main/doc/output/current.webp)
+![One white pixel]({{site.baseurl}}/assets/images/scene-0.0.1.webp)
 
 ## Why Start With WebP?
 

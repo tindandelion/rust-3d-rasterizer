@@ -15,7 +15,7 @@ We shipped the second milestone of the rasterizer. This one feels like a real st
 
 The result is still intentionally simple and easy to inspect:
 
-![Current render output](https://raw.githubusercontent.com/tindandelion/rust-3d-rasterizer/main/doc/output/current.webp)
+![Current render output](https://raw.githubusercontent.com/tindandelion/rust-3d-rasterizer/0.0.2/doc/output/current.webp)
 
 ## Line drawing algorithm
 
@@ -130,7 +130,7 @@ The original plan, a crossed square, would not give us enough visual feedback on
 
 ## What this version unlocks
 
-This release does not yet include projection, meshes, or triangle filling. But it gives us a dependable primitive that all of that will rely on. The next milestone is orthographic cube projection, where this line path becomes the first wireframe backbone instead of a standalone demo.
+This release does not yet include projection, meshes, or triangle filling. But it gives us a dependable primitive that all of that will rely on. The next milestone was orthographic cube projection, where this line path becomes the first wireframe backbone instead of a standalone demo — we shipped that in [a cube takes shape][post-cube-takes-shape].
 
 [version-0-0-2]: https://github.com/tindandelion/rust-3d-rasterizer/tree/0.0.2
 [prev-post]: {{site.baseurl}}/{% post_url 2026-05-10-one-white-pixel %}
@@ -138,3 +138,4 @@ This release does not yet include projection, meshes, or triangle filling. But i
 [source-set-pixel]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.2/src/framebuffer.rs#L39
 [source-draw-flower]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.2/src/main.rs#L38
 [tau-docs]: https://doc.rust-lang.org/std/f64/consts/constant.TAU.html
+[post-cube-takes-shape]: {{site.baseurl}}/{% post_url 2026-05-15-a-cube-takes-shape %}

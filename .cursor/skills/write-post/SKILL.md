@@ -89,7 +89,7 @@ For common knowledge:
 
 ## Site Conventions
 
-- Images can use raw GitHub URLs for artifacts from `main`, for example `doc/output/current.webp`.
+- Pin render output images to the post’s release tag, not `main`, for example `https://raw.githubusercontent.com/tindandelion/rust-3d-rasterizer/0.0.3/doc/output/current.webp` for version 0.0.3. The homepage may keep `main` for live project progress.
 - The site uses Minima/Jekyll. Run `bundle exec jekyll build` after edits.
 - If `authors:` is present, `_layouts/post.html` renders the header as `May 10, 2026 — by Sergey and Cursor`.
 - Do not edit `_site/`; it is build output.
