@@ -21,13 +21,14 @@ This document describes how I plan to approach the project iteratively.
 
 ### [x] Cube: animation — rotating wireframe (orthographic)
 
-- **Goal:** Introduce **multi-frame / time**: drive **model orientation** that changes every frame. **Shipped:** one **full lap** around **world Y** (left-multiplied onto the same fixed **X/Y tilt + scale** pose as the orthographic still) so the scaffold stays simple; a **three-axis Euler** sweep remains an optional follow-up experiment.
-- **Outcome:** One **lossless animated `.webp`** (**800×600**) showing the **orthographic wireframe cube** rotating smoothly over **`ANIMATED_CUBE_FRAME_COUNT`** frames (**20 ms** spacing in code → 50 fps), encoded with **`webp-animation`** and **`EncodingType::Lossless`**. This **animation scaffold** is in place for later milestones (projection swap, filled raster, shading—same loop).
+- **Goal:** Introduce **multi-frame / time**: drive **model orientation** that changes every frame.
+- **Shipped:** A **three-axis Euler-style** tumble: **world-fixed** **`R_z R_y R_x`** with **α = β = γ = t**, **t** sweeping **0 … τ** over **`ANIMATED_CUBE_FRAME_COUNT`** frames (**seamless loop**). The animated mesh is **only** **0.5** uniform scale on the unit cube (**no** π/4 **X/Y tilt** from the still—that tilt stays on **`still-cube`** for a readable single-frame ortho snapshot). The library **`wireframe`** module exposes **`draw_edges`** only; each **export binary** owns its **model matrix**.
+- **Outcome:** One **lossless animated `.webp`** (**800×600**) showing the **orthographic wireframe cube** tumbling smoothly over **`ANIMATED_CUBE_FRAME_COUNT`** frames (**20 ms** spacing in code → 50 fps), encoded with **`webp-animation`** and **`EncodingType::Lossless`**. This **animation scaffold** is in place for later milestones (projection swap, filled raster, shading—same loop).
 
 ### [ ] Cube: perspective projection
 
 - **Goal:** Switch projection to **perspective** (homogeneous divide, guardrails for \(w\) / behind-camera junk).
-- **Outcome:** **Still frame first:** same cube/orientation style as orthographic still milestone, but **perspective** → **still `.webp`**. Then **reuse the animation loop** from the previous step: **animated `.webp`** of **perspective wireframe** rotation (same axis/time policy as orthographic animation).
+- **Outcome:** **Still frame first:** same cube/orientation style as orthographic still milestone, but **perspective** → **still `.webp`**. Then **reuse the animation loop** from the previous step: **animated `.webp`** of **perspective wireframe** with the **same frame count, timing, and Euler tumble policy** as orthographic animation (projection swap only).
 
 ### [ ] Cube: filled raster + depth buffer
 
