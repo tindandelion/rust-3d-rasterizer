@@ -1,17 +1,19 @@
-//! Lossless **animated** WebP: orthographic **wireframe** cube (edge length **0.5** in world space)
-//! rotating every frame — template copied from **`still-cube`** (duplication tolerated for now).
+//! Lossless **animated** WebP: orthographic **wireframe** cube (edge length **0.5** in world space),
+//! **\(R_y\)** rotation sampled over **`ANIMATED_CUBE_FRAME_COUNT`** frames.
 
-use std::env;
-use std::ffi::OsString;
 use std::path::Path;
 
-use glam::{Mat3, Mat4, Vec3};
+use glam::Mat4;
 
-use thorus_forge::scene::cube::{Cube, Edge};
+use thorus_forge::scene::cube::Cube;
+use thorus_forge::wireframe::{draw_edges, model_matrix_still};
 use thorus_forge::{
-    ANIMATED_CUBE_FRAME_COUNT, Camera, DEFAULT_OUT_PATH, FrameBuffer, Rgb, SCENE_HEIGHT,
-    SCENE_WIDTH, WebpEncoder,
+    ANIMATED_CUBE_FRAME_COUNT, Camera, FrameBuffer, Rgb, SCENE_HEIGHT, SCENE_WIDTH, WebpEncoder,
+    output_webp_path_from_args,
 };
+
+/// Wireframe stroke: **cornflower blue** (reads clearly on black).
+const WIRE_RGB: Rgb = Rgb(100, 149, 237);
 
 /// Timestamp step between successive frames (**ms**); last frame duration uses the same spacing at **`finalize`**.
 ///
@@ -19,7 +21,7 @@ use thorus_forge::{
 const FRAME_SPACING_MS: i32 = 20;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let out_path = output_file_name();
+    let out_path = output_webp_path_from_args();
 
     let camera = Camera::new(SCENE_WIDTH, SCENE_HEIGHT);
     let mut framebuffer = FrameBuffer::new(SCENE_WIDTH, SCENE_HEIGHT);
@@ -30,8 +32,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         framebuffer.clear_black();
 
         let mut mesh = Cube::new();
-        mesh.set_transform(cube_transform_frame(frame_index));
-        draw_wireframe(&mut framebuffer, &camera, &mesh, Rgb::WHITE);
+        mesh.set_transform(model_matrix_y_lap(frame_index, ANIMATED_CUBE_FRAME_COUNT));
+        draw_edges(&mut framebuffer, &camera, &mesh, WIRE_RGB);
 
         encoder.add_frame(&framebuffer)?;
     }
@@ -48,32 +50,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// Project each edge through **`camera`** and rasterize with the framebuffer's **DDA** line routine.
-fn draw_wireframe(fb: &mut FrameBuffer, camera: &Camera, cube: &Cube, color: Rgb) {
-    for Edge(a, b) in cube.edges() {
-        fb.draw_line(camera.transform(a), camera.transform(b), color);
-    }
-}
-
-/// Static **π/4** tilt (same readability trick as **`still-cube`**), plus one full **\(2π\)** spin about **world +Y**.
-///
-/// **Composition (column vectors):** **`R_y(t) · R_tilt · S`** with **`t = 2π · frame_index / N`**
-/// (**`frame_index ∈ [0, N)`**). **`R_tilt = R_x(π/4) · R_y(π/4)`** matches the still frame’s fixed pose when **`t = 0`**.
-fn cube_transform_frame(frame_index: u32) -> Mat4 {
-    let tilt = std::f32::consts::FRAC_PI_4;
-    let base = Mat3::from_rotation_x(tilt) * Mat3::from_rotation_y(tilt);
-    let scale = Mat3::from_diagonal(Vec3::splat(0.5));
-
-    let n = ANIMATED_CUBE_FRAME_COUNT.max(1) as f32;
+/// Full **`R_y`** lap sampled over **`lap_frames`** frames; left-multiplies **`wireframe::model_matrix_still`**.
+fn model_matrix_y_lap(frame_index: u32, lap_frames: u32) -> Mat4 {
+    let n = lap_frames.max(1) as f32;
     let t = (frame_index as f32 / n) * std::f32::consts::TAU;
-
-    let spin_y = Mat3::from_rotation_y(t);
-
-    Mat4::from_mat3(spin_y * base * scale)
-}
-
-fn output_file_name() -> OsString {
-    env::args_os()
-        .nth(1)
-        .unwrap_or_else(|| DEFAULT_OUT_PATH.into())
+    Mat4::from_rotation_y(t) * model_matrix_still()
 }

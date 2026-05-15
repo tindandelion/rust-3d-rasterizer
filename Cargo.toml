@@ -2,7 +2,7 @@
 name = "thorus-forge"
 version = "0.1.0"
 edition = "2024"
-default-run = "still-cube"
+default-run = "animated-cube"
 
 [dependencies]
 glam = { version = "0.32.1", features = ["approx"] }
