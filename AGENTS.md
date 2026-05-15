@@ -14,7 +14,7 @@ When behavior or scope is unclear, **prefer the planning docs** over guessing.
 ## Stack and layout
 
 - **Language:** Rust (see `Cargo.toml` for `edition` and package name).
-- **Layout:** Single Cargo crate for now; introduce modules as needed (e.g. `raster`, `mesh`, export/WebP). Scene-wide defaults (**`SCENE_WIDTH`**, **`STILL_CUBE_DEFAULT_OUT_PATH`**, …) stay as **`pub const`** in **`lib.rs`** until a dedicated config module earns its keep. Split into a workspace only if maintainability demands it.
+- **Layout:** Single Cargo crate for now; introduce modules as needed (e.g. `raster`, `mesh`, export/WebP). Scene-wide defaults (**`SCENE_WIDTH`**, **`DEFAULT_OUT_PATH`**, …) stay as **`pub const`** in **`lib.rs`** until a dedicated config module earns its keep. Split into a workspace only if maintainability demands it.
 - **Modules:** Prefer the post-2018 layout for directory modules: **`parent.rs` + `parent/child.rs`** (e.g. `scene.rs` and `scene/cube.rs`). Avoid adding new `mod.rs` files unless there is a compelling reason; **`mod.rs`** remains valid Rust but is no longer the idiomatic default here.
 
 ## Conventions to preserve

@@ -1,72 +1,60 @@
 # Refactoring plan
 
-This document captures proposed refactorings given the current codebase layout (`src/lib.rs` crate-root constants, `scene.rs`, `scene/`, `src/bin/still-cube.rs`, framebuffer, ortho_camera, webp_encoder, integration tests). Order is **suggested priority**; adjust to taste.
+Forward-looking refactors aligned with **`doc/planning/project-breakdown.md`**.
 
-## High leverage, low ceremony
+Completed foundational work—the library + **`src/bin`** layout, **`scene::cube`** (**`Cube`**, **`Edge`**), crate-root **`SCENE_WIDTH`**, **`SCENE_HEIGHT`**, and **`DEFAULT_OUT_PATH`**—is left to git history and **`AGENTS.md`**. It is intentionally not listed below.
 
-### [x] 1. Library + thin binary
+## Current layout
 
-Add `src/lib.rs` that exposes `framebuffer`, `ortho_camera`, and `webp_encoder` (public or `pub(crate)` as appropriate). Entry binaries live under `src/bin/` with thin wiring only.
+| Piece | Role |
+| --- | --- |
+| **`src/lib.rs`** | **`SCENE_*`**, **`DEFAULT_OUT_PATH`**, `mod …`, **`pub use`** facade (`FrameBuffer`, `Rgb`, `Camera`, `WebpEncoder`) |
+| **`framebuffer.rs`** | RGB storage, **`set_pixel`**, DDA **`draw_line`** |
+| **`ortho_camera.rs`** | **`Camera`**, NDC-ish → framebuffer **`UVec2`** |
+| **`scene.rs`**, **`scene/cube.rs`** | **`Cube`**, **`Edge`**, **`UNIT_VERTS`**, **`edges()`** (topology + transform stored on **`Cube`**) |
+| **`webp_encoder.rs`** | Lossless **`WebpEncoder`** around **`webp-animation`** |
+| **`src/bin/still-cube.rs`** | Builds **`cube_transform()`**, local wireframe raster loop (**`Camera::transform`** + **`draw_line`**), CLI + WebP encode |
+| **`tests/`**, **`tests/common/mod.rs`** | Spawn **`still-cube`**, decode WebPs, **`cube`** golden compare |
 
-**Why:** Enables unit and integration tests that call the raster path **without** spawning a binary via `std::process::Command`, and shares types with future examples or benchmarks.
+Observations worth keeping in mind:
 
-### [x] 2. Move scene data and drawing out of the default binary
+- **`still-cube`** is the natural home for demo-specific **`Mat4`** (scale + tilt) until a shared “demo scene” API exists.
+- The local **`draw_wireframe`** in **`still-cube`** is the pattern other wireframe demos will repeat until item **1** lands.
+- **`tests/common`** hard-codes **`INTEGRATION_TEST_BIN = "still-cube"`**—if more bins gain golden tests, centralize bin names alongside crate-root **`SCENE_*`** or lift into a thin test harness.
 
-Relocate cube geometry into a dedicated module (`scene/cube.rs`: **`Cube`**, **`Edge`**, **`UNIT_VERTS`**). **`still-cube`** sets `Cube`'s **`Mat4`**, runs wireframe raster (camera + framebuffer) there, then encodes.
+## Candidate refactors (rough priority)
 
-**Why:** Upcoming milestones (animation loop, more meshes) should not grow the bin into a grab bag.
+### 1. Generic wireframe helper
 
-### [x] 3. Single place for scene dimensions and defaults
+Lift the “project both endpoints → **`draw_line`**” loop into **`raster`** (**new**) or **`framebuffer`**, e.g. **`draw_edges`** / **`draw_world_wireframe`** over **`Iterator<Item = Edge>`** or edges + verts + a projector closure.
 
-Centralize canvas size (e.g. 800×600), default output path, and other shared raster defaults as **`pub const`** on **`thorus_forge`** (**`src/lib.rs`**) unless a **`config`** module is needed later.
+**Why:** **`Cube::edges()`** already fits; spokes, crossed-square stills, and torus wires should reuse the same path (**`still-cube`** stays declarative).
 
-**Why:** Reduces drift between binaries, tests, and golden snapshots when those values must stay aligned.
+### 2. Explicit pipeline stages
 
-## Medium leverage (as the pipeline grows)
+Name or lightly structure **model/world transforms → `Camera::transform` → raster** (even before full **`Mat4`** view/proj split) so animation and perspective milestones slot in without rewriting **`still-cube`** ad hoc.
 
-### 4. Explicit pipeline stages (model → camera → raster)
+**Why:** Matches **`project-spec`** mental model; reduces risk when Euler/quaternion orientation or perspective divide appears.
 
-Name or extract steps: apply model transform to vertices, then `Camera::transform`, then line rasterization—even if some steps stay as small pure functions before a full matrix stack.
+### 3. **`FrameBuffer` accessors & test layout**
 
-**Why:** Clarifies where orthographic vs perspective and animation orientation will plug in; matches mental model in `doc/planning/project-spec.md`.
+Add **`width()` / `height()`** if exporters or loaders need introspection—optional. Optionally move framebuffer **`cfg(test)`** helpers (**`get_pixel`**, **`to_ascii_art`**) behind a **`test_support`** submodule if they grow.
 
-### 5. Generic wireframe helper
+### 4. **`WebpEncoder::write`** error typing
 
-Provide a function that draws an edge list against arbitrary vertex positions (e.g. `draw_edges(framebuffer, camera, &verts, &edges, color)`), instead of cube-specialized logic only.
+Replace **`Box<dyn std::error::Error>`** with a small **`enum`** (encode vs **`io::Error`**) instead of collapsing failure sources.
 
-**Why:** Reuse for spokes, crossed-square regression scenes, and later torus wireframe edges.
+### 5. **`ortho_camera`** naming
 
-### 6. Framebuffer API and test helpers
+Defer renaming to something like **`camera`** (with orthographic vs perspective beside each other) until the perspective milestone is real—avoid churn for its own sake.
 
-If needed, add `width()` / `height()` for callers. Consider moving test-only helpers (`get_pixel`, `to_ascii_art`) into a `#[cfg(test)]` submodule or `test_support` for clarity while keeping the production `FrameBuffer` API minimal.
+## Deferred intentionally
 
-**Why:** Keeps tests readable as assertion surface grows.
-
-## Smaller polish (optional)
-
-### 7. `WebpEncoder::write` error types
-
-Replace `Box<dyn std::error::Error>` with a small enum or concrete error chain (encode vs I/O) so callers do not lose the failure source.
-
-**Why:** Better ergonomics without necessarily adding dependencies.
-
-### 8. Module naming vs perspective milestone
-
-Defer renaming `ortho_camera` until a second projection exists, or rename in the same change set that introduces perspective (e.g. `camera` + ortho/perspective types).
-
-**Why:** Avoids rename churn unless it pays off immediately.
-
-## Deferred / avoid for now
-
-- **Heavy trait-based “plugin” architecture** for every future milestone—the crate is still small; two concrete projection paths may stay clearer until the second is real.
-- **Cargo workspace split**—only if multiple crates become necessary; see `AGENTS.md`.
-
-## Suggested sequencing
-
-1. ~~Library split~~ **done** · ~~extract cube/scene from bin~~ **done** · ~~shared dimensions / defaults (#3)~~ **done** · next: generic wireframe (#5) as new scenes appear.
-2. Error typing and framebuffer API tweaks when pain appears.
+- Heavy plugin-style **`trait`** graphs spanning every milestone.
+- Cargo **workspace split** unless maintainability demands it (**`AGENTS.md`**).
 
 ## References
 
-- `AGENTS.md` — scope, conventions, when to split the workspace.
-- `doc/planning/project-breakdown.md` — milestone order (animation, perspective, filled raster, etc.).
+- **`AGENTS.md`** — conventions, committing, scope.
+- **`doc/planning/project-breakdown.md`** — milestone order (animation, perspective, filled raster, …).
+- **`doc/planning/project-spec.md`** — coordinates, framebuffer contract.
