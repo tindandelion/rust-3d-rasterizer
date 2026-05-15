@@ -19,10 +19,10 @@ This document describes how I plan to approach the project iteratively.
 - **Goal:** Learn the math for **orthographic** projection and viewport mapping (**Unity-ish LH / +Y up / +Z forward** in world terms; clip/screen mapping stays pragmatic until the wgpu checkpoint).
 - **Outcome:** A **single still** **800×600** **`.webp`**: **wireframe** cube, **all twelve edges**, **fixed camera**, **one chosen model orientation** (rotate the cube “just enough” in that frame so it reads as a cube in 3D). Triangle soup is fine. No time loop yet—this milestone is projection correctness, not animation plumbing.
 
-### [ ] Cube: animation — rotating wireframe (orthographic)
+### [x] Cube: animation — rotating wireframe (orthographic)
 
-- **Goal:** Introduce **multi-frame / time**: drive **model orientation** that changes every frame—rotation around **all three axes** (implementation choice: **per-axis Euler** with documented order + gimbal caveat, or **quaternion + axis-angle** if you prefer fewer traps).
-- **Outcome:** One **lossless animated `.webp`** (**800×600**) showing the **orthographic wireframe cube** rotating smoothly over \(N\) frames (pick \(N\), frame timestamps in ms, and loop convention once and reuse). Encode with **`webp-animation`** using **`EncodingType::Lossless`**. This establishes your **animation scaffold** early; later milestones **reuse** it (swap projection, filled raster, shading—same loop).
+- **Goal:** Introduce **multi-frame / time**: drive **model orientation** that changes every frame. **Shipped:** one **full lap** around **world Y** (left-multiplied onto the same fixed **X/Y tilt + scale** pose as the orthographic still) so the scaffold stays simple; a **three-axis Euler** sweep remains an optional follow-up experiment.
+- **Outcome:** One **lossless animated `.webp`** (**800×600**) showing the **orthographic wireframe cube** rotating smoothly over **`ANIMATED_CUBE_FRAME_COUNT`** frames (**20 ms** spacing in code → 50 fps), encoded with **`webp-animation`** and **`EncodingType::Lossless`**. This **animation scaffold** is in place for later milestones (projection swap, filled raster, shading—same loop).
 
 ### [ ] Cube: perspective projection
 
