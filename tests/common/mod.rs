@@ -10,6 +10,9 @@ use std::process::Command;
 use tempfile::TempDir;
 use webp_animation::{ColorMode, Decoder};
 
+/// `src/bin/still-cube.rs` — integration tests spawn this target (not necessarily same as `CARGO_PKG_NAME`).
+const INTEGRATION_TEST_BIN: &str = "still-cube";
+
 /// Decoded first frame of a **WebP** still (**RGBA** pixels, same decoder path as
 /// [`run_package_binary`] output).
 pub struct WebpImage {
@@ -34,23 +37,20 @@ pub struct RenderedWebp {
     pub output_path: PathBuf,
 }
 
-/// Resolves `CARGO_BIN_EXE_<pkg>` for this package’s binary (same layout as `cargo test`).
+/// Resolves `CARGO_BIN_EXE_<name>` for [`INTEGRATION_TEST_BIN`] (same layout as `cargo test`).
 fn package_binary_path() -> PathBuf {
-    let pkg_name = std::env::var("CARGO_PKG_NAME")
-        .expect("CARGO_PKG_NAME is set when integration tests run via `cargo test`");
-
-    let key = format!("CARGO_BIN_EXE_{pkg_name}");
+    let key = format!("CARGO_BIN_EXE_{INTEGRATION_TEST_BIN}");
     std::env::var_os(&key)
         .map(PathBuf::from)
         .unwrap_or_else(|| {
             panic!(
                 "`{key}` must be set when integration tests run via `cargo test` \
-                 (Cargo supplies the path to the package binary)"
+                 (Cargo supplies the path to each binary target)"
             )
         })
 }
 
-/// Creates a temp workspace, runs the package binary once (**`current_dir`** = that directory,
+/// Creates a temp workspace, runs **`still-cube`** once (**`current_dir`** = that directory,
 /// single CLI arg = relative **`.webp`** path), and returns the **absolute** path to the file.
 pub fn run_package_binary(output_relative_to_temp: impl AsRef<Path>) -> RenderedWebp {
     let dir = tempfile::tempdir().expect("temp directory");

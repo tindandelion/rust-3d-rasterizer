@@ -1,5 +1,5 @@
-//! Orthographic **screen mapping** for this phase of the rasterizer (`src/ortho_camera.rs`, wired from
-//! **`main.rs`** as **`mod ortho_camera`**).
+//! Orthographic **screen mapping** for this phase of the rasterizer (`src/ortho_camera.rs`).
+//! Exposed from the library crate (`thorus_forge::ortho_camera`); the **`still-cube`** bin uses **`Camera`**.
 //!
 //! # Public API
 //!

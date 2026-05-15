@@ -6,7 +6,7 @@ This document summarizes what was implemented for the **Cube: orthographic proje
 
 ## Deliverable
 
-The `rust-3d-rasterizer` binary renders a **white wireframe cube** on a **black** **800×600** RGB framebuffer and exports a **lossless** single-frame **`.webp`**, same CLI contract as before (optional output path argument; default `scene.webp`).
+The `still-cube` binary renders a **white wireframe cube** on a **black** **800×600** RGB framebuffer and exports a **lossless** single-frame **`.webp`**, same CLI contract as before (optional output path argument; default `scene.webp`).
 
 ---
 

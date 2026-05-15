@@ -1,18 +1,12 @@
 //! Lossless WebP still: wireframe **cube** with edge length **0.5** in world space.
 
-mod framebuffer;
-mod ortho_camera;
-mod webp_encoder;
-
 use std::env;
 use std::ffi::OsString;
 use std::path::Path;
 
 use glam::{Mat3, Vec3};
 
-use framebuffer::{FrameBuffer, Rgb};
-use ortho_camera::Camera;
-use webp_encoder::WebpEncoder;
+use thorus_forge::{Camera, FrameBuffer, Rgb, WebpEncoder};
 
 const SCENE_WIDTH: u32 = 800;
 const SCENE_HEIGHT: u32 = 600;

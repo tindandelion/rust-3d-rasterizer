@@ -1,7 +1,8 @@
 [package]
-name = "rust-3d-rasterizer"
+name = "thorus-forge"
 version = "0.1.0"
 edition = "2024"
+default-run = "still-cube"
 
 [dependencies]
 glam = { version = "0.32.1", features = ["approx"] }

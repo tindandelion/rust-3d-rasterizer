@@ -1,4 +1,4 @@
-//! Runs the `rust-3d-rasterizer` binary and checks that output WebP decodes correctly.
+//! Runs the `still-cube` binary and checks that output WebP decodes correctly.
 
 mod common;
 
