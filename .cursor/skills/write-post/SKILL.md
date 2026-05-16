@@ -55,6 +55,17 @@ The tag scheme is plain `x.x.x`, not `vx.x.x`.
 - Mention next steps when they naturally follow from `project-breakdown.md`.
 - Use sentence-style capitalization for section/subsection headers inside posts (for example, `## Why the new output uses radial spokes`, not title case). Post titles may still use title case.
 
+## Math and formulas
+
+The site loads **MathJax** in `_includes/head.html`. Use LaTeX in post bodies:
+
+- **Inline:** `$...$` (e.g. `$t \in [0, 2\pi)$`, `$R_z(t)\, R_y(t)\, R_x(t)$`).
+- **Display:** `$$...$$` on their own lines for larger formulas.
+
+**When to use LaTeX:** expressions with **symbolic** notation — variables ($t$, $i$, $\alpha$), rotation matrices, intervals, vectors, $\pi$ / $\tau$, axis labels ($+\mathrm{Y}$), and similar.
+
+**When not to:** values that are **only numbers and units** in prose — write **800×600**, **360** frames, **20 ms**, **50 fps**, **7.2 s**, version numbers, and plain counts in normal Markdown (bold where emphasis helps). Do not wrap those in `$...$`.
+
 ## Links And References
 
 Use reference-style Markdown links.
