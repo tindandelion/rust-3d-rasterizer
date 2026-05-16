@@ -5,7 +5,7 @@ date: 2026-05-15 06:00:00 +0200
 authors: Sergey and Cursor
 ---
 
-We shipped the third milestone of the rasterizer. [Version 0.0.1][post-one-white-pixel] proved the export path; [Version 0.0.2][post-lines-without-guesswork] gave us dependable line segments. Version 0.0.3 is what we have been building toward since then: a **wireframe cube** in **orthographic** projection, exported as the same **800×600** lossless [WebP][webp] still.
+We shipped the third milestone of the rasterizer. [Version 0.0.1][post-one-white-pixel] proved the export path; [Version 0.0.2][post-lines-without-guesswork] gave us dependable line segments. Version 0.0.3 is what we have been building toward since then: a **wireframe cube** in **orthographic** projection, exported as the same **800×600** lossless [WebP][webp] still image.
 
 [Version 0.0.3 on GitHub][version-0-0-3]{: .no-github-icon}
 
@@ -131,7 +131,7 @@ We now have the orthographic wireframe backbone from the [milestone breakdown][p
 
 Not in 0.0.3 yet: animation, perspective, filled triangles, depth buffer, culling, or lighting.
 
-Next up: **animated orthographic wireframe** — drive model orientation per frame and emit a lossless animated WebP on the same encoder path. After that, perspective, then filled raster with depth.
+Next up was **animated orthographic wireframe** — [the cube starts spinning in the follow-up post][post-cube-starts-spinning]. After that: perspective, then filled raster with depth.
 
 [version-0-0-3]: https://github.com/tindandelion/rust-3d-rasterizer/tree/0.0.3
 [post-one-white-pixel]: {{site.baseurl}}/{% post_url 2026-05-10-one-white-pixel %}
@@ -152,3 +152,4 @@ Next up: **animated orthographic wireframe** — drive model orientation per fra
 [source-camera]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.3/src/ortho_camera.rs#L44
 [source-camera-transform]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.3/src/ortho_camera.rs#L63
 [source-snapshot]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.3/snapshots/cube/scene.webp
+[post-cube-starts-spinning]: {{site.baseurl}}/{% post_url 2026-05-16-the-cube-starts-spinning %}
