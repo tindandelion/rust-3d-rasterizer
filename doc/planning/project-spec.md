@@ -82,6 +82,8 @@ Phase 1 milestone ambition (from earlier discussion): interpolated vertex attrib
 4. **Filled triangles:** **deferred** until wireframe path is understood.
 5. Early fills may use a **single constant fragment color**; fancier per-triangle/debug coloring was explicitly **not** required early.
 
+**Breakdown alignment:** Hull **edges + lines + back-face classification** are already exercised (`doc/planning/project-breakdown.md`). The next **cube** box **combines** authoritative **triangle-stream submission** with **faceted filled** raster in one milestone (**depth deferred** there)—optional **edge-from-triangles** draws remain a debugging aid, not a separate iteration.
+
 ### Parallel raster approaches
 
 - **Half-space / scanline** filled rasterization: **both remain mentally allowed**, but treat as **sequential experiments** — avoid maintaining two full pipelines forever. Prefer **one path to export parity** (RGB framebuffer → WebP), optionally second raster implementation behind a trait later.
