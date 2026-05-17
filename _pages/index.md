@@ -23,9 +23,9 @@ In that sense, this project is an homage to my adolescent self: curious, ignoran
 
 The plan is to build the math and rasterization path on the **CPU** first, then add optional **GPU** rendering with **wgpu** (Metal on Mac) as a stretch goal. Scenes stay small and procedural — working up shapes like a cube, a sphere, and eventually a torus — with lossless **WebP** stills and animations as the main artifacts.
 
-The second motivation, equally important in the modern day and age, is to deliberately practice **AI-assisted ("agentic") coding**. Tools like Cursor and similar agents have changed the day-to-day of writing software, and I want to develop a real, hands-on intuition for working with them — not as a passive autocomplete user, but as someone delegating meaningful work and reviewing the result.
-
 ### Working with AI agents
+
+The second motivation, equally important in the modern day and age, is to deliberately practice **AI-assisted ("agentic") coding**. Tools like Cursor and similar agents have changed the day-to-day of writing software, and I want to develop a real, hands-on intuition for working with them — not as a passive autocomplete user, but as someone delegating meaningful work and reviewing the result.
 
 A few things I want to figure out along the way:
 
