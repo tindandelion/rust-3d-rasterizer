@@ -25,8 +25,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut framebuffer = FrameBuffer::new(SCENE_WIDTH, SCENE_HEIGHT);
     let camera = Camera::new(SCENE_WIDTH, SCENE_HEIGHT);
 
-    let mut mesh = Cube::new();
-    mesh.set_transform(model_matrix_still());
+    let mesh = Cube::default().transform(model_matrix_still());
     draw_edges(&mut framebuffer, &camera, &mesh, Rgb::WHITE);
 
     let mut encoder = WebpEncoder::new(SCENE_WIDTH, SCENE_HEIGHT)?;

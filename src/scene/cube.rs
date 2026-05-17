@@ -1,192 +1,142 @@
-//! Axis-aligned **unit cube** (edge length **1**, centered at the origin): eight vertices, twelve edges.
+//! Axis-aligned **unit cube** (edge length **1**, centered at the origin, half-extent **0.5**).
+//!
+//! A [`Cube`] holds eight corner positions plus six [`CubeFace`] records (matching normals and quad indices)—no separate model matrix is stored.
+//! [`Cube::transform`] repacks both arrays; [`Cube::visible_edges`] applies **Option A** silhouette filtering (emit a hull edge unless **both** adjacent facets face **away**—compare each stored **`normal`** with [`crate::Camera::direction`], which follows the **`+Z` forward**, **into‑scene** convention used elsewhere in this crate).
+//!
+//! Planning context for ordering and milestones: `doc/planning/project-spec.md` and `doc/planning/project-breakdown.md`.
+
+mod face;
 
 use glam::{Mat4, Vec3};
+use std::{array, collections::HashSet};
 
-/// One undirected segment as two **already-transformed** world-space endpoints.
+pub use face::CubeFace;
+
+/// Undirected segment between two points in the same frame as the parent [`Cube`]'s `vertices` positions (exported wireframe treats posed cubes as world-space endpoints).
+///
+/// **`0` / `1`**: unordered endpoints (`glam::Vec3` each).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Edge(pub Vec3, pub Vec3);
 
-/// One square face of the axis-aligned unit cube: outward normal in model space and quad corner indices into [`UNIT_VERTS`].
+/// Axis-aligned boxed corners plus template facet metadata ready for posing via [`Cube::transform`].
 ///
-/// Corner order matches a consistent winding so each quad’s edges match [`EDGE_INDICES`] hull connectivity.
+/// **Defaults:** [`Cube::default`] ⇒ corners equal **`UNIT_VERTS`**, normals/quads seeded from **`UNIT_FACES`** (**identity** posture before posing).
 ///
-/// [`CubeFace::transform`] only affects **`normal`**; **`verts`** stay model-space indices.
-#[derive(Clone, Copy, Debug, PartialEq)]
-struct CubeFace {
-    /// Unit outward normal in **model** space for [`FACES`]; after [`CubeFace::transform`], **`normal`** is **world** space.
-    normal: Vec3,
-    /// Quad vertex indices in winding order (always **model** space).
-    verts: [usize; 4],
-}
-
-impl CubeFace {
-    /// Maps **`normal`** through **`model_to_world`** via [`Mat4::transform_vector3`], then renormalizes.
-    ///
-    /// **`verts`** are copied unchanged (still indices into [`UNIT_VERTS`]).
-    ///
-    /// For **uniform** scale and rotation this matches correct plane normals; **non-uniform** scale needs the
-    /// inverse-transpose of the upper **3×3** (deferred until required).
-    fn transform(&self, model_to_world: Mat4) -> CubeFace {
-        CubeFace {
-            normal: model_to_world.transform_vector3(self.normal).normalize(),
-            verts: self.verts,
-        }
-    }
-
-    /// **`true`** if **`self.normal`** faces away from view direction **`camera_forward_world`** (**into** the scene).
-    ///
-    /// **`normal`** must be a **world-space** unit outward normal (e.g. from [`CubeFace::transform`] on a [`FACES`] entry).
-    ///
-    /// Back-facing means **`n · camera_forward_world < 0`**. **`dot == 0`** (edge-on) is **not** back-facing.
-    fn is_back(&self, camera_forward_world: Vec3) -> bool {
-        self.normal.dot(camera_forward_world) < 0.0
-    }
-}
-
-/// Corners of the axis-aligned unit cube, edge length **1**, half-extent **0.5**.
-/// Ordering matches [`EDGE_INDICES`] hull connectivity and [`FACES`] quads.
-const UNIT_VERTS: [Vec3; 8] = [
-    Vec3::new(-0.5, -0.5, -0.5),
-    Vec3::new(0.5, -0.5, -0.5),
-    Vec3::new(0.5, 0.5, -0.5),
-    Vec3::new(-0.5, 0.5, -0.5),
-    Vec3::new(-0.5, -0.5, 0.5),
-    Vec3::new(0.5, -0.5, 0.5),
-    Vec3::new(0.5, 0.5, 0.5),
-    Vec3::new(-0.5, 0.5, 0.5),
-];
-
-/// The six faces of the unit cube ([`UNIT_VERTS`]), axis-aligned in model space.
-///
-/// Face index order matches [`EDGE_FACE_PAIRS`].
-const FACES: [CubeFace; 6] = [
-    // −Z (back)
-    CubeFace {
-        normal: Vec3::NEG_Z,
-        verts: [0, 3, 2, 1],
-    },
-    // +Z (front)
-    CubeFace {
-        normal: Vec3::Z,
-        verts: [4, 5, 6, 7],
-    },
-    // +X (right)
-    CubeFace {
-        normal: Vec3::X,
-        verts: [1, 2, 6, 5],
-    },
-    // −X (left)
-    CubeFace {
-        normal: Vec3::NEG_X,
-        verts: [0, 4, 7, 3],
-    },
-    // +Y (top)
-    CubeFace {
-        normal: Vec3::Y,
-        verts: [3, 7, 6, 2],
-    },
-    // −Y (bottom)
-    CubeFace {
-        normal: Vec3::NEG_Y,
-        verts: [0, 1, 5, 4],
-    },
-];
-
-/// Hull edges as vertex index pairs; order matches [`EDGE_FACE_PAIRS`].
-const EDGE_INDICES: [(usize, usize); 12] = [
-    (0, 1),
-    (1, 2),
-    (2, 3),
-    (3, 0),
-    (4, 5),
-    (5, 6),
-    (6, 7),
-    (7, 4),
-    (0, 4),
-    (1, 5),
-    (2, 6),
-    (3, 7),
-];
-
-/// For each hull edge, the two incident face indices into [`FACES`].
-const EDGE_FACE_PAIRS: [(usize, usize); 12] = [
-    (5, 0),
-    (0, 2),
-    (0, 4),
-    (0, 3),
-    (5, 1),
-    (2, 1),
-    (4, 1),
-    (3, 1),
-    (5, 3),
-    (5, 2),
-    (4, 2),
-    (4, 3),
-];
-
-/// Unit cube (**[`UNIT_VERTS`]**) plus a **`Mat4`** model → world-style transform (`set_transform`).
+/// **Typical exporter path:** raster [`Cube::visible_edges`] through **`crate::wireframe::draw_edges`** with [`crate::Camera`].
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Cube {
-    transform: Mat4,
+    pub vertices: [Vec3; 8],
+    pub faces: [CubeFace; 6],
 }
 
 impl Cube {
-    pub fn new() -> Self {
-        Self {
-            transform: Mat4::IDENTITY,
-        }
-    }
-
-    pub fn set_transform(&mut self, transform: Mat4) {
-        self.transform = transform;
-    }
-
-    /// Hull edges that survive **Option A** back-face filtering: draw iff **not** both adjacent faces are back-facing ([`FACES`], [`EDGE_FACE_PAIRS`]).
+    /// Returns a copy with each corner multiplied by **`m.transform_point3`** and each **`faces`** slot updated via [`CubeFace::transform`] (**corner indices **`verts`** stay **0 … 7** throughout).
     ///
-    /// Pass **`camera.direction()`** from [`crate::Camera`] so classification matches the raster camera (see [`crate::wireframe::draw_edges`]).
-    pub fn visible_edges(&self, camera_forward_world: Vec3) -> impl Iterator<Item = Edge> + '_ {
-        let mut face_back = [false; 6];
-        for (i, face) in FACES.iter().enumerate() {
-            face_back[i] = face.transform(self.transform).is_back(camera_forward_world);
+    /// **Composition:** chaining maps **`cube.transform(A).transform(B)`** ⇒ **`vertices` become `|v| ↦ B · (A · v)`** (matching column-vector math / outside-in **`Mat4` multiplication** semantics used by callers).
+    pub fn transform(&self, m: Mat4) -> Cube {
+        Cube {
+            vertices: array::from_fn(|i| m.transform_point3(self.vertices[i])),
+            faces: array::from_fn(|i| self.faces[i].transform(m)),
         }
+    }
 
-        EDGE_INDICES
-            .iter()
-            .copied()
-            .zip(EDGE_FACE_PAIRS.iter().copied())
-            .filter_map(move |((i, j), (fa, fb))| {
-                if face_back[fa] && face_back[fb] {
-                    return None;
-                }
-                Some(Edge(
-                    self.transform.transform_point3(UNIT_VERTS[i]),
-                    self.transform.transform_point3(UNIT_VERTS[j]),
-                ))
-            })
+    /// Yields **[`Edge`]** segments under **Option A**: omit an edge only when **both** incident **`faces`** are strictly **back‑facing** vs **`camera_forward_world`** (**`facet_normal · camera_forward_world < 0`** test per stored facet **`normal`).
+    ///
+    /// Edge↔facet incidence follows **`EDGE_INDICES`** × **`EDGE_FACE_PAIRS`** (private tables kept parallel to **`faces`** row order seeded from **`UNIT_FACES`** documentation).
+    ///
+    /// Prefer passing [`crate::Camera::direction`] unchanged so [`crate::wireframe::draw_edges`] stays coherent with camera math.
+    pub fn visible_edges(&self, view_direction: Vec3) -> impl Iterator<Item = Edge> + '_ {
+        let mut seen = HashSet::new();
+        for face in self.faces.iter() {
+            if face.is_back(view_direction) {
+                continue;
+            }
+            for (a, b) in face.edges() {
+                let edge = if a < b { (a, b) } else { (b, a) };
+                seen.insert(edge);
+            }
+        }
+        seen.into_iter()
+            .map(|(i, j)| Edge(self.vertices[i], self.vertices[j]))
     }
 }
 
 impl Default for Cube {
+    /// Identity-posture boxed cube
     fn default() -> Self {
-        Self::new()
+        let vertices: [Vec3; 8] = [
+            Vec3::new(-0.5, -0.5, -0.5),
+            Vec3::new(0.5, -0.5, -0.5),
+            Vec3::new(0.5, 0.5, -0.5),
+            Vec3::new(-0.5, 0.5, -0.5),
+            Vec3::new(-0.5, -0.5, 0.5),
+            Vec3::new(0.5, -0.5, 0.5),
+            Vec3::new(0.5, 0.5, 0.5),
+            Vec3::new(-0.5, 0.5, 0.5),
+        ];
+
+        let faces: [CubeFace; 6] = [
+            CubeFace {
+                normal: Vec3::NEG_Z,
+                verts: [0, 3, 2, 1],
+            },
+            CubeFace {
+                normal: Vec3::Z,
+                verts: [4, 5, 6, 7],
+            },
+            CubeFace {
+                normal: Vec3::X,
+                verts: [1, 2, 6, 5],
+            },
+            CubeFace {
+                normal: Vec3::NEG_X,
+                verts: [0, 4, 7, 3],
+            },
+            CubeFace {
+                normal: Vec3::Y,
+                verts: [3, 7, 6, 2],
+            },
+            CubeFace {
+                normal: Vec3::NEG_Y,
+                verts: [0, 1, 5, 4],
+            },
+        ];
+
+        Self { vertices, faces }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::f32::consts::FRAC_PI_4;
+
     use super::*;
 
     #[test]
     fn visible_edges_count_from_front() {
-        let cube = Cube::new();
+        let cube = Cube::default();
         let forward = Vec3::new(0.0, 0.0, -1.0);
         assert_eq!(cube.visible_edges(forward).count(), 12);
     }
 
     #[test]
     fn visible_edges_count_from_arbitrary_point() {
-        let cube = Cube::new();
+        let cube = Cube::default();
         let forward = Vec3::new(-1.0, -1.0, -1.0);
         assert_eq!(cube.visible_edges(forward).count(), 9);
+    }
+
+    #[test]
+    fn visible_edges_count_after_transform() {
+        let forward = Vec3::new(0.0, 0.0, 1.0);
+        let transform = Mat4::from_rotation_x(FRAC_PI_4) * Mat4::from_rotation_y(FRAC_PI_4);
+
+        assert_eq!(
+            Cube::default()
+                .transform(transform)
+                .visible_edges(forward)
+                .count(),
+            9,
+        );
     }
 }

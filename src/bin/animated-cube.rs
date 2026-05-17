@@ -37,11 +37,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut encoder = WebpEncoder::with_frame_spacing(SCENE_WIDTH, SCENE_HEIGHT, FRAME_SPACING_MS)?;
 
+    let cube = Cube::default();
     for frame_index in 0..ANIMATED_CUBE_FRAME_COUNT {
         framebuffer.clear_black();
 
-        let mut mesh = Cube::new();
-        mesh.set_transform(model_matrix_euler_sweep(
+        let mesh = cube.transform(model_matrix_euler_sweep(
             frame_index,
             ANIMATED_CUBE_FRAME_COUNT,
         ));
