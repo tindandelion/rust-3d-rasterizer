@@ -12,11 +12,11 @@ pub struct Edge(pub Vec3, pub Vec3);
 ///
 /// [`CubeFace::transform`] only affects **`normal`**; **`verts`** stay model-space indices.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct CubeFace {
+struct CubeFace {
     /// Unit outward normal in **model** space for [`FACES`]; after [`CubeFace::transform`], **`normal`** is **world** space.
-    pub normal: Vec3,
+    normal: Vec3,
     /// Quad vertex indices in winding order (always **model** space).
-    pub verts: [usize; 4],
+    verts: [usize; 4],
 }
 
 impl CubeFace {
@@ -26,7 +26,7 @@ impl CubeFace {
     ///
     /// For **uniform** scale and rotation this matches correct plane normals; **non-uniform** scale needs the
     /// inverse-transpose of the upper **3×3** (deferred until required).
-    pub fn transform(&self, model_to_world: Mat4) -> CubeFace {
+    fn transform(&self, model_to_world: Mat4) -> CubeFace {
         CubeFace {
             normal: model_to_world.transform_vector3(self.normal).normalize(),
             verts: self.verts,
@@ -38,7 +38,7 @@ impl CubeFace {
     /// **`normal`** must be a **world-space** unit outward normal (e.g. from [`CubeFace::transform`] on a [`FACES`] entry).
     ///
     /// Back-facing means **`n · camera_forward_world < 0`**. **`dot == 0`** (edge-on) is **not** back-facing.
-    pub fn is_back(&self, camera_forward_world: Vec3) -> bool {
+    fn is_back(&self, camera_forward_world: Vec3) -> bool {
         self.normal.dot(camera_forward_world) < 0.0
     }
 }
@@ -59,7 +59,7 @@ const UNIT_VERTS: [Vec3; 8] = [
 /// The six faces of the unit cube ([`UNIT_VERTS`]), axis-aligned in model space.
 ///
 /// Face index order matches [`EDGE_FACE_PAIRS`].
-pub const FACES: [CubeFace; 6] = [
+const FACES: [CubeFace; 6] = [
     // −Z (back)
     CubeFace {
         normal: Vec3::NEG_Z,

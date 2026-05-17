@@ -2,7 +2,7 @@
 
 Forward-looking refactors aligned with **`doc/planning/project-breakdown.md`**.
 
-Completed foundational work—the library + **`src/bin`** layout, **`scene::cube`** (**`Cube`**, **`CubeFace`**, **`Edge`**), crate-root **`SCENE_WIDTH`**, **`SCENE_HEIGHT`**, and **`DEFAULT_OUT_PATH`**—is left to git history and **`AGENTS.md`**. It is intentionally not listed below.
+Completed foundational work—the library + **`src/bin`** layout, **`scene::cube`** (**`Cube`**, **`Edge`**), crate-root **`SCENE_WIDTH`**, **`SCENE_HEIGHT`**, and **`DEFAULT_OUT_PATH`**—is left to git history and **`AGENTS.md`**. It is intentionally not listed below.
 
 ## Current layout
 
@@ -11,7 +11,7 @@ Completed foundational work—the library + **`src/bin`** layout, **`scene::cube
 | **`src/lib.rs`** | **`SCENE_*`**, **`DEFAULT_OUT_PATH`**, `mod …`, **`pub use`** facade (`FrameBuffer`, `Rgb`, `Camera`, `WebpEncoder`) |
 | **`framebuffer.rs`** | RGB storage, **`set_pixel`**, DDA **`draw_line`** |
 | **`ortho_camera.rs`** | **`Camera`**, NDC-ish → framebuffer **`UVec2`** |
-| **`scene.rs`**, **`scene/cube.rs`** | **`Cube`**, **`CubeFace`**, **`Edge`**, **`FACES`**, **`UNIT_VERTS`**, **`visible_edges()`** (back-face–filtered hull wireframe + transform on **`Cube`**) |
+| **`scene.rs`**, **`scene/cube.rs`** | **`Cube`**, **`Edge`**, **`visible_edges()`** (back-face–filtered hull wireframe); **`CubeFace`** / **`FACES`** / verts table stay module-private |
 | **`wireframe.rs`** | **`draw_edges`**: **`Cube::visible_edges`** + **`Camera::direction`** → **`draw_line`** |
 | **`webp_encoder.rs`** | Lossless **`WebpEncoder`** around **`webp-animation`** |
 | **`src/bin/still-cube.rs`** | Demo **`Mat4`** (scale + tilt), **`wireframe::draw_edges`**, CLI + WebP encode |
