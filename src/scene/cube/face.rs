@@ -4,7 +4,7 @@ use glam::{Mat4, Vec3};
 
 /// One convex hull facet of [`super::Cube`] (paired with **`vertices`** positions in **one** spatial frame—normals rotate with **[`super::Cube::transform`]**, indices stay unchanged).
 ///
-/// **`verts`** follow winding consistent with seeded hull data in the parent module (`EDGE_INDICES` connectivity).
+/// **`verts`** winding matches the six quads seeded in **[`super::Cube::default`]** (outward **unit `normal`** per face).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct CubeFace {
     /// Outward **unit normal** for this hull quad ([`CubeFace::transform`] / [`super::Cube::transform`] keep it coherent with **`vertices`** after each matrix).

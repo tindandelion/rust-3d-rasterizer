@@ -1,7 +1,8 @@
 //! Axis-aligned **unit cube** (edge length **1**, centered at the origin, half-extent **0.5**).
 //!
 //! A [`Cube`] holds eight corner positions plus six [`CubeFace`] records (matching normals and quad indices)—no separate model matrix is stored.
-//! [`Cube::transform`] repacks both arrays; [`Cube::visible_edges`] applies **Option A** silhouette filtering (emit a hull edge unless **both** adjacent facets face **away**—compare each stored **`normal`** with [`crate::Camera::direction`], which follows the **`+Z` forward**, **into‑scene** convention used elsewhere in this crate).
+//! [`Cube::transform`] repacks both arrays; [`Cube::visible_edges`] applies **Option A** silhouette filtering (emit a hull edge unless **both** adjacent facets face **away**).
+//! Classify faceting using each stored **`normal`** against the **into‑scene** view vector—typically [`crate::Camera::direction`] (**`+Z` forward**, left‑handed scene convention used elsewhere in this crate).
 //!
 //! Planning context for ordering and milestones: `doc/planning/project-spec.md` and `doc/planning/project-breakdown.md`.
 
@@ -18,9 +19,9 @@ pub use face::CubeFace;
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Edge(pub Vec3, pub Vec3);
 
-/// Axis-aligned boxed corners plus template facet metadata ready for posing via [`Cube::transform`].
+/// Axis-aligned box corners plus template facet metadata ready for posing via [`Cube::transform`].
 ///
-/// **Defaults:** [`Cube::default`] ⇒ corners equal **`UNIT_VERTS`**, normals/quads seeded from **`UNIT_FACES`** (**identity** posture before posing).
+/// **Defaults:** [`Cube::default`] seeds the eight **`±0.5`** corners and six outward‑normal quads (**identity** posture before posing).
 ///
 /// **Typical exporter path:** raster [`Cube::visible_edges`] through **`crate::wireframe::draw_edges`** with [`crate::Camera`].
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -40,9 +41,9 @@ impl Cube {
         }
     }
 
-    /// Yields **[`Edge`]** segments under **Option A**: omit an edge only when **both** incident **`faces`** are strictly **back‑facing** vs **`camera_forward_world`** (**`facet_normal · camera_forward_world < 0`** test per stored facet **`normal`).
+    /// Yields **[`Edge`]** segments under **Option A**: omit an edge only when **both** incident faces are strictly **back‑facing** vs **`view_direction`** (**`facet_normal · view_direction < 0`** per [`CubeFace`], using each stored facet **`normal`).
     ///
-    /// Edge↔facet incidence follows **`EDGE_INDICES`** × **`EDGE_FACE_PAIRS`** (private tables kept parallel to **`faces`** row order seeded from **`UNIT_FACES`** documentation).
+    /// **Implementation:** take every face that is **not** back‑facing, append its quad boundary pairs from [`CubeFace::edges`], dedupe undirected hull edges with canonical **`(min(i,j), max(i,j))`** keys, then pair **`vertices`** endpoints.
     ///
     /// Prefer passing [`crate::Camera::direction`] unchanged so [`crate::wireframe::draw_edges`] stays coherent with camera math.
     pub fn visible_edges(&self, view_direction: Vec3) -> impl Iterator<Item = Edge> + '_ {
@@ -62,7 +63,7 @@ impl Cube {
 }
 
 impl Default for Cube {
-    /// Identity-posture boxed cube
+    /// Identity-pose unit cube (see struct docs).
     fn default() -> Self {
         let vertices: [Vec3; 8] = [
             Vec3::new(-0.5, -0.5, -0.5),
