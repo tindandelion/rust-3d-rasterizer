@@ -68,6 +68,14 @@ impl Camera {
         }
     }
 
+    /// Unit vector in world space pointing **into** the scene (**view / forward**).
+    ///
+    /// Matches this module’s fixed pose (**`+Z`** forward, left-handed — see module docs). Used for
+    /// back-face tests against [`crate::scene::cube::Cube::visible_edges`].
+    pub fn direction(&self) -> Vec3 {
+        Vec3::Z
+    }
+
     /// **`world_point.x`** / **`y`** are NDC-style **`[-1, 1]`** for in-bounds framing; **`z`** does not affect **`xy`**.
     pub fn transform(&self, world_point: Vec3) -> UVec2 {
         let p = self.transform_matrix * world_point.extend(1.0);
@@ -96,6 +104,12 @@ mod tests {
     //! Covers **`Camera::transform`** on **`z = 0`** NDC corners/interior unless **`z`** independence is the point.
 
     use super::*;
+
+    #[test]
+    fn direction_is_pos_z_forward() {
+        let camera = Camera::new(800, 600);
+        assert_eq!(camera.direction(), Vec3::Z);
+    }
 
     #[test]
     fn world_center_maps_to_viewport_center() {
