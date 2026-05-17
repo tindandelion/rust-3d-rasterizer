@@ -13,11 +13,11 @@ Version 0.0.5 fixes that with the simplest trick that works on a convex cube: **
 
 ## What you will see
 
-Side by side with 0.0.4, the difference is obvious. The tumble and the cornflower blue stroke are the same; what changes is **which** edges survive. Back faces no longer leak through — the shape reads as an **open shell** you are looking at from the outside, not a transparent box.
+Side by side with 0.0.4, the difference is obvious. The tumble and the cornflower blue stroke are the same; what changes is **which** edges survive. Back faces no longer leak through — it finally looks like a cube you’re looking at from the outside, not a glass box you can see straight through.
 
 ![Animated cornflower-blue wireframe cube with back faces culled](https://raw.githubusercontent.com/tindandelion/rust-3d-rasterizer/0.0.5/doc/output/current.webp)
 
-The still export (`still-cube`) got the same treatment: the golden image in [`snapshots/cube/scene.webp`][source-snapshot] has fewer white segments for the same π/4 tilt. Fewer lines per frame also shrinks the animated WebP on disk (**~300 KB** vs **~387 KB** at 0.0.4) — a side effect, not the goal.
+Fewer lines per frame also shrinks the animated WebP on disk (**~300 KB** vs **~387 KB** at 0.0.4) — a side effect, not the goal.
 
 ## Wireframe is fine — hidden faces are not
 
@@ -25,11 +25,11 @@ We are not abandoning wireframe. Orthographic projection, the Euler tumble, **36
 
 What felt wrong was **semantic**: when you watch the cube spin, edges on the rear faces are still there. Your brain knows those faces are turned away; drawing them anyway makes the object feel **see-through in the wrong way** — not artistic x-ray wireframe, just incomplete occlusion. For a convex cube, that is the easiest visual lie to fix before we add perspective, triangle fills, or a depth buffer.
 
-Other fixes exist (hidden-line removal, depth tests along every segment, only drawing the silhouette). They are heavier. On a cube with six flat sides, **back-face culling** is the small step that removes most of the offending edges with a dot product per face.
+The usual name for that fix is **[back-face culling][back-face-culling]** — here is how we apply it on a line-only cube.
 
 ## What is back-face culling?
 
-[Back-face culling][back-face-culling] is a standard idea in real-time graphics: **do not spend work on geometry that faces away from the camera.**
+In real-time graphics, the idea is simple: **do not spend work on geometry that faces away from the camera.**
 
 Each flat face of a mesh has an **outward normal** — a unit vector perpendicular to the surface, pointing out of the solid. Compare that normal to the **view direction** (from the surface toward the eye, or equivalently the direction you treat as “into the scene”). The dot product $\mathbf{n} \cdot \mathbf{v}$ tells you which way the face points relative to the viewer:
 
@@ -43,6 +43,8 @@ For **filled** rasterization you usually cull whole **triangles** before shading
 
 In practice that means keeping silhouette and front hull wiring while dropping edges that exist only on the back of a convex solid. It is the same facing test as triangle culling, applied to **which line segments we emit**.
 
+A concrete check: after a π/4 tilt on **X** and **Y** with **0.5** uniform scale (camera down **+Z**), [`visible_edges`][source-visible-edges] emits **nine** segments instead of twelve. The three dropped edges are hull segments where **both** incident faces are back-facing. A silhouette edge between a front face and a back face still draws — only one side is culled.
+
 Our fixed orthographic camera looks down **+Z**; [`Camera::direction`][source-camera-direction] returns that axis so [`draw_edges`][source-draw-edges] and the cube use one consistent $\mathbf{v}$.
 
 ## Implementation: why we introduced _CubeFace_
@@ -55,7 +57,7 @@ We extracted [`CubeFace`][source-cube-face] into its own module so that logic st
 
 #### What CubeFace is responsible for
 
-Each [`CubeFace`][source-cube-face] is one quad of the hull. It stores:
+Each `CubeFace` is one quad of the hull. It stores:
 
 - an outward **unit normal** (updated when the cube is posed), and  
 - four **vertex indices** into the parent cube’s corner array (which corners form this side).
@@ -63,20 +65,20 @@ Each [`CubeFace`][source-cube-face] is one quad of the hull. It stores:
 Its methods mirror those responsibilities:
 
 - [`transform`][source-face-transform] — rotate the normal with the same pose matrix as the cube; leave indices unchanged (**0 … 7** always refer to the same corners).
-- [`is_back`][source-is-back] — run the facing test ($\mathbf{n} \cdot \mathbf{v} < 0$).
+- [`is_back`][source-face-is-back] — run the facing test ($\mathbf{n} \cdot \mathbf{v} < 0$).
 - [`edges`][source-face-edges] — list the four boundary segments of this quad (index pairs along the winding).
 
 [`Cube`][source-cube-vertices] itself changed shape: it now stores **`vertices` and `faces`**, not **`vertices` and `edges`**.
 
-[`Cube::default`][source-cube-default] builds a **unit cube** — edge length **1**, centered at the origin **(0, 0, 0)** — as eight corners and six [`CubeFace`][source-cube-face] records (outward normals along $\pm X$, $\pm Y$, $\pm Z$). That default is the template; exporters customize the pose by calling [`Cube::transform`][source-cube-transform], which returns a new cube with moved corners and updated face normals (the still’s π/4 tilt, the animation’s Euler tumble, and the **0.5** uniform scale all go through here).
+[`Cube::default`][source-cube-default] builds a **unit cube** — edge length **1**, centered at the origin **(0, 0, 0)** — as eight corners and six `CubeFace` records (outward normals along $\pm X$, $\pm Y$, $\pm Z$). That default is the template; exporters customize the pose by calling [`Cube::transform`][source-cube-transform], which returns a new cube with moved corners and updated face normals (the animation’s Euler tumble and the **0.5** uniform scale go through here).
 
-We still need **edges** to draw the wireframe. They are no longer stored on the cube — we **derive** them from the faces. [`Cube::visible_edges`][source-visible-edges] skips back-facing faces, walks the boundary of each remaining face, dedupes shared hull segments with canonical $(\min,\max)$ index keys, and emits [`Edge`][source-edge] pairs for the rasterizer.
+We still need **edges** to draw the wireframe. They are no longer stored on the cube — we **derive** them from the faces. `visible_edges` skips back-facing faces, walks the boundary of each remaining face, and emits [`Edge`][source-edge] pairs for the rasterizer. Each interior hull edge belongs to two faces, so without deduplication we would emit it twice; canonical $(\min,\max)$ index keys collapse those duplicates.
 
-[`wireframe::draw_edges`][source-draw-edges] is unchanged in spirit: project through [`Camera::transform`][source-camera-transform], call [`draw_line`][source-draw-line]. It now sources segments from `visible_edges(camera.direction())` instead of the old always-twelve [`edges()`][post-cube-starts-spinning] path from 0.0.4.
+`wireframe::draw_edges` is unchanged in spirit: project through [`Camera::transform`][source-camera-transform], call `draw_line`. It now sources segments from `visible_edges`, passing `camera.direction()`, instead of the old always-twelve [`edges()`][post-cube-starts-spinning] path from 0.0.4.
 
 ## Our next move
 
-We are happy with the wireframe path for now: orthographic cube, animation, and back-face–aware edges.
+With orthographic projection, animation, and back-face–aware edges in place, the wireframe line of milestones feels complete for now.
 
 The next chapter is **solid geometry**: a **filled cube** whose **faces have color** — six sides, six deliberate RGB values, rasterized as flat facets rather than strokes. Same pose and camera; the framebuffer gets triangles instead of segment lists. That is not lighting yet (no diffuse term, no light direction), but it is the bridge from “edges only” to surfaces you can later shade.
 
@@ -85,19 +87,16 @@ After the colored solid reads correctly, **shading and lighting** are the natura
 [version-0-0-5]: https://github.com/tindandelion/rust-3d-rasterizer/tree/0.0.5
 [post-cube-starts-spinning]: {{site.baseurl}}/{% post_url 2026-05-16-the-cube-starts-spinning %}
 [back-face-culling]: https://en.wikipedia.org/wiki/Back-face_culling
-[project-breakdown]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.5/doc/planning/project-breakdown.md
 [source-draw-line]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.5/src/framebuffer.rs#L51
 [source-cube-face]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.5/src/scene/cube/face.rs#L9
-[source-is-back]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.5/src/scene/cube/face.rs#L40
-[source-face-edges]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.5/src/scene/cube/face.rs#L33
 [source-cube-vertices]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.5/src/scene/cube.rs#L28
-[source-edge]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.5/src/scene/cube.rs#L19
 [source-face-transform]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.5/src/scene/cube/face.rs#L24
 [source-camera-direction]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.5/src/ortho_camera.rs#L75
-[source-camera-transform]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.5/src/ortho_camera.rs#L63
 [source-draw-edges]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.5/src/wireframe.rs#L9
 [source-visible-edges]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.5/src/scene/cube.rs#L49
-[source-cube-default]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.5/src/scene/cube.rs#L66
 [source-cube-transform]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.5/src/scene/cube.rs#L36
-[source-face-module]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.5/src/scene/cube/face.rs#L1
-[source-snapshot]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.5/snapshots/cube/scene.webp
+[source-cube-default]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.5/src/scene/cube.rs#L94
+[source-edge]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.5/src/scene/cube.rs#L21
+[source-face-is-back]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.5/src/scene/cube/face.rs#L41
+[source-face-edges]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.5/src/scene/cube/face.rs#L35
+[source-camera-transform]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.5/src/ortho_camera.rs#L79
