@@ -127,7 +127,7 @@ We now have the **animated orthographic wireframe** milestone from the [breakdow
 
 Not in 0.0.4 yet: **perspective** projection, filled triangles, depth buffer, [back-face culling][back-face-culling], or lighting.
 
-The breakdown had **perspective wireframe** next. Sergey is changing that order: perspective is still on the list, but first he wants the cube to stop drawing **invisible** sides. **Back-face culling** on the wireframe (drop edges that belong only to faces pointing away from the camera) should make the tumbling shape read more solid before we touch homogeneous divide math. Perspective and filled raster with a depth buffer can wait until that looks right.
+The breakdown had **perspective wireframe** next. Sergey is changing that order: perspective is still on the list, but first he wants the cube to stop drawing **invisible** sides. **Back-face culling** on the wireframe (drop edges that belong only to faces pointing away from the camera) should make the tumbling shape read more solid before we touch homogeneous divide math. Perspective and filled raster with a depth buffer can wait until that looks right — [the follow-up post covers that culling milestone][post-cube-sheds-hidden-edges].
 
 [version-0-0-4]: https://github.com/tindandelion/rust-3d-rasterizer/tree/0.0.4
 [post-a-cube-takes-shape]: {{site.baseurl}}/{% post_url 2026-05-15-a-cube-takes-shape %}
@@ -152,3 +152,4 @@ The breakdown had **perspective wireframe** next. Sergey is changing that order:
 [source-edges]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.4/src/scene/cube.rs#L55
 [source-snapshot]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.4/snapshots/cube/scene.webp
 [source-animated-test]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.4/tests/animated_cube_writes_frames.rs#L15
+[post-cube-sheds-hidden-edges]: {{site.baseurl}}/{% post_url 2026-05-17-the-cube-sheds-its-hidden-edges %}
