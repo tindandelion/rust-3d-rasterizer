@@ -33,7 +33,7 @@ impl CubeFace {
     /// Returns **true** when **`normal`** · **`view_direction`** is **< 0** (facet purely back‑facing versus “into‑scene **`view_direction`**”; matches **[`crate::Camera::direction`]** payloads used by **`crate::wireframe`**).
     ///
     /// Grazing normals (**`dot == 0`**), including edge-on cues, classify as **not** back-facing.
-    pub(super) fn is_back(&self, view_direction: Vec3) -> bool {
+    pub fn is_back(&self, view_direction: Vec3) -> bool {
         self.normal.dot(view_direction) < 0.0
     }
 }
