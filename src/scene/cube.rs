@@ -77,30 +77,12 @@ impl Default for Cube {
         ];
 
         let faces: [CubeFace; 6] = [
-            CubeFace {
-                normal: Vec3::NEG_Z,
-                verts: [0, 3, 2, 1],
-            },
-            CubeFace {
-                normal: Vec3::Z,
-                verts: [4, 5, 6, 7],
-            },
-            CubeFace {
-                normal: Vec3::X,
-                verts: [1, 2, 6, 5],
-            },
-            CubeFace {
-                normal: Vec3::NEG_X,
-                verts: [0, 4, 7, 3],
-            },
-            CubeFace {
-                normal: Vec3::Y,
-                verts: [3, 7, 6, 2],
-            },
-            CubeFace {
-                normal: Vec3::NEG_Y,
-                verts: [0, 1, 5, 4],
-            },
+            CubeFace::new(Vec3::NEG_Z, [0, 3, 2, 1]),
+            CubeFace::new(Vec3::Z, [4, 5, 6, 7]),
+            CubeFace::new(Vec3::X, [1, 2, 6, 5]),
+            CubeFace::new(Vec3::NEG_X, [0, 4, 7, 3]),
+            CubeFace::new(Vec3::Y, [3, 7, 6, 2]),
+            CubeFace::new(Vec3::NEG_Y, [0, 1, 5, 4]),
         ];
 
         Self { vertices, faces }
