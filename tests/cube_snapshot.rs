@@ -2,7 +2,7 @@
 //! (default **RGBA** frame buffer from **`webp_animation::Decoder`**, opaque alpha).
 //!
 //! Regenerate the snapshot after intentional visual changes:
-//! `cargo run --quiet -- snapshots/cube/scene.webp` (from the crate root).
+//! `cargo run --quiet --bin still-cube -- snapshots/cube/scene.webp` (from the crate root).
 
 mod common;
 

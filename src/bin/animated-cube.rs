@@ -1,19 +1,17 @@
-//! Lossless **animated** WebP: orthographic **wireframe** cube (edge length **0.5** in world space),
-//! **three-axis Euler** tumble (**`R_z R_y R_x`** with a common angle) sampled over **`ANIMATED_CUBE_FRAME_COUNT`** frames.
+//! Lossless **animated** WebP: orthographic **filled faceted** **cube** (per-face flat colors, back-face culled),
+//! edge length **0.5** in world space, **three-axis Euler** tumble (**`R_z R_y R_x`** with a common angle)
+//! sampled over **`ANIMATED_CUBE_FRAME_COUNT`** frames.
 
 use std::path::Path;
 
 use glam::{Mat3, Mat4, Vec3};
 
-use thorus_forge::draw_edges;
+use thorus_forge::draw_faces;
 use thorus_forge::scene::cube::Cube;
 use thorus_forge::{
-    ANIMATED_CUBE_FRAME_COUNT, Camera, FrameBuffer, Rgb, SCENE_HEIGHT, SCENE_WIDTH, WebpEncoder,
+    ANIMATED_CUBE_FRAME_COUNT, Camera, FrameBuffer, SCENE_HEIGHT, SCENE_WIDTH, WebpEncoder,
     output_webp_path_from_args,
 };
-
-/// Wireframe stroke: **cornflower blue** (reads clearly on black).
-const WIRE_RGB: Rgb = Rgb(100, 149, 237);
 
 /// Timestamp step between successive frames (**ms**); last frame duration uses the same spacing at **`finalize`**.
 ///
@@ -45,7 +43,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             frame_index,
             ANIMATED_CUBE_FRAME_COUNT,
         ));
-        draw_edges(&mut framebuffer, &camera, &mesh, WIRE_RGB);
+        draw_faces(&mut framebuffer, &camera, &mesh);
 
         encoder.add_frame(&framebuffer)?;
     }

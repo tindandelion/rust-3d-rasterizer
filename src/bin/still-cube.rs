@@ -1,13 +1,13 @@
-//! Lossless WebP still: wireframe **cube** with edge length **0.5** in world space.
+//! Lossless WebP still: **filled faceted** **cube** (back-face culled quads, per-face palette), edge length **0.5** in world space.
 
 use std::path::Path;
 
 use glam::{Mat3, Mat4, Vec3};
 
-use thorus_forge::draw_edges;
+use thorus_forge::draw_faces;
 use thorus_forge::scene::cube::Cube;
 use thorus_forge::{
-    Camera, FrameBuffer, Rgb, SCENE_HEIGHT, SCENE_WIDTH, WebpEncoder, output_webp_path_from_args,
+    Camera, FrameBuffer, SCENE_HEIGHT, SCENE_WIDTH, WebpEncoder, output_webp_path_from_args,
 };
 
 const TILT: f32 = std::f32::consts::FRAC_PI_4;
@@ -26,7 +26,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let camera = Camera::new(SCENE_WIDTH, SCENE_HEIGHT);
 
     let mesh = Cube::default().transform(model_matrix_still());
-    draw_edges(&mut framebuffer, &camera, &mesh, Rgb::WHITE);
+    draw_faces(&mut framebuffer, &camera, &mesh);
 
     let mut encoder = WebpEncoder::new(SCENE_WIDTH, SCENE_HEIGHT)?;
     encoder.add_frame(&framebuffer)?;
