@@ -34,8 +34,8 @@ use scene::cube::{Cube, Edge, Quad};
 ///
 /// [Cube::faces]: scene::cube::Cube::faces
 pub const CUBE_FACE_PALETTE: [Rgb; 6] = [
-    Rgb(214, 90, 99),   // −Z — rose
-    Rgb(80, 160, 230),  // +Z — sky
+    Rgb(0, 0, 255),     // −Z — blue
+    Rgb(255, 0, 0),     // +Z — red
     Rgb(237, 190, 77),  // +X — amber
     Rgb(155, 102, 210), // −X — iris
     Rgb(78, 198, 128),  // +Y — jade
