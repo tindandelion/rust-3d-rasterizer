@@ -5,8 +5,8 @@ use std::path::Path;
 
 use glam::{Mat3, Mat4, Vec3};
 
+use thorus_forge::draw_edges;
 use thorus_forge::scene::cube::Cube;
-use thorus_forge::wireframe::draw_edges;
 use thorus_forge::{
     ANIMATED_CUBE_FRAME_COUNT, Camera, FrameBuffer, Rgb, SCENE_HEIGHT, SCENE_WIDTH, WebpEncoder,
     output_webp_path_from_args,

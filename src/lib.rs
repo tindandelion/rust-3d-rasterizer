@@ -26,8 +26,19 @@ pub mod framebuffer;
 pub mod ortho_camera;
 pub mod scene;
 pub mod webp_encoder;
-pub mod wireframe;
 
 pub use framebuffer::{FillQuad, FrameBuffer, Line, Rgb};
 pub use ortho_camera::Camera;
 pub use webp_encoder::WebpEncoder;
+
+use scene::cube::{Cube, Edge};
+
+/// Rasterize [`scene::cube::Cube::visible_edges`] through **`camera`** (**DDA** in [`Line::draw`]).
+///
+/// View direction comes from [`Camera::direction`] (same axis used for back-face classification).
+pub fn draw_edges(fb: &mut FrameBuffer, camera: &Camera, cube: &Cube, color: Rgb) {
+    let forward = camera.direction();
+    for Edge(a, b) in cube.visible_edges(forward) {
+        Line::new(camera.transform(a), camera.transform(b), color).draw(fb);
+    }
+}

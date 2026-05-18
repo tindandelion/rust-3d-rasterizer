@@ -26,7 +26,7 @@ pub struct Quad(pub Vec3, pub Vec3, pub Vec3, pub Vec3);
 ///
 /// **Defaults:** [`Cube::default`] seeds the eight **`±0.5`** corners and six outward‑normal quads (**identity** posture before posing).
 ///
-/// **Typical exporter path:** raster [`Cube::visible_edges`] through **`crate::wireframe::draw_edges`**, or filled quads from [`Cube::visible_faces`], with [`crate::Camera`].
+/// **Typical exporter path:** raster [`Cube::visible_edges`] through **[`crate::draw_edges`]**, or filled quads from [`Cube::visible_faces`], with [`crate::Camera`].
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Cube {
     pub vertices: [Vec3; 8],
@@ -48,7 +48,7 @@ impl Cube {
     ///
     /// **Implementation:** take every face from [`Self::iter_visible_faces`], append its quad boundary pairs from [`CubeFace::edges`], dedupe undirected hull edges with canonical **`(min(i,j), max(i,j))`** keys, then pair **`vertices`** endpoints.
     ///
-    /// Prefer passing [`crate::Camera::direction`] unchanged so [`crate::wireframe::draw_edges`] stays coherent with camera math.
+    /// Prefer passing [`crate::Camera::direction`] unchanged so [`crate::draw_edges`] stays coherent with camera math.
     pub fn visible_edges(&self, view_direction: Vec3) -> impl Iterator<Item = Edge> + '_ {
         let mut seen = HashSet::new();
         for face in self.iter_visible_faces(view_direction) {

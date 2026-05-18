@@ -39,7 +39,7 @@ impl CubeFace {
         [(v[0], v[1]), (v[1], v[2]), (v[2], v[3]), (v[3], v[0])].into_iter()
     }
 
-    /// Returns **true** when **`normal`** · **`view_direction`** is **< 0** (facet purely back‑facing versus “into‑scene **`view_direction`**”; matches **[`crate::Camera::direction`]** payloads used by **`crate::wireframe`**).
+    /// Returns **true** when **`normal`** · **`view_direction`** is **< 0** (facet purely back‑facing versus “into‑scene **`view_direction`**”; matches **[`crate::Camera::direction`]** payloads used by [`crate::draw_edges`]).
     ///
     /// Grazing normals (**`dot == 0`**), including edge-on cues, classify as **not** back-facing.
     pub fn is_back(&self, view_direction: Vec3) -> bool {
