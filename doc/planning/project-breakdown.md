@@ -28,22 +28,22 @@ This document describes how I plan to approach the project iteratively.
 ### [x] Cube: wireframe — back-face–aware edges
 
 - **Goal:** Learn **facet facing** vs the camera (**face normal · view**) on the **`scene/cube::Cube`** hull **while** the export path stays **orthographic** (projection swap is **deferred**: **see `Perspective projection`**). Treat each undirected hull edge as shared by **two faces** (convex cube: standard incidence). **Draw** an edge iff **not** both adjacent faces are **back-facing** (**Option A**–style silhouette / visible-hull wiring—the same classification idea later reused for torus wireframe).
-- **Outcome:** Orthographic **`still-cube`** and **`animated-cube`** show **fewer than twelve** segments whenever **back faces hide** hull edges (**animated** exposes silhouette changes over **`ANIMATED_CUBE_FRAME_COUNT`** at **20 ms**). Geometry and adjacency live in **`src/scene/cube.rs`**; raster stays **`wireframe`** + **`draw_line`** only (**no filled triangle raster** yet—the authoritative **`[Vertex; 3]`** stream waits until **`Cube: triangle stream — filled faceted raster`**).
+- **Outcome:** Orthographic **`still-cube`** and **`animated-cube`** show **fewer than twelve** segments whenever **back faces hide** hull edges (**animated** exposes silhouette changes over **`ANIMATED_CUBE_FRAME_COUNT`** at **20 ms**). Geometry and adjacency live in **`src/scene/cube.rs`**; raster stays **`wireframe`** + **`draw_line`** only (**no filled quad/triangle raster** yet—the authoritative **face stream for fills** waits until **`Cube: quad stream — filled faceted raster`**).
 
-### [ ] Cube: triangle stream — filled faceted raster (**depth buffer deferred**)
+### [ ] Cube: quad stream — filled faceted raster (**depth buffer deferred**)
 
-- **Goal:** Make **`scene/cube`** authoritative as a **triangle stream** (**`[Vertex; 3]`** or indexed triangles unfolded at the raster boundary). **Cull back-facing triangles** at submit time (**same facet-facing rule** as hull-edge BF). Rasterize **fills** with **one** chosen algorithm (**half-space / barycentric** _or_ scanlines—stick with it long-term). Extend **`Vertex`** as needed (**position + per-face flat RGB**, or equivalent triangle-level color plumbing). **No lighting model yet** (**diffuse/lighting stays** in **`Cube: basic shading`**). **Optional sanity pass:** build **deduped edges** from surviving triangles and **`draw_line`** them to confirm **topology + incidence** and parity with the prior **hull wireframe** look—nice for debugging, not a separate shipping milestone.
-- **Outcome:** **`still-cube`** / **`animated-cube`** **`WebP`** exports show a **rotating faceted “rainbow-ish” cube** (six deliberate flat colors) driven from **triangles**, not handcrafted hull edges. **Defer per-pixel depth test** (**see milestone `Depth buffer`**, placed **before torus**)—a single **convex exterior** cube stays safe without **`z`**; general meshes still wait for depth.
+- **Goal:** Make **`scene/cube`** authoritative as a **quad stream** (**`[Vertex; 4]`** per face, or indexed quads unfolded at the raster boundary). **Cull back-facing faces** at submit time (**same facet-facing rule** as hull-edge BF). Add a **2D raster helper** for **filled convex quads:** compute the **axis-aligned bounding box** of the four projected vertices (in pixel space), scan pixels inside the box, and **fill only** pixels that pass an **inside test** against the **4-vertex convex** polygon (e.g. consistent **half-plane** tests along edges—simple and sufficient for orthographic **cube** faces). Extend **`Vertex`** as needed (**position + per-face flat RGB**, or equivalent face-level color plumbing). **No lighting model yet** (**diffuse/lighting stays** in **`Cube: basic shading`**). **Optional sanity pass:** build **deduped edges** from surviving quads and **`draw_line`** them to confirm **topology + incidence** and parity with the prior **hull wireframe** look—nice for debugging, not a separate shipping milestone. **Interim only:** this path is **removed** when **`Sphere: triangular mesh`** refactors the cube to **triangles**—**do not** keep quad and triangle fill implementations side by side long-term.
+- **Outcome:** **`still-cube`** / **`animated-cube`** **`WebP`** exports show a **rotating faceted “rainbow-ish” cube** (six deliberate flat colors) driven from **quads**, not handcrafted hull edges. **Defer per-pixel depth test** (**see milestone `Depth buffer`**, placed **before torus**)—a single **convex exterior** cube stays safe without **`z`**; general meshes still wait for depth.
 
 ### [ ] Cube: basic shading
 
 - **Goal:** Learn **faceted shading** math (per-face normals duplicated at vertices, or equivalent).
-- **Outcome:** Filled cube with **simple shading** (e.g. diffuse term) so faces read as distinct planes.
+- **Outcome:** Filled cube with **simple shading** (e.g. diffuse term) so faces read as distinct planes. If this lands **before** the **sphere/triangle** milestone, **`scene/cube`** may still emit **quads**; the **same shading idea** carries over when the cube is refactored to **two triangles per face**.
 
-### [ ] Sphere: more complex shape
+### [ ] Sphere: triangular mesh — procedural tessellation (**unify with cube**)
 
-- **Goal:** Generate a **procedural sphere**; move toward an **indexed mesh** where it pays off (shared vertices vs triangle soup).
-- **Outcome:** **Faceted** shaded sphere (low tessellation should still read “polyhedral”).
+- **Goal:** Generate a **procedural sphere** as **triangular facets**; move toward an **indexed mesh** where it pays off (shared vertices vs triangle soup). **Implement** (or finalize) **one** filled **triangle** raster path. **Refactor `scene/cube`** to the **same** **`[Vertex; 3]`** representation (**two triangles per quad face**, consistent winding)—**delete** the **quad** submission path and **quad** fill routine so the codebase keeps **a single** mesh/fill stack.
+- **Outcome:** **Faceted** shaded sphere (low tessellation should still read “polyhedral”) **and** a **triangle-mesh cube** in exports, with **no** remaining dual quad/triangle fill implementation.
 
 ### [ ] Sphere: smooth shading
 
@@ -52,8 +52,8 @@ This document describes how I plan to approach the project iteratively.
 
 ### [ ] Depth buffer (**opaque occlusion**)
 
-- **Goal:** Introduce **per-pixel depth** (orthogonal depth \(z\) in view space vs **normalized device \(z_{\text{NDC}}\)** vs **inverse depth** — pick one rule and stick to it; align later with **`wgpu`** convention checkpoint). Raster carries **\(z_\text{opaque}\)** alongside RGB and **overwrites only if nearer** (**no transparency** assumption for now). Land this **once** **`cube`/`sphere`** solid rendering is exercised so the filled **torus** can lean on **`z`** for **tube/hole self-overlap** without cramming depth into earlier cube milestones.
-- **Outcome:** Reliable **overlap resolution** when **triangle draw order stops being safe**—the **immediate consumer** is **filled torus** (and similar self-occluding opaque meshes). Optionally **stress on cube** (**two overlapping cubes**) if you want a simpler regression harness than the torus alone; **perspective quirks** (**see `Perspective projection`**, **after torus**) are a separate follow-on stress suite.
+- **Goal:** Introduce **per-pixel depth** (orthogonal depth \(z\) in view space vs **normalized device \(z_{\text{NDC}}\)** vs **inverse depth** — pick one rule and stick to it; align later with **`wgpu`** convention checkpoint). **Filled geometry** uses the **unified triangle** path (**cube** already refactored at the **sphere** milestone) so each fragment carries **\(z_\text{opaque}\)** alongside RGB and **overwrites only if nearer** (**no transparency** assumption for now). Land this **once** **`cube`/`sphere`** solid rendering is exercised so the filled **torus** can lean on **`z`** for **tube/hole self-overlap** without cramming depth into earlier cube milestones.
+- **Outcome:** Reliable **overlap resolution** when **draw order stops being safe**—the **immediate consumer** is **filled torus** (and similar self-occluding opaque meshes). Optionally **stress on cube** (**two overlapping cubes**) if you want a simpler regression harness than the torus alone; **perspective quirks** (**see `Perspective projection`**, **after torus**) are a separate follow-on stress suite.
 
 ### [ ] Torus: wireframe — back-face–aware edges (A)
 
@@ -67,7 +67,7 @@ This document describes how I plan to approach the project iteratively.
 
 ### [ ] Torus: filled + smooth shading
 
-- **Goal:** Apply the same filled pipeline as the cube/sphere to the torus (**orthographic camera** retained through this milestone—the **projection matrix** swaps in **`Perspective projection`**, **next**).
+- **Goal:** Apply the same **triangle** filled pipeline as **cube/sphere** to the torus (**orthographic camera** retained through this milestone—the **projection matrix** swaps in **`Perspective projection`**, **next**).
 - **Outcome:** **Smooth-shaded filled torus** under **orthographic projection** (**CPU rasterizer capstone mesh** before **`Perspective projection`** and **Phase 2**).
 
 ### [ ] Perspective projection (CPU)
@@ -84,7 +84,7 @@ This document describes how I plan to approach the project iteratively.
 
 ## Notes / deferred
 
-- **Iteration order:** **`Perspective projection`** deliberately follows **filled torus** so **cube → sphere → depth → torus** stays entirely **orthographic** first (simpler **\(w\)**-free correctness). **`Cube: triangle stream — filled faceted raster`** lands **`[Vertex; 3]`**, **submit-time BF**, and **filled flat colors** together (**optional edge overlay** from surviving triangles for parity checks only). **`Depth buffer`** sits **before torus** for **tube/hole overlap** under **orthographic** **`z`**; revisit **\(z_{\text{NDC}}\)** / depth behavior once **perspective** lands (**see `Perspective projection`**). That cube milestone still skips **`z`** for a sane **single convex exterior** reading.
+- **Iteration order:** **`Perspective projection`** deliberately follows **filled torus** so **cube → sphere → depth → torus** stays entirely **orthographic** first (simpler **\(w\)**-free correctness). **`Cube: quad stream — filled faceted raster`** lands **`[Vertex; 4]`**, **bbox + inner test** fill, **submit-time BF**, and **filled flat colors** together (**optional edge overlay** from surviving quads for parity checks only)—**interim** until **`Sphere: triangular mesh`**, which **refactors the cube** to **triangles** and **drops** the quad fill path (**one** implementation). **`Depth buffer`** sits **before torus** for **tube/hole overlap** under **orthographic** **`z`**; revisit **\(z_{\text{NDC}}\)** / depth behavior once **perspective** lands (**see `Perspective projection`**). The **quad** cube milestone still skips **`z`** for a sane **single convex exterior** reading.
 - **Golden image regression tests:** add when eyeballing saturates — decode `.webp` to RGB and compare, or compare raw framebuffer bytes **before** encode (still vs animated).
 - **Live window** (`winit` + framebuffer blit): optional after disk-export workflow is boring—pairs naturally with animation (**real-time** rotation instead of writing WebPs).
 - **PNG / ffmpeg:** optional escape hatches for tooling compatibility or pixel-diff tooling that prefers PNG—**not** the default deliverable.

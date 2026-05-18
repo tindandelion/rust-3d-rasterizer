@@ -20,7 +20,7 @@ When behavior or scope is unclear, **prefer the planning docs** over guessing.
 ## Conventions to preserve
 
 - **World/camera intuition:** Unity-style **left-handed**, **+Y up**, **+Z forward** (see spec for clip/screen mapping details).
-- **Geometry API:** Rasterizer should consume triangles as a stream (`[Vertex; 3]` or equivalent); evolve `Vertex` only when a milestone needs new attributes.
+- **Geometry API:** **Interim:** filled **cube** uses a **quad** stream (`[Vertex; 4]` per face). **After** the **sphere** milestone (which **refactors the cube** to triangles), **all** meshes use **one** **`[Vertex; 3]`** stream and **one** triangle fill path—**no** long-lived dual quad/triangle raster. Evolve `Vertex` only when a milestone needs new attributes.
 - **Scope:** Restricted scenes in early phases; procedural meshes; long-term visual target includes a **torus**—follow milestone order in the breakdown doc.
 
 ## How to work in this repo

@@ -48,9 +48,9 @@ Optional stretch beyond the original two phases is allowed (e.g. deeper CPU topi
 - **Restricted scenes:** no general frustum clipping homework in phase 1; geometry stays inside the volume by construction.
 - **Long-term visual target:** fixed viewpoint, single shape — a **torus**.
 - **Mesh progression:**
-  1. **Cube** — start as **triangle soup** (non-indexed) for minimal plumbing.
-  2. **Sphere** — **optimize** (move toward **indexed/shared vertices** as appropriate).
-  3. **Torus** — capstone CPU mesh complexity before/at GPU transition.
+  1. **Cube (interim)** — **quad faces** only for the **first** filled-cube milestone (**six** convex quads; **4-vertex** faces). Wireframe can stay edge-based. This is a **deliberate shortcut**: **one** simple **bbox + inner test** raster path before a general **triangle** fill exists.
+  2. **Sphere + cube unification** — add the **sphere** as **triangular facets** and **refactor the cube** to a **triangle mesh** as well (**two triangles per face**, or equivalent). **Remove** the **quad** submission/fill path—**do not** maintain **two** filled primitives long-term; everything share **one** **`[Vertex; 3]`** stream + **triangle** rasterizer after this milestone.
+  3. **Torus** — capstone CPU mesh complexity before/at GPU transition (**triangle** soup or indexed tris).
 - **Generation:** **procedural** meshes (no asset pipeline required early).
 
 ---
@@ -67,7 +67,7 @@ Phase 1 milestone ambition (from earlier discussion): interpolated vertex attrib
 
 ## Geometry ↔ rasterizer boundary
 
-- **Stream-of-triangles API:** rasterizer consumes an iterator/stream of triangles (`[Vertex; 3]` or equivalent), regardless of whether the source is soup or indexed internally.
+- **Phase 1 order:** **`[Vertex; 4]` quad stream** only for the **interim** filled **cube** milestone (convex quads in 2D after projection). From the **sphere + cube triangle refactor** milestone onward, **everything** uses a **`[Vertex; 3]` triangle stream** (cube, sphere, torus—**one** code path). Internal storage may stay indexed; **unfold** at the raster boundary.
 - **`Vertex` evolution:** start with **position only**; add normals, colors, UVs, etc., **only when a milestone requires them**.
 
 ---
@@ -76,13 +76,14 @@ Phase 1 milestone ambition (from earlier discussion): interpolated vertex attrib
 
 ### Order of milestones
 
-1. **Wireframe** before filled triangles.
+1. **Wireframe** before filled surfaces.
 2. **Lines:** simplest practical approach — **DDA-style** stepping (float increments acceptable).
 3. **Out-of-bounds:** **skip-only** (`set_pixel` guarded); no full line clipping initially.
-4. **Filled triangles:** **deferred** until wireframe path is understood.
-5. Early fills may use a **single constant fragment color**; fancier per-triangle/debug coloring was explicitly **not** required early.
+4. **Filled convex quads (cube, interim):** after wireframe is understood, rasterize each **projected quad** as a **4-vertex convex polygon** in **2D**: **axis-aligned bounding box** in pixel space + **inside test** (e.g. **half-plane / edge** tests). **Retire** this helper when step **5** lands—**no** parallel quad+triangle fill pipelines in steady state.
+5. **Filled triangles (steady state):** land with **sphere** and the **cube→triangle mesh refactor**; pick **one** tri fill algorithm (**half-space / barycentric** _or_ scanlines) and use it for **all** meshes afterward.
+6. Early fills may use **flat colors per face**; fancier per-primitive/debug coloring was explicitly **not** required early.
 
-**Breakdown alignment:** Hull **edges + lines + back-face classification** are already exercised (`doc/planning/project-breakdown.md`). The next **cube** box **combines** authoritative **triangle-stream submission** with **faceted filled** raster in one milestone (**depth deferred** there)—optional **edge-from-triangles** draws remain a debugging aid, not a separate iteration.
+**Breakdown alignment:** Hull **edges + lines + back-face classification** are already exercised (`doc/planning/project-breakdown.md`). The next **cube** milestone uses **quad-stream** fill (**depth deferred**); optional **edge overlay** from surviving quads remains a debugging aid. The **sphere** milestone **replaces** that with **triangles only**.
 
 ### Parallel raster approaches
 
@@ -120,7 +121,7 @@ Phase 1 milestone ambition (from earlier discussion): interpolated vertex attrib
 
 1. **wgpu convention alignment pass** — depth range, front-face winding, NDC handedness, relationship to framebuffer row order vs Unity/world intuition.
 2. **Golden image / pixel-diff tests** — adopt when eyeballing saturates (WebP decode path or pre-encode buffer compare).
-3. **Filled-triangle algorithm choice** — commit after experimentation (half-space/barycentric vs scanlines).
+3. **Filled-triangle algorithm choice** — commit when **sphere + cube triangle refactor** lands (half-space/barycentric vs scanlines); **interim cube quads** use **bbox + inner test** until that milestone **replaces** them.
 4. **Cross-platform** — revisit when/if portability becomes a goal.
 
 ---
