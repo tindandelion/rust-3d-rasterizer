@@ -28,6 +28,6 @@ pub mod scene;
 pub mod webp_encoder;
 pub mod wireframe;
 
-pub use framebuffer::{FrameBuffer, Rgb};
+pub use framebuffer::{FillQuad, FrameBuffer, Line, Rgb};
 pub use ortho_camera::Camera;
 pub use webp_encoder::WebpEncoder;

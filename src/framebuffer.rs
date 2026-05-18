@@ -1,6 +1,10 @@
 //! RGB framebuffer: `width × height` pixels, three `u8` channels per pixel, row-major.
 
-use glam::UVec2;
+mod fill_quad;
+mod line;
+
+pub use fill_quad::FillQuad;
+pub use line::Line;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Rgb(pub u8, pub u8, pub u8);
@@ -48,41 +52,39 @@ impl FrameBuffer {
         self.rgb[i + 1] = color.1;
         self.rgb[i + 2] = color.2;
     }
-
-    /// Endpoint-inclusive segment (`pt1`–`pt2`). **DDA-style:** parameter `t` in `[0, 1]` with
-    /// `steps = max(|Δx|, |Δy|)` and floating drift along the segment; samples are rounded to
-    /// integer pixels. Pixels outside the buffer are skipped (`set_pixel` guards).
-    pub fn draw_line(&mut self, pt1: UVec2, pt2: UVec2, color: Rgb) {
-        let x0 = pt1.x as f64;
-        let y0 = pt1.y as f64;
-        let dx = pt2.x as f64 - x0;
-        let dy = pt2.y as f64 - y0;
-
-        let dx_i = pt2.x as i64 - pt1.x as i64;
-        let dy_i = pt2.y as i64 - pt1.y as i64;
-        let nx = dx_i.unsigned_abs();
-        let ny = dy_i.unsigned_abs();
-        let steps = nx.max(ny);
-
-        for i in 0..=steps {
-            let t = if steps == 0 {
-                0.0
-            } else {
-                i as f64 / steps as f64
-            };
-            let px = (x0 + dx * t).round();
-            let py = (y0 + dy * t).round();
-
-            if px >= 0.0 && py >= 0.0 {
-                self.set_pixel(px as u32, py as u32, color);
-            }
-        }
-    }
 }
 
 impl AsRef<[u8]> for FrameBuffer {
     fn as_ref(&self) -> &[u8] {
         &self.rgb
+    }
+}
+
+#[cfg(test)]
+impl FrameBuffer {
+    pub(crate) fn get_pixel(&self, x: u32, y: u32) -> Rgb {
+        let Some(i) = self.pixel_offset(x, y) else {
+            return Rgb::BLACK;
+        };
+        Rgb(self.rgb[i], self.rgb[i + 1], self.rgb[i + 2])
+    }
+
+    /// Row-major text: row 0, then row 1, … with no separators. `' '` matches `Rgb::BLACK`, `'+'` any other color.
+    pub(crate) fn to_ascii_art(&self) -> String {
+        let mut out = String::with_capacity((self.height * self.width) as usize);
+
+        for y in 0..self.height {
+            for x in 0..self.width {
+                let ch = if self.get_pixel(x, y) == Rgb::BLACK {
+                    ' '
+                } else {
+                    '+'
+                };
+                out.push(ch);
+            }
+        }
+
+        out
     }
 }
 
@@ -120,113 +122,5 @@ mod tests {
         let mut fb = FrameBuffer::new(2, 2);
         fb.set_pixel(100, 0, Rgb::WHITE);
         assert!(fb.as_ref().iter().all(|&b| b == 0));
-    }
-
-    #[test]
-    fn draw_horizontal_line() {
-        let mut fb = FrameBuffer::new(10, 5);
-        fb.draw_line(UVec2::new(1, 3), UVec2::new(8, 3), Rgb::WHITE);
-
-        #[rustfmt::skip]
-        let expected = concat!(
-            "          ",
-            "          ",
-            "          ",
-            " ++++++++ ",
-            "          ",
-        );
-        assert_eq!(fb.to_ascii_art(), expected);
-    }
-
-    #[test]
-    fn draw_vertical_line() {
-        let mut fb = FrameBuffer::new(10, 5);
-        fb.draw_line(UVec2::new(3, 1), UVec2::new(3, 3), Rgb::WHITE);
-
-        #[rustfmt::skip]
-        let expected = concat!(
-            "          ",
-            "   +      ",
-            "   +      ",
-            "   +      ",
-            "          ",
-        );
-        assert_eq!(fb.to_ascii_art(), expected);
-    }
-
-    #[test]
-    fn draw_diagonal_line_slope_one() {
-        let mut fb = FrameBuffer::new(10, 5);
-        fb.draw_line(UVec2::new(1, 0), UVec2::new(4, 3), Rgb::WHITE);
-
-        #[rustfmt::skip]
-        let expected = concat!(
-            " +        ",
-            "  +       ",
-            "   +      ",
-            "    +     ",
-            "          ",
-        );
-        assert_eq!(fb.to_ascii_art(), expected);
-    }
-
-    #[test]
-    fn draw_diagonal_line_reverse() {
-        let mut fb = FrameBuffer::new(10, 5);
-        fb.draw_line(UVec2::new(4, 3), UVec2::new(1, 0), Rgb::WHITE);
-
-        #[rustfmt::skip]
-        let expected = concat!(
-            " +        ",
-            "  +       ",
-            "   +      ",
-            "    +     ",
-            "          ",
-        );
-        assert_eq!(fb.to_ascii_art(), expected);
-    }
-
-    #[test]
-    fn draw_line_clips_diagonal_when_end_lies_outside_buffer() {
-        let mut fb = FrameBuffer::new(10, 5);
-        // Start inside the buffer; end is beyond both width and height.
-        fb.draw_line(UVec2::new(3, 1), UVec2::new(12, 10), Rgb::WHITE);
-
-        #[rustfmt::skip]
-        let expected = concat!(
-            "          ",
-            "   +      ",
-            "    +     ",
-            "     +    ",
-            "      +   ",
-        );
-        assert_eq!(fb.to_ascii_art(), expected);
-    }
-
-    impl FrameBuffer {
-        fn get_pixel(&self, x: u32, y: u32) -> Rgb {
-            let Some(i) = self.pixel_offset(x, y) else {
-                return Rgb::BLACK;
-            };
-            Rgb(self.rgb[i], self.rgb[i + 1], self.rgb[i + 2])
-        }
-
-        /// Row-major text: row 0, then row 1, … with no separators. `' '` matches `Rgb::BLACK`, `'+'` any other color.
-        fn to_ascii_art(&self) -> String {
-            let mut out = String::with_capacity((self.height * self.width) as usize);
-
-            for y in 0..self.height {
-                for x in 0..self.width {
-                    let ch = if self.get_pixel(x, y) == Rgb::BLACK {
-                        ' '
-                    } else {
-                        '+'
-                    };
-                    out.push(ch);
-                }
-            }
-
-            out
-        }
     }
 }
