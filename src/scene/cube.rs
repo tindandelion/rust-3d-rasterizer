@@ -1,7 +1,7 @@
 //! Axis-aligned **unit cube** (edge length **1**, centered at the origin, half-extent **0.5**).
 //!
 //! A [`Cube`] holds eight corner positions plus six [`CubeFace`] records (matching normals and quad indices)—no separate model matrix is stored.
-//! [`Cube::transform`] repacks both arrays; [`Cube::visible_edges`] applies **Option A** silhouette filtering (emit a hull edge unless **both** adjacent facets face **away**).
+//! [`Cube::transform`] repacks both arrays; [`Cube::visible_edges`] applies **Option A** silhouette filtering (emit a hull edge unless **both** adjacent facets face **away**). [`Cube::visible_faces`] yields each hull quad that is **not** strictly back‑facing (same **`view_direction`** / **normal · view** rule as [`CubeFace::is_back`]).
 //! Classify faceting using each stored **`normal`** against the **into‑scene** view vector—typically [`crate::Camera::direction`] (**`+Z` forward**, left‑handed scene convention used elsewhere in this crate).
 //!
 //! Planning context for ordering and milestones: `doc/planning/project-spec.md` and `doc/planning/project-breakdown.md`.
@@ -11,7 +11,7 @@ mod face;
 use glam::{Mat4, Vec3};
 use std::{array, collections::HashSet};
 
-pub use face::CubeFace;
+use face::CubeFace;
 
 /// Undirected segment between two points in the same frame as the parent [`Cube`]'s `vertices` positions (exported wireframe treats posed cubes as world-space endpoints).
 ///
@@ -19,11 +19,14 @@ pub use face::CubeFace;
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Edge(pub Vec3, pub Vec3);
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Quad(pub Vec3, pub Vec3, pub Vec3, pub Vec3);
+
 /// Axis-aligned box corners plus template facet metadata ready for posing via [`Cube::transform`].
 ///
 /// **Defaults:** [`Cube::default`] seeds the eight **`±0.5`** corners and six outward‑normal quads (**identity** posture before posing).
 ///
-/// **Typical exporter path:** raster [`Cube::visible_edges`] through **`crate::wireframe::draw_edges`** with [`crate::Camera`].
+/// **Typical exporter path:** raster [`Cube::visible_edges`] through **`crate::wireframe::draw_edges`**, or filled quads from [`Cube::visible_faces`], with [`crate::Camera`].
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Cube {
     pub vertices: [Vec3; 8],
@@ -43,15 +46,12 @@ impl Cube {
 
     /// Yields **[`Edge`]** segments under **Option A**: omit an edge only when **both** incident faces are strictly **back‑facing** vs **`view_direction`** (**`facet_normal · view_direction < 0`** per [`CubeFace`], using each stored facet **`normal`).
     ///
-    /// **Implementation:** take every face that is **not** back‑facing, append its quad boundary pairs from [`CubeFace::edges`], dedupe undirected hull edges with canonical **`(min(i,j), max(i,j))`** keys, then pair **`vertices`** endpoints.
+    /// **Implementation:** take every face from [`Self::iter_visible_faces`], append its quad boundary pairs from [`CubeFace::edges`], dedupe undirected hull edges with canonical **`(min(i,j), max(i,j))`** keys, then pair **`vertices`** endpoints.
     ///
     /// Prefer passing [`crate::Camera::direction`] unchanged so [`crate::wireframe::draw_edges`] stays coherent with camera math.
     pub fn visible_edges(&self, view_direction: Vec3) -> impl Iterator<Item = Edge> + '_ {
         let mut seen = HashSet::new();
-        for face in self.faces.iter() {
-            if face.is_back(view_direction) {
-                continue;
-            }
+        for face in self.iter_visible_faces(view_direction) {
             for (a, b) in face.edges() {
                 let edge = if a < b { (a, b) } else { (b, a) };
                 seen.insert(edge);
@@ -59,6 +59,27 @@ impl Cube {
         }
         seen.into_iter()
             .map(|(i, j)| Edge(self.vertices[i], self.vertices[j]))
+    }
+
+    /// Yields each **front‑ or grazing‑facing** hull quad as [`Quad`] (**four [`Vec3`] corners** in facet winding), omitting facets strictly **back‑facing** vs **`view_direction`** ([`CubeFace::is_back`]).
+    ///
+    /// Use the same **`view_direction`** as [`Self::visible_edges`] / [`crate::Camera::direction`] for consistent culling.
+    pub fn visible_faces(&self, view_direction: Vec3) -> impl Iterator<Item = Quad> + '_ {
+        self.iter_visible_faces(view_direction).map(|face| {
+            let v = face.verts();
+            Quad(
+                self.vertices[v[0]],
+                self.vertices[v[1]],
+                self.vertices[v[2]],
+                self.vertices[v[3]],
+            )
+        })
+    }
+
+    fn iter_visible_faces(&self, view_direction: Vec3) -> impl Iterator<Item = &CubeFace> + '_ {
+        self.faces
+            .iter()
+            .filter(move |face| !face.is_back(view_direction))
     }
 }
 
@@ -121,5 +142,46 @@ mod tests {
                 .count(),
             9,
         );
+    }
+
+    #[test]
+    fn visible_faces_count_from_front() {
+        let cube = Cube::default();
+        let forward = Vec3::new(0.0, 0.0, -1.0);
+        assert_eq!(cube.visible_faces(forward).count(), 5);
+    }
+
+    #[test]
+    fn visible_faces_count_from_arbitrary_direction() {
+        let cube = Cube::default();
+        let forward = Vec3::new(-1.0, -1.0, -1.0);
+        assert_eq!(cube.visible_faces(forward).count(), 3);
+    }
+
+    #[test]
+    fn visible_faces_count_after_transform() {
+        let forward = Vec3::new(0.0, 0.0, 1.0);
+        let transform = Mat4::from_rotation_x(FRAC_PI_4) * Mat4::from_rotation_y(FRAC_PI_4);
+
+        assert_eq!(
+            Cube::default()
+                .transform(transform)
+                .visible_faces(forward)
+                .count(),
+            3,
+        );
+    }
+
+    #[test]
+    fn visible_faces_corners_match_default_cube_layout() {
+        let cube = Cube::default();
+        let forward = Vec3::new(0.0, 0.0, -1.0);
+        let faces: Vec<Quad> = cube.visible_faces(forward).collect();
+        assert!(faces.iter().any(|f| {
+            f.0 == cube.vertices[0]
+                && f.1 == cube.vertices[3]
+                && f.2 == cube.vertices[2]
+                && f.3 == cube.vertices[1]
+        }));
     }
 }

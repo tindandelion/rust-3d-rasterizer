@@ -18,6 +18,11 @@ impl CubeFace {
         Self { normal, verts }
     }
 
+    /// Indices into the parent [`super::Cube`]'s **`vertices`** for this quad (winding matches [`Self::edges`]).
+    pub fn verts(&self) -> &[usize; 4] {
+        &self.verts
+    }
+
     /// Re-transforms **`normal`** with **`m.transform_vector3`**, normalized; copies **`verts` unchanged**.
     ///
     /// **Note:** rotations + uniform scaling match analytic normals here; arbitrary **non-uniform** scales should eventually use transpose-inverse of **3×3** (explicitly deferred in this codebase).
