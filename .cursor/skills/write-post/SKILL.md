@@ -18,9 +18,35 @@ Gather context before writing:
   - `doc/planning/project-spec.md`
   - `doc/planning/project-breakdown.md`
   - `README.md`
+- Read Cursor agent transcripts 
 - Check relevant source files on `main` and link code references to GitHub.
 - Check version tags with `git ls-remote --tags origin '<version>'` when the post references a release.
 - Use `git diff` between current version and previous version (versions are tagged x.x.x) to figure out what changes have been made.
+
+### Cursor agent transcripts
+
+For milestone posts tied to a release tag, find the relevant Cursor chat logs with `.cursor/skills/write-post/scripts/transcripts-for-tags.sh`. 
+
+Run from the repo root (gh-pages):
+
+```bash
+.cursor/skills/write-post/scripts/transcripts-for-tags.sh 0.0.6
+```
+
+Or pass an explicit range (previous release through current):
+
+```bash
+.cursor/skills/write-post/scripts/transcripts-for-tags.sh 0.0.5 0.0.6
+```
+
+Behavior:
+
+- **One tag** — lists transcripts from the previous semver tag through that tag (e.g. `0.0.5` → `0.0.6` for `0.0.6`).
+- **Two or more tags** — lists transcripts between the earliest and latest tag times.
+
+Then **read every `.jsonl` file** the script prints. Use them for session narrative: what we focused on, design discussions, and implementation choices. Prefer transcript detail over generic summaries when it matches the code and diary docs.
+
+If the script fails, say so and continue from `doc/diary` and `git diff` only.
 
 ## Post Requirements
 
