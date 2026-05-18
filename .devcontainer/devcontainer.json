@@ -10,7 +10,12 @@
 				"swyphcosmo.spellchecker"
 			]
 		}
-	}
+	},
+
+	// Host Cursor project data (e.g. rust-3d-rasterizer agent transcripts for write-post).
+	"mounts": [
+		"source=${localEnv:HOME}${localEnv:USERPROFILE}/.cursor/projects,target=/workspaces/main-cursor-projects,type=bind,readonly"
+	]
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
