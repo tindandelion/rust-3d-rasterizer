@@ -82,7 +82,7 @@ With orthographic projection, animation, and back-face–aware edges in place, t
 
 The next chapter is **solid geometry**: a **filled cube** whose **faces have color** — six sides, six deliberate RGB values, rasterized as flat facets rather than strokes. Same pose and camera; the framebuffer gets triangles instead of segment lists. That is not lighting yet (no diffuse term, no light direction), but it is the bridge from “edges only” to surfaces you can later shade.
 
-After the colored solid reads correctly, **shading and lighting** are the natural follow-on — faces that change brightness with orientation and a simple light model, still on the CPU before we tackle spheres, depth buffers, or perspective. The wireframe era taught projection and facing; the fill era is where the cube starts to look like an object.
+After the colored solid reads correctly, **shading and lighting** are the natural follow-on — faces that change brightness with orientation and a simple light model, still on the CPU before we tackle spheres, depth buffers, or perspective. The wireframe era taught projection and facing; the fill era is where the cube starts to look like an object. That solid, faceted cube is **[live in 0.0.6][post-cube-paints-faces]**.
 
 [version-0-0-5]: https://github.com/tindandelion/rust-3d-rasterizer/tree/0.0.5
 [post-cube-starts-spinning]: {{site.baseurl}}/{% post_url 2026-05-16-the-cube-starts-spinning %}
@@ -100,3 +100,4 @@ After the colored solid reads correctly, **shading and lighting** are the natura
 [source-face-is-back]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.5/src/scene/cube/face.rs#L41
 [source-face-edges]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.5/src/scene/cube/face.rs#L35
 [source-camera-transform]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.5/src/ortho_camera.rs#L79
+[post-cube-paints-faces]: {{site.baseurl}}/{% post_url 2026-05-18-the-cube-paints-its-six-faces %}
