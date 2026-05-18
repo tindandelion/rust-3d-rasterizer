@@ -1,7 +1,7 @@
 //! Axis-aligned **unit cube** (edge length **1**, centered at the origin, half-extent **0.5**).
 //!
 //! A [`Cube`] holds eight corner positions plus six [`CubeFace`] records (matching normals and quad indices)—no separate model matrix is stored.
-//! [`Cube::transform`] repacks both arrays; [`Cube::visible_edges`] applies **Option A** silhouette filtering (emit a hull edge unless **both** adjacent facets face **away**). [`Cube::visible_faces`] yields each hull quad that is **not** strictly back‑facing (same **`view_direction`** / **normal · view** rule as [`CubeFace::is_back`]).
+//! [`Cube::transform`] repacks both arrays; [`Cube::visible_edges`] applies **Option A** silhouette filtering (emit a hull edge unless **both** adjacent facets face **away**). [`Cube::visible_faces`] yields each **`(faces` slot `0 … 5`, [`Quad`] corners)** hull facet that is **not** strictly back‑facing (same **`view_direction`** / **normal · view** rule as [`CubeFace::is_back`]).
 //! Classify faceting using each stored **`normal`** against the **into‑scene** view vector—typically [`crate::Camera::direction`] (**`+Z` forward**, left‑handed scene convention used elsewhere in this crate).
 //!
 //! Planning context for ordering and milestones: `doc/planning/project-spec.md` and `doc/planning/project-breakdown.md`.
@@ -26,7 +26,7 @@ pub struct Quad(pub Vec3, pub Vec3, pub Vec3, pub Vec3);
 ///
 /// **Defaults:** [`Cube::default`] seeds the eight **`±0.5`** corners and six outward‑normal quads (**identity** posture before posing).
 ///
-/// **Typical exporter path:** raster [`Cube::visible_edges`] through **[`crate::draw_edges`]**, or filled quads from [`Cube::visible_faces`], with [`crate::Camera`].
+/// **Typical exporter path:** raster [`Cube::visible_edges`] through **[`crate::draw_edges`]**, or fill from [`Cube::visible_faces`] (**`.map(|(_, q)| q)`** when you only need [`Quad`] corners), with [`crate::Camera`].
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Cube {
     pub vertices: [Vec3; 8],
@@ -61,19 +61,26 @@ impl Cube {
             .map(|(i, j)| Edge(self.vertices[i], self.vertices[j]))
     }
 
-    /// Yields each **front‑ or grazing‑facing** hull quad as [`Quad`] (**four [`Vec3`] corners** in facet winding), omitting facets strictly **back‑facing** vs **`view_direction`** ([`CubeFace::is_back`]).
+    /// Yields **`(slot, quad)`** for each visible hull facet. **`slot`** is **`Self::faces`** index **`0 … 5`** (order fixed by [`Cube::default`], unchanged by [`Cube::transform`]); **`quad`** is four **[`Vec3`]** corners in facet winding (**same back‑face test** as [`Self::visible_edges`]). [`crate::CUBE_FACE_PALETTE`] / [`crate::draw_faces`] use **`slot`** for flat tints.
     ///
-    /// Use the same **`view_direction`** as [`Self::visible_edges`] / [`crate::Camera::direction`] for consistent culling.
-    pub fn visible_faces(&self, view_direction: Vec3) -> impl Iterator<Item = Quad> + '_ {
-        self.iter_visible_faces(view_direction).map(|face| {
-            let v = face.verts();
-            Quad(
-                self.vertices[v[0]],
-                self.vertices[v[1]],
-                self.vertices[v[2]],
-                self.vertices[v[3]],
-            )
-        })
+    /// Prefer passing [`crate::Camera::direction`] unchanged alongside [`Self::visible_edges`] for consistent BF culling.
+    pub fn visible_faces(&self, view_direction: Vec3) -> impl Iterator<Item = (usize, Quad)> + '_ {
+        self.faces
+            .iter()
+            .enumerate()
+            .filter(move |(_, face)| !face.is_back(view_direction))
+            .map(|(idx, face)| {
+                let v = face.verts();
+                (
+                    idx,
+                    Quad(
+                        self.vertices[v[0]],
+                        self.vertices[v[1]],
+                        self.vertices[v[2]],
+                        self.vertices[v[3]],
+                    ),
+                )
+            })
     }
 
     fn iter_visible_faces(&self, view_direction: Vec3) -> impl Iterator<Item = &CubeFace> + '_ {
@@ -176,7 +183,7 @@ mod tests {
     fn visible_faces_corners_match_default_cube_layout() {
         let cube = Cube::default();
         let forward = Vec3::new(0.0, 0.0, -1.0);
-        let faces: Vec<Quad> = cube.visible_faces(forward).collect();
+        let faces: Vec<Quad> = cube.visible_faces(forward).map(|(_, q)| q).collect();
         assert!(faces.iter().any(|f| {
             f.0 == cube.vertices[0]
                 && f.1 == cube.vertices[3]
