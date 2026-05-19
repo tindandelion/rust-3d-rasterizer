@@ -14,6 +14,7 @@ impl Rgb {
     pub const WHITE: Self = Self(255, 255, 255);
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FrameBuffer {
     width: u32,
     height: u32,
