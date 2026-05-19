@@ -10,7 +10,6 @@ pub use line::Line;
 pub struct Rgb(pub u8, pub u8, pub u8);
 
 impl Rgb {
-    #[allow(dead_code)]
     pub const BLACK: Self = Self(0, 0, 0);
     pub const WHITE: Self = Self(255, 255, 255);
 }
