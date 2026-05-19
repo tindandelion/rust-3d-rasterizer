@@ -13,6 +13,10 @@ impl Normal3 {
     pub const NEG_Y: Self = Self(Vec3::NEG_Y);
     pub const Z: Self = Self(Vec3::Z);
     pub const NEG_Z: Self = Self(Vec3::NEG_Z);
+
+    pub fn dot(&self, other: Self) -> f32 {
+        self.0.dot(other.0)
+    }
 }
 
 impl From<Vec3> for Normal3 {

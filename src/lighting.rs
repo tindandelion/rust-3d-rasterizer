@@ -26,14 +26,14 @@ impl DiffuseLight {
         let ambient_factor = ambient_factor.clamp(0.0, 1.0);
         let diffuse_factor = 1.0 - ambient_factor;
         Self {
-            toward_light: toward_light,
+            toward_light,
             ambient_factor,
             diffuse_factor,
         }
     }
 
     pub fn calc_intensity(&self, normal: Normal3) -> f32 {
-        let diffuse = self.toward_light.dot(normal.into()).max(0.0);
+        let diffuse = self.toward_light.dot(normal).max(0.0);
         (self.ambient_factor + self.diffuse_factor * diffuse).clamp(0.0, 1.0)
     }
 }

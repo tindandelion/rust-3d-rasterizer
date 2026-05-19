@@ -52,7 +52,7 @@ impl CubeFace {
     ///
     /// Grazing faceting (**`dot == 0`**) is **excluded** (not strictly front-facing).
     pub fn is_front_facing(&self, view_direction: Normal3) -> bool {
-        view_direction.dot(self.normal.into()) < 0.0
+        view_direction.dot(self.normal) < 0.0
     }
 }
 
