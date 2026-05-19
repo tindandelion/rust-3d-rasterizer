@@ -59,7 +59,7 @@ impl Cube {
     /// edges with canonical **`(min(i,j), max(i,j))`** keys, then pair **`vertices`** endpoints.
     ///
     /// Prefer passing [`crate::Camera::direction`] unchanged so [`crate::draw_edges`] stays coherent with camera math.
-    pub fn visible_edges(&self, view_direction: Vec3) -> impl Iterator<Item = Edge> + '_ {
+    pub fn visible_edges(&self, view_direction: Normal3) -> impl Iterator<Item = Edge> + '_ {
         let mut seen = HashSet::new();
         for (_, face) in self.iter_front_facing_faces(view_direction) {
             for (a, b) in face.edges() {
@@ -81,7 +81,7 @@ impl Cube {
         &self,
         view_direction: Normal3,
     ) -> impl Iterator<Item = (usize, Quad)> + '_ {
-        self.iter_front_facing_faces(view_direction.into())
+        self.iter_front_facing_faces(view_direction)
             .map(|(idx, face)| {
                 let v = face.verts();
                 (
@@ -96,7 +96,7 @@ impl Cube {
 
     fn iter_front_facing_faces(
         &self,
-        view_direction: Vec3,
+        view_direction: Normal3,
     ) -> impl Iterator<Item = (usize, &CubeFace)> + '_ {
         self.faces
             .iter()
@@ -141,20 +141,20 @@ mod tests {
     #[test]
     fn visible_edges_count_from_front() {
         let cube = Cube::default();
-        let forward = Vec3::Z;
+        let forward = Normal3::Z;
         assert_eq!(cube.visible_edges(forward).count(), 4);
     }
 
     #[test]
     fn visible_edges_count_from_arbitrary_point() {
         let cube = Cube::default();
-        let forward = Vec3::new(-1.0, -1.0, -1.0);
+        let forward = Vec3::new(-1.0, -1.0, -1.0).into();
         assert_eq!(cube.visible_edges(forward).count(), 9);
     }
 
     #[test]
     fn visible_edges_count_after_transform() {
-        let forward = Vec3::new(0.0, 0.0, 1.0);
+        let forward = Normal3::Z;
         let transform = Mat4::from_rotation_x(FRAC_PI_4) * Mat4::from_rotation_y(FRAC_PI_4);
 
         assert_eq!(
@@ -182,7 +182,7 @@ mod tests {
 
     #[test]
     fn visible_faces_count_after_transform() {
-        let forward = Vec3::new(0.0, 0.0, 1.0).into();
+        let forward = Normal3::Z;
         let transform = Mat4::from_rotation_x(FRAC_PI_4) * Mat4::from_rotation_y(FRAC_PI_4);
 
         assert_eq!(

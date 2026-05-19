@@ -2,6 +2,8 @@
 
 use glam::{Mat4, Vec3};
 
+use crate::geometry::Normal3;
+
 /// One convex hull facet of [`super::Cube`] (paired with **`vertices`** positions in **one** spatial frame—normals rotate with **[`super::Cube::transform`]**, indices stay unchanged).
 ///
 /// **`verts`** winding matches the six quads seeded in **[`super::Cube::default`]** (outward **unit `normal`** per face).
@@ -49,13 +51,15 @@ impl CubeFace {
     /// **[`crate::Camera::direction`]** for [`crate::draw_edges`] and [`crate::draw_faces`].
     ///
     /// Grazing faceting (**`dot == 0`**) is **excluded** (not strictly front-facing).
-    pub fn is_front_facing(&self, view_direction: Vec3) -> bool {
-        self.normal.dot(view_direction) < 0.0
+    pub fn is_front_facing(&self, view_direction: Normal3) -> bool {
+        view_direction.dot(self.normal) < 0.0
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::geometry::Normal3;
+
     use super::CubeFace;
     use approx::assert_relative_eq;
     use glam::{Mat4, Vec3};
@@ -86,18 +90,18 @@ mod tests {
     #[test]
     fn is_front_facing_true_for_neg_z_cap_when_view_is_pos_z() {
         let face = CubeFace::new(Vec3::NEG_Z, VERTS);
-        assert!(face.is_front_facing(Vec3::Z));
+        assert!(face.is_front_facing(Normal3::Z));
     }
 
     #[test]
     fn is_front_facing_false_for_pos_z_cap_when_view_is_pos_z() {
         let face = CubeFace::new(Vec3::Z, VERTS);
-        assert!(!face.is_front_facing(Vec3::Z));
+        assert!(!face.is_front_facing(Normal3::Z));
     }
 
     #[test]
     fn is_front_facing_false_when_grazing() {
         let face = CubeFace::new(Vec3::X, VERTS);
-        assert!(!face.is_front_facing(Vec3::Z));
+        assert!(!face.is_front_facing(Normal3::Z));
     }
 }
