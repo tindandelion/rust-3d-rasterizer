@@ -52,6 +52,7 @@ Note the `baseurl: /rust-3d-rasterizer` in `_config.yml` — always use `{{ "...
 - **Layout/include overrides** of the Minima theme should be minimal — only override files that genuinely need changes; let Minima provide the rest.
 - **Styles**: edit `assets/main.scss`. Keep overrides scoped; don't fork the Minima stylesheet wholesale.
 - **External code links** point to the `main` branch of `rust-3d-rasterizer` (see `_pages/index.md` for examples).
+- **Bold in diary posts**: use sparingly — only to highlight truly important bits (e.g. one pivotal outcome or diagnosis). Prefer plain prose; use backticks for code and identifiers. Do not bold routine terms, axes, counts, or milestone names for decoration.
 
 ## Don't
 
