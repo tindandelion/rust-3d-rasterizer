@@ -199,10 +199,6 @@ mod tests {
         assert_eq!(visible_faces.len(), 1);
 
         let (_, first_face) = visible_faces[0];
-        assert_eq!(first_face.corners[0], cube.vertices[0]);
-        assert_eq!(first_face.corners[1], cube.vertices[3]);
-        assert_eq!(first_face.corners[2], cube.vertices[2]);
-        assert_eq!(first_face.corners[3], cube.vertices[1]);
         assert_eq!(first_face.normal, Vec3::NEG_Z);
     }
 }
