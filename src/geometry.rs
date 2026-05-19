@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::ops::{Deref, Neg};
 
 use glam::Vec3;
 
@@ -30,5 +30,37 @@ impl Deref for Normal3 {
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl Neg for Normal3 {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        Self(-self.0)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Normal3;
+    use approx::assert_relative_eq;
+    use glam::Vec3;
+
+    #[test]
+    fn neg_flips_underlying_vec3() {
+        let n = Normal3::from(Vec3::new(1.0, 2.0, 8.0));
+        assert_relative_eq!(Vec3::from(-n), -Vec3::from(n));
+    }
+
+    #[test]
+    fn neg_preserves_unit_length() {
+        let n = Normal3::from(Vec3::new(1.0, 2.0, 8.0));
+        assert_relative_eq!((-n).length(), 1.0);
+    }
+
+    #[test]
+    fn neg_z_axis_constant() {
+        assert_eq!(Vec3::from(-Normal3::Z), Vec3::NEG_Z);
     }
 }

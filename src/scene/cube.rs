@@ -14,6 +14,8 @@ use std::{array, collections::HashSet};
 
 use face::CubeFace;
 
+use crate::geometry::Normal3;
+
 /// Undirected segment between two points in the same frame as the parent [`Cube`]'s `vertices` positions (exported wireframe treats posed cubes as world-space endpoints).
 ///
 /// **`0` / `1`**: unordered endpoints (`glam::Vec3` each).
@@ -75,8 +77,11 @@ impl Cube {
     /// has **`corners`** in facet winding and **`normal`** (outward unit vector for [`crate::draw_faces`] lighting).
     ///
     /// Prefer passing [`crate::Camera::direction`] unchanged alongside [`Self::visible_edges`] for coherent view axis.
-    pub fn visible_faces(&self, view_direction: Vec3) -> impl Iterator<Item = (usize, Quad)> + '_ {
-        self.iter_front_facing_faces(view_direction)
+    pub fn visible_faces(
+        &self,
+        view_direction: Normal3,
+    ) -> impl Iterator<Item = (usize, Quad)> + '_ {
+        self.iter_front_facing_faces(view_direction.into())
             .map(|(idx, face)| {
                 let v = face.verts();
                 (
@@ -164,20 +169,20 @@ mod tests {
     #[test]
     fn visible_faces_count_from_front() {
         let cube = Cube::default();
-        let forward = Vec3::Z;
+        let forward = Normal3::Z;
         assert_eq!(cube.visible_faces(forward).count(), 1);
     }
 
     #[test]
     fn visible_faces_count_from_arbitrary_direction() {
         let cube = Cube::default();
-        let forward = Vec3::new(-1.0, -1.0, -1.0);
+        let forward = Vec3::new(-1.0, -1.0, -1.0).into();
         assert_eq!(cube.visible_faces(forward).count(), 3);
     }
 
     #[test]
     fn visible_faces_count_after_transform() {
-        let forward = Vec3::new(0.0, 0.0, 1.0);
+        let forward = Vec3::new(0.0, 0.0, 1.0).into();
         let transform = Mat4::from_rotation_x(FRAC_PI_4) * Mat4::from_rotation_y(FRAC_PI_4);
 
         assert_eq!(
@@ -192,7 +197,7 @@ mod tests {
     #[test]
     fn looking_at_cube_from_front() {
         let cube = Cube::default();
-        let look_along_z_axis = Vec3::Z;
+        let look_along_z_axis = Normal3::Z;
 
         let visible_faces = cube.visible_faces(look_along_z_axis).collect::<Vec<_>>();
         assert_eq!(visible_faces.len(), 1);

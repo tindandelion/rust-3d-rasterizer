@@ -46,6 +46,8 @@
 
 use glam::{Mat4, UVec2, Vec3};
 
+use crate::geometry::Normal3;
+
 /// Fixed orthographic **`Vec3`** → framebuffer pixel mapping for one **`width × height`** raster target.
 ///
 /// Holds a precomputed **`Mat4`** (**NDC `xy`** + **`z`** through scale part → pixel space before **`round`**).
@@ -72,8 +74,8 @@ impl Camera {
     ///
     /// Matches this module’s fixed pose (**`+Z`** forward, left-handed — see module docs). Used for
     /// front‑facing classification for [`crate::scene::cube::Cube::visible_edges`] / [`crate::scene::cube::Cube::visible_faces`].
-    pub fn direction(&self) -> Vec3 {
-        Vec3::Z
+    pub fn direction(&self) -> Normal3 {
+        Normal3::Z
     }
 
     /// **`world_point.x`** / **`y`** are NDC-style **`[-1, 1]`** for in-bounds framing; **`z`** does not affect **`xy`**.
@@ -108,7 +110,7 @@ mod tests {
     #[test]
     fn direction_is_pos_z_forward() {
         let camera = Camera::new(800, 600);
-        assert_eq!(camera.direction(), Vec3::Z);
+        assert_eq!(camera.direction(), Normal3::Z);
     }
 
     #[test]

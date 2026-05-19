@@ -18,7 +18,7 @@ const FB_HEIGHT: u32 = 101;
 fn draw_unit_cube() {
     let mut fb = FrameBuffer::new(FB_WIDTH, FB_HEIGHT);
     let camera = Camera::new(FB_WIDTH, FB_HEIGHT);
-    let light = DiffuseLight::new((-camera.direction()).into(), 0.1);
+    let light = DiffuseLight::new(-camera.direction(), 0.1);
     let cube = Cube::default();
 
     draw_faces(&mut fb, &camera, &cube, &light);

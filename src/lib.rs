@@ -44,7 +44,7 @@ pub fn output_webp_path_from_args() -> OsString {
 /// View direction comes from [`Camera::direction`] (same axis used for **front‑facing** classification as [`Cube::visible_faces`]).
 pub fn draw_edges(fb: &mut FrameBuffer, camera: &Camera, cube: &Cube, color: Rgb) {
     let forward = camera.direction();
-    for Edge(a, b) in cube.visible_edges(forward) {
+    for Edge(a, b) in cube.visible_edges(forward.into()) {
         Line::new(camera.transform(a), camera.transform(b), color).draw(fb);
     }
 }
@@ -55,7 +55,7 @@ pub fn draw_edges(fb: &mut FrameBuffer, camera: &Camera, cube: &Cube, color: Rgb
 /// **`quad.normal`** ([`scene::cube::Quad`]).
 pub fn draw_faces(fb: &mut FrameBuffer, camera: &Camera, cube: &Cube, light: &DiffuseLight) {
     let forward = camera.direction();
-    for (_slot, quad) in cube.visible_faces(forward) {
+    for (_slot, quad) in cube.visible_faces(forward.into()) {
         let intensity = light.calc_intensity(quad.normal);
         let color = CUBE_ALBEDO.scale(intensity);
         let corners = std::array::from_fn(|i| camera.transform(quad.corners[i]));
