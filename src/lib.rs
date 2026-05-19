@@ -16,11 +16,13 @@ pub const DEFAULT_OUT_PATH: &str = "scene.webp";
 pub const ANIMATED_CUBE_FRAME_COUNT: u32 = 360;
 
 pub mod framebuffer;
+pub mod lighting;
 pub mod ortho_camera;
 pub mod scene;
 pub mod webp_encoder;
 
 pub use framebuffer::{FillQuad, FrameBuffer, Line, Rgb};
+pub use lighting::DiffuseLight;
 pub use ortho_camera::Camera;
 pub use webp_encoder::WebpEncoder;
 
