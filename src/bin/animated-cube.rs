@@ -1,4 +1,4 @@
-//! Lossless **animated** WebP: orthographic **filled faceted** **cube** (**`cube_export_light`** × per-face palette, back-face culled),
+//! Lossless **animated** WebP: orthographic **filled** **cube** — uniform **`CUBE_ALBEDO`** blue, **`DiffuseLight`**, back-face culled;
 //! edge length **0.5** in world space, **three-axis Euler** tumble (**`R_z R_y R_x`** with a common angle)
 //! sampled over **`ANIMATED_CUBE_FRAME_COUNT`** frames.
 

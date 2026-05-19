@@ -28,21 +28,8 @@ pub use webp_encoder::WebpEncoder;
 
 use scene::cube::{Cube, Edge};
 
-/// Flat **`Rgb`** tint for **[`Cube::faces`] slot** **`i`** after **`[`Cube::default`]`**, in order:
-///
-/// **`0`** **`−Z`**, **`1`** **`+Z`**, **`2`** **`+X`**, **`3`** **`−X`**, **`4`** **`+Y`**, **`5`** **`−Y`**
-/// (outward normals in **`[`scene::cube::Cube::default`]`**; [`Cube::transform`] keeps slots, only **`normal`** /
-/// **`vertices`** move — paired with **`slot`** keys from [`Cube::visible_faces`]).
-///
-/// [Cube::faces]: scene::cube::Cube::faces
-pub const CUBE_FACE_PALETTE: [Rgb; 6] = [
-    Rgb(0, 0, 255),     // −Z — blue
-    Rgb(255, 0, 0),     // +Z — red
-    Rgb(237, 190, 77),  // +X — amber
-    Rgb(155, 102, 210), // −X — iris
-    Rgb(78, 198, 128),  // +Y — jade
-    Rgb(234, 128, 196), // −Y — orchid
-];
+/// Single **`Rgb`** **albedo** for filled cube rendering ([`draw_faces`]) — saturated blue (**`#346ED2`**) tuned for diffuse shading.
+pub const CUBE_ALBEDO: Rgb = Rgb(52, 110, 210);
 
 /// Output **`.webp`** path for export binaries: first **argv** argument if set, else [`DEFAULT_OUT_PATH`].
 pub fn output_webp_path_from_args() -> OsString {
@@ -63,13 +50,13 @@ pub fn draw_edges(fb: &mut FrameBuffer, camera: &Camera, cube: &Cube, color: Rgb
 
 /// Fills [`Cube::visible_faces`] through **`camera`** (**[`FillQuad`]** per **strictly front‑facing** facet).
 ///
-/// Each surviving facet uses **`CUBE_FACE_PALETTE[slot]`** scaled by **[`DiffuseLight::calc_intensity`]** on
+/// Each surviving facet uses **[`CUBE_ALBEDO`]** scaled by **[`DiffuseLight::calc_intensity`]** on
 /// **`quad.normal`** ([`scene::cube::Quad`]).
 pub fn draw_faces(fb: &mut FrameBuffer, camera: &Camera, cube: &Cube, light: &DiffuseLight) {
     let forward = camera.direction();
-    for (face_idx, quad) in cube.visible_faces(forward) {
+    for (_slot, quad) in cube.visible_faces(forward) {
         let intensity = light.calc_intensity(quad.normal);
-        let color = CUBE_FACE_PALETTE[face_idx].scale(intensity);
+        let color = CUBE_ALBEDO.scale(intensity);
         let corners = std::array::from_fn(|i| camera.transform(quad.corners[i]));
         FillQuad::new(corners, color).draw(fb);
     }

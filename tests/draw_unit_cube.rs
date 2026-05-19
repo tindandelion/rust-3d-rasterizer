@@ -2,13 +2,13 @@
 //!
 //! With **`Camera::direction` = +Z**, the strictly front-facing hull facet is the **−Z** cap (outward normal
 //! **`NEG_Z`**). **`DiffuseLight`** toward **`NEG_Z`** yields full **`calc_intensity`**, so
-//! [`thorus_forge::CUBE_FACE_PALETTE`]\[0\] blue is unchanged after **`Rgb::scale`**. On this **`FB_WIDTH`×`FB_HEIGHT`** canvas,
+//! [`thorus_forge::CUBE_ALBEDO`] is unchanged after **`Rgb::scale`**. On this **`FB_WIDTH`×`FB_HEIGHT`** canvas,
 //! **`scale = (min(w,h) − 1) / 2`** is an integer, so unit-cube **`±0.5`** corners land exactly on
 //! **`FILLED_MIN…FILLED_LAST`** (**no** intermediate **`f32::round`**).
 
 use glam::UVec2;
 use thorus_forge::{
-    CUBE_FACE_PALETTE, Camera, DiffuseLight, FillQuad, FrameBuffer, draw_faces, scene::cube::Cube,
+    CUBE_ALBEDO, Camera, DiffuseLight, FillQuad, FrameBuffer, draw_faces, scene::cube::Cube,
 };
 
 const FB_WIDTH: u32 = 101;
@@ -35,6 +35,6 @@ fn expected_framebuffer_unit_cube_camera_front() -> FrameBuffer {
         UVec2::new(75, 75),
         UVec2::new(75, 25),
     ];
-    FillQuad::new(corners, CUBE_FACE_PALETTE[0]).draw(&mut fb);
+    FillQuad::new(corners, CUBE_ALBEDO).draw(&mut fb);
     fb
 }

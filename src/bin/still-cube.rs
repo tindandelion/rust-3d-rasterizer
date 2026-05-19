@@ -1,4 +1,4 @@
-//! Lossless WebP still: **filled faceted** **cube** (back-face culled quads, **`cube_export_light`** × palette), edge length **0.5** in world space.
+//! Lossless WebP still: **filled** **cube** — uniform **`CUBE_ALBEDO`** blue, **`DiffuseLight`**, back-face culled; edge length **0.5** in world space.
 
 use std::path::Path;
 

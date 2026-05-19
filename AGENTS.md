@@ -9,6 +9,8 @@ Personal learning project: a **3D software rasterizer** in **Rust**, developed p
 - `doc/planning/project-spec.md` — goals, math, dependencies, coordinate conventions, raster strategy.
 - `doc/planning/project-breakdown.md` — iterative milestones and expected artifacts (WebP stills/animations).
 
+When editing **`doc/planning/project-breakdown.md`**, **do not change completed milestones** (items marked **`[x]`**) unless the **user explicitly asks** to revise that finished task. Prefer updating **open** milestones (`[ ]`) and the **Notes / deferred** section when the plan or shipped reality needs clarification.
+
 When behavior or scope is unclear, **prefer the planning docs** over guessing.
 
 ## Stack and layout
