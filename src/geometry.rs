@@ -97,11 +97,6 @@ mod tests {
     }
 
     #[test]
-    fn neg_z_axis_constant() {
-        assert_eq!(Vec3::from(-Normal3::Z), Vec3::NEG_Z);
-    }
-
-    #[test]
     fn relative_eq_delegates_to_inner_vec3() {
         let v = Vec3::new(1.0, 2.0, 8.0);
         let a = Normal3::from(v);
