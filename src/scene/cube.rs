@@ -20,8 +20,13 @@ use face::CubeFace;
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Edge(pub Vec3, pub Vec3);
 
+/// One visible hull **quad**: corners in **facet winding** plus matching **outward unit normal**
+/// (world space, same frame as [`Cube::vertices`]).
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Quad(pub Vec3, pub Vec3, pub Vec3, pub Vec3);
+pub struct Quad {
+    pub corners: [Vec3; 4],
+    pub normal: Vec3,
+}
 
 /// Axis-aligned box corners plus template facet metadata ready for posing via [`Cube::transform`].
 ///
@@ -66,8 +71,9 @@ impl Cube {
 
     /// Yields **`(slot, quad)`** for each **strictly front‑facing** hull facet ([`CubeFace::is_front_facing`],
     /// **`normal` · `view` < 0** vs **into‑scene** **`view_direction`**). **`slot`** is **`Self::faces`** index
-    /// **`0 … 5`** (order fixed by [`Cube::default`], unchanged by [`Cube::transform`]); **`quad`** is four **[`Vec3`]**
-    /// corners in facet winding. [`crate::CUBE_FACE_PALETTE`] / [`crate::draw_faces`] use **`slot`** for flat tints.
+    /// **`0 … 5`** (order fixed by [`Cube::default`], unchanged by [`Cube::transform`]). Each **`quad`**
+    /// has **`corners`** in facet winding and **`normal`** (outward unit vector for shading).
+    /// [`crate::CUBE_FACE_PALETTE`] / [`crate::draw_faces`] use **`slot`** for flat tints.
     ///
     /// Prefer passing [`crate::Camera::direction`] unchanged alongside [`Self::visible_edges`] for coherent view axis.
     pub fn visible_faces(&self, view_direction: Vec3) -> impl Iterator<Item = (usize, Quad)> + '_ {
@@ -76,12 +82,10 @@ impl Cube {
                 let v = face.verts();
                 (
                     idx,
-                    Quad(
-                        self.vertices[v[0]],
-                        self.vertices[v[1]],
-                        self.vertices[v[2]],
-                        self.vertices[v[3]],
-                    ),
+                    Quad {
+                        corners: array::from_fn(|i| self.vertices[v[i]]),
+                        normal: face.normal(),
+                    },
                 )
             })
     }
@@ -195,9 +199,10 @@ mod tests {
         assert_eq!(visible_faces.len(), 1);
 
         let (_, first_face) = visible_faces[0];
-        assert_eq!(first_face.0, cube.vertices[0]);
-        assert_eq!(first_face.1, cube.vertices[3]);
-        assert_eq!(first_face.2, cube.vertices[2]);
-        assert_eq!(first_face.3, cube.vertices[1]);
+        assert_eq!(first_face.corners[0], cube.vertices[0]);
+        assert_eq!(first_face.corners[1], cube.vertices[3]);
+        assert_eq!(first_face.corners[2], cube.vertices[2]);
+        assert_eq!(first_face.corners[3], cube.vertices[1]);
+        assert_eq!(first_face.normal, Vec3::NEG_Z);
     }
 }

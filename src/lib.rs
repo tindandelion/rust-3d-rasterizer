@@ -26,7 +26,7 @@ pub use lighting::DiffuseLight;
 pub use ortho_camera::Camera;
 pub use webp_encoder::WebpEncoder;
 
-use scene::cube::{Cube, Edge, Quad};
+use scene::cube::{Cube, Edge};
 
 /// Flat **`Rgb`** tint for **[`Cube::faces`] slot** **`i`** after **`[`Cube::default`]`**, in order:
 ///
@@ -66,14 +66,9 @@ pub fn draw_edges(fb: &mut FrameBuffer, camera: &Camera, cube: &Cube, color: Rgb
 /// Each surviving facet is filled with **`CUBE_FACE_PALETTE[slot]`**, where **`slot`** (**`faces`** index **`0 … 5`**) matches [`Cube::visible_faces`].
 pub fn draw_faces(fb: &mut FrameBuffer, camera: &Camera, cube: &Cube) {
     let forward = camera.direction();
-    for (face_idx, Quad(a, b, c, d)) in cube.visible_faces(forward) {
+    for (face_idx, quad) in cube.visible_faces(forward) {
         let color = CUBE_FACE_PALETTE[face_idx];
-        let corners = [
-            camera.transform(a),
-            camera.transform(b),
-            camera.transform(c),
-            camera.transform(d),
-        ];
+        let corners = std::array::from_fn(|i| camera.transform(quad.corners[i]));
         FillQuad::new(corners, color).draw(fb);
     }
 }
