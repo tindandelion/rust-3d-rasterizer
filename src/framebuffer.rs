@@ -1,18 +1,12 @@
 //! RGB framebuffer: `width × height` pixels, three `u8` channels per pixel, row-major.
 
+mod colors;
 mod fill_quad;
 mod line;
 
+pub use colors::Rgb;
 pub use fill_quad::FillQuad;
 pub use line::Line;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Rgb(pub u8, pub u8, pub u8);
-
-impl Rgb {
-    pub const BLACK: Self = Self(0, 0, 0);
-    pub const WHITE: Self = Self(255, 255, 255);
-}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FrameBuffer {
