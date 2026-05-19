@@ -1,7 +1,8 @@
 //! Axis-aligned **unit cube** (edge length **1**, centered at the origin, half-extent **0.5**).
 //!
 //! A [`Cube`] holds eight corner positions plus six [`CubeFace`] records (matching normals and quad indices)—no separate model matrix is stored.
-//! [`Cube::transform`] repacks both arrays; [`Cube::visible_edges`] applies **Option A** silhouette filtering (emit a hull edge unless **both** adjacent facets face **away**). [`Cube::visible_faces`] yields each **`(faces` slot `0 … 5`, [`Quad`] corners)** hull facet that is **not** strictly back‑facing (same **`view_direction`** / **normal · view** rule as [`CubeFace::is_back`]).
+//! [`Cube::transform`] repacks both arrays; [`Cube::visible_edges`] and [`Cube::visible_faces`] share the same
+//! **strictly front‑facing** rule ([`CubeFace::is_front_facing`], **`normal` · `view` < 0** for **into‑scene** view).
 //! Classify faceting using each stored **`normal`** against the **into‑scene** view vector—typically [`crate::Camera::direction`] (**`+Z` forward**, left‑handed scene convention used elsewhere in this crate).
 //!
 //! Planning context for ordering and milestones: `doc/planning/project-spec.md` and `doc/planning/project-breakdown.md`.
@@ -44,14 +45,16 @@ impl Cube {
         }
     }
 
-    /// Yields **[`Edge`]** segments under **Option A**: omit an edge only when **both** incident faces are strictly **back‑facing** vs **`view_direction`** (**`facet_normal · view_direction < 0`** per [`CubeFace`], using each stored facet **`normal`).
+    /// Yields undirected **[`Edge`]** segments that bound at least one **strictly front‑facing** facet vs
+    /// **`view_direction`** (same [`CubeFace::is_front_facing`] test as [`Self::visible_faces`]).
     ///
-    /// **Implementation:** take every face from [`Self::iter_visible_faces`], append its quad boundary pairs from [`CubeFace::edges`], dedupe undirected hull edges with canonical **`(min(i,j), max(i,j))`** keys, then pair **`vertices`** endpoints.
+    /// **Implementation:** for each front‑facing face, take [`CubeFace::edges`] pairs, dedupe undirected hull
+    /// edges with canonical **`(min(i,j), max(i,j))`** keys, then pair **`vertices`** endpoints.
     ///
     /// Prefer passing [`crate::Camera::direction`] unchanged so [`crate::draw_edges`] stays coherent with camera math.
     pub fn visible_edges(&self, view_direction: Vec3) -> impl Iterator<Item = Edge> + '_ {
         let mut seen = HashSet::new();
-        for face in self.iter_visible_faces(view_direction) {
+        for (_, face) in self.iter_front_facing_faces(view_direction) {
             for (a, b) in face.edges() {
                 let edge = if a < b { (a, b) } else { (b, a) };
                 seen.insert(edge);
@@ -61,14 +64,14 @@ impl Cube {
             .map(|(i, j)| Edge(self.vertices[i], self.vertices[j]))
     }
 
-    /// Yields **`(slot, quad)`** for each visible hull facet. **`slot`** is **`Self::faces`** index **`0 … 5`** (order fixed by [`Cube::default`], unchanged by [`Cube::transform`]); **`quad`** is four **[`Vec3`]** corners in facet winding (**same back‑face test** as [`Self::visible_edges`]). [`crate::CUBE_FACE_PALETTE`] / [`crate::draw_faces`] use **`slot`** for flat tints.
+    /// Yields **`(slot, quad)`** for each **strictly front‑facing** hull facet ([`CubeFace::is_front_facing`],
+    /// **`normal` · `view` < 0** vs **into‑scene** **`view_direction`**). **`slot`** is **`Self::faces`** index
+    /// **`0 … 5`** (order fixed by [`Cube::default`], unchanged by [`Cube::transform`]); **`quad`** is four **[`Vec3`]**
+    /// corners in facet winding. [`crate::CUBE_FACE_PALETTE`] / [`crate::draw_faces`] use **`slot`** for flat tints.
     ///
-    /// Prefer passing [`crate::Camera::direction`] unchanged alongside [`Self::visible_edges`] for consistent BF culling.
+    /// Prefer passing [`crate::Camera::direction`] unchanged alongside [`Self::visible_edges`] for coherent view axis.
     pub fn visible_faces(&self, view_direction: Vec3) -> impl Iterator<Item = (usize, Quad)> + '_ {
-        self.faces
-            .iter()
-            .enumerate()
-            .filter(move |(_, face)| !face.is_back(view_direction))
+        self.iter_front_facing_faces(view_direction)
             .map(|(idx, face)| {
                 let v = face.verts();
                 (
@@ -83,10 +86,14 @@ impl Cube {
             })
     }
 
-    fn iter_visible_faces(&self, view_direction: Vec3) -> impl Iterator<Item = &CubeFace> + '_ {
+    fn iter_front_facing_faces(
+        &self,
+        view_direction: Vec3,
+    ) -> impl Iterator<Item = (usize, &CubeFace)> + '_ {
         self.faces
             .iter()
-            .filter(move |face| !face.is_back(view_direction))
+            .enumerate()
+            .filter(move |(_, face)| face.is_front_facing(view_direction))
     }
 }
 
@@ -126,8 +133,8 @@ mod tests {
     #[test]
     fn visible_edges_count_from_front() {
         let cube = Cube::default();
-        let forward = Vec3::new(0.0, 0.0, -1.0);
-        assert_eq!(cube.visible_edges(forward).count(), 12);
+        let forward = Vec3::Z;
+        assert_eq!(cube.visible_edges(forward).count(), 4);
     }
 
     #[test]
@@ -154,8 +161,8 @@ mod tests {
     #[test]
     fn visible_faces_count_from_front() {
         let cube = Cube::default();
-        let forward = Vec3::new(0.0, 0.0, -1.0);
-        assert_eq!(cube.visible_faces(forward).count(), 5);
+        let forward = Vec3::Z;
+        assert_eq!(cube.visible_faces(forward).count(), 1);
     }
 
     #[test]
@@ -180,15 +187,17 @@ mod tests {
     }
 
     #[test]
-    fn visible_faces_corners_match_default_cube_layout() {
+    fn looking_at_cube_from_front() {
         let cube = Cube::default();
-        let forward = Vec3::new(0.0, 0.0, -1.0);
-        let faces: Vec<Quad> = cube.visible_faces(forward).map(|(_, q)| q).collect();
-        assert!(faces.iter().any(|f| {
-            f.0 == cube.vertices[0]
-                && f.1 == cube.vertices[3]
-                && f.2 == cube.vertices[2]
-                && f.3 == cube.vertices[1]
-        }));
+        let look_along_z_axis = Vec3::Z;
+
+        let visible_faces = cube.visible_faces(look_along_z_axis).collect::<Vec<_>>();
+        assert_eq!(visible_faces.len(), 1);
+
+        let (_, first_face) = visible_faces[0];
+        assert_eq!(first_face.0, cube.vertices[0]);
+        assert_eq!(first_face.1, cube.vertices[3]);
+        assert_eq!(first_face.2, cube.vertices[2]);
+        assert_eq!(first_face.3, cube.vertices[1]);
     }
 }

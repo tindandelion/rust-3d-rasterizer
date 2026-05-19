@@ -51,7 +51,7 @@ pub fn output_webp_path_from_args() -> OsString {
 
 /// Rasterize [`scene::cube::Cube::visible_edges`] through **`camera`** (**DDA** in [`Line::draw`]).
 ///
-/// View direction comes from [`Camera::direction`] (same axis used for back-face classification).
+/// View direction comes from [`Camera::direction`] (same axis used for **front‑facing** classification as [`Cube::visible_faces`]).
 pub fn draw_edges(fb: &mut FrameBuffer, camera: &Camera, cube: &Cube, color: Rgb) {
     let forward = camera.direction();
     for Edge(a, b) in cube.visible_edges(forward) {
@@ -59,7 +59,7 @@ pub fn draw_edges(fb: &mut FrameBuffer, camera: &Camera, cube: &Cube, color: Rgb
     }
 }
 
-/// Fills [`Cube::visible_faces`] through **`camera`** (**[`FillQuad`]** per surviving facet).
+/// Fills [`Cube::visible_faces`] through **`camera`** (**[`FillQuad`]** per **strictly front‑facing** facet).
 ///
 /// Each surviving facet is filled with **`CUBE_FACE_PALETTE[slot]`**, where **`slot`** (**`faces`** index **`0 … 5`**) matches [`Cube::visible_faces`].
 pub fn draw_faces(fb: &mut FrameBuffer, camera: &Camera, cube: &Cube) {

@@ -71,7 +71,7 @@ impl Camera {
     /// Unit vector in world space pointing **into** the scene (**view / forward**).
     ///
     /// Matches this module’s fixed pose (**`+Z`** forward, left-handed — see module docs). Used for
-    /// back-face tests against [`crate::scene::cube::Cube::visible_edges`].
+    /// front‑facing classification for [`crate::scene::cube::Cube::visible_edges`] / [`crate::scene::cube::Cube::visible_faces`].
     pub fn direction(&self) -> Vec3 {
         Vec3::Z
     }

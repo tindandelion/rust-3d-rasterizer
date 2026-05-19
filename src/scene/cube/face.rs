@@ -39,10 +39,12 @@ impl CubeFace {
         [(v[0], v[1]), (v[1], v[2]), (v[2], v[3]), (v[3], v[0])].into_iter()
     }
 
-    /// Returns **true** when **`normal`** · **`view_direction`** is **< 0** (facet purely back‑facing versus “into‑scene **`view_direction`**”; matches **[`crate::Camera::direction`]** payloads used by [`crate::draw_edges`]).
+    /// Returns **true** when **`normal`** · **`view_direction`** is **< 0** — outward **`normal`** points
+    /// **against** into‑scene **`view_direction`** (strictly toward the default camera), matching
+    /// **[`crate::Camera::direction`]** for [`crate::draw_edges`] and [`crate::draw_faces`].
     ///
-    /// Grazing normals (**`dot == 0`**), including edge-on cues, classify as **not** back-facing.
-    pub fn is_back(&self, view_direction: Vec3) -> bool {
+    /// Grazing faceting (**`dot == 0`**) is **excluded** (not strictly front-facing).
+    pub fn is_front_facing(&self, view_direction: Vec3) -> bool {
         self.normal.dot(view_direction) < 0.0
     }
 }
@@ -77,21 +79,20 @@ mod tests {
     }
 
     #[test]
-    fn is_back_true_when_normal_faces_away_from_view() {
-        let face = CubeFace::new(Vec3::Z, VERTS);
-        assert!(face.is_back(Vec3::NEG_Z));
+    fn is_front_facing_true_for_neg_z_cap_when_view_is_pos_z() {
+        let face = CubeFace::new(Vec3::NEG_Z, VERTS);
+        assert!(face.is_front_facing(Vec3::Z));
     }
 
     #[test]
-    fn is_back_false_when_normal_aligned_with_view() {
+    fn is_front_facing_false_for_pos_z_cap_when_view_is_pos_z() {
         let face = CubeFace::new(Vec3::Z, VERTS);
-        assert!(!face.is_back(Vec3::Z));
+        assert!(!face.is_front_facing(Vec3::Z));
     }
 
     #[test]
-    fn is_back_false_when_grazing() {
+    fn is_front_facing_false_when_grazing() {
         let face = CubeFace::new(Vec3::X, VERTS);
-        let view = Vec3::Y;
-        assert!(!face.is_back(view));
+        assert!(!face.is_front_facing(Vec3::Z));
     }
 }
