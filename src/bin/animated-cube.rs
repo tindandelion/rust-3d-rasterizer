@@ -31,7 +31,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let out_path = output_webp_path_from_args();
 
     let camera = Camera::new(SCENE_WIDTH, SCENE_HEIGHT);
-    let light = DiffuseLight::new(glam::Vec3::new(1.0, 1.0, -1.0), 0.25);
+    let light = DiffuseLight::new(glam::Vec3::new(1.0, 1.0, -1.0).into(), 0.25);
 
     let mut framebuffer = FrameBuffer::new(SCENE_WIDTH, SCENE_HEIGHT);
 

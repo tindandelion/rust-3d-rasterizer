@@ -24,7 +24,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut framebuffer = FrameBuffer::new(SCENE_WIDTH, SCENE_HEIGHT);
     let camera = Camera::new(SCENE_WIDTH, SCENE_HEIGHT);
-    let light = DiffuseLight::new(glam::Vec3::new(1.0, 1.0, -1.0), 0.25);
+    let light = DiffuseLight::new(glam::Vec3::new(1.0, 1.0, -1.0).into(), 0.25);
 
     let mesh = Cube::default().transform(model_matrix_still());
     draw_faces(&mut framebuffer, &camera, &mesh, &light);

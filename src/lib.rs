@@ -16,6 +16,7 @@ pub const DEFAULT_OUT_PATH: &str = "scene.webp";
 pub const ANIMATED_CUBE_FRAME_COUNT: u32 = 360;
 
 pub mod framebuffer;
+pub mod geometry;
 pub mod lighting;
 pub mod ortho_camera;
 pub mod scene;
