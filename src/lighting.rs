@@ -2,8 +2,6 @@
 //!
 //! See [`DiffuseLight`]: direction is **from the surface toward the light** (unit vector stored internally).
 
-use glam::Vec3;
-
 use crate::geometry::Normal3;
 
 /// Directional light model: **toward-light** direction plus an **ambient** fraction of directional contrast.
@@ -34,9 +32,8 @@ impl DiffuseLight {
         }
     }
 
-    pub fn calc_intensity(&self, normal: Vec3) -> f32 {
-        let normal = normal.normalize();
-        let diffuse = self.toward_light.dot(normal).max(0.0);
+    pub fn calc_intensity(&self, normal: Normal3) -> f32 {
+        let diffuse = self.toward_light.dot(normal.into()).max(0.0);
         (self.ambient_factor + self.diffuse_factor * diffuse).clamp(0.0, 1.0)
     }
 }
@@ -52,47 +49,41 @@ mod tests {
     #[test]
     fn pure_directional_fully_lit_when_normal_aligns_with_light() {
         let light = DiffuseLight::new(Normal3::Z, 0.0);
-        assert_relative_eq!(light.calc_intensity(Vec3::Z), 1.0);
+        assert_relative_eq!(light.calc_intensity(Normal3::Z), 1.0);
     }
 
     #[test]
     fn pure_directional_zero_when_normal_perpendicular_to_light() {
         let light = DiffuseLight::new(Normal3::Z, 0.0);
-        assert_relative_eq!(light.calc_intensity(Vec3::X), 0.0);
+        assert_relative_eq!(light.calc_intensity(Normal3::X), 0.0);
     }
 
     #[test]
     fn pure_directional_zero_when_normal_faces_away_from_light() {
         let light = DiffuseLight::new(Normal3::Z, 0.0);
-        assert_relative_eq!(light.calc_intensity(Vec3::NEG_Z), 0.0);
+        assert_relative_eq!(light.calc_intensity(Normal3::NEG_Z), 0.0);
     }
 
     #[test]
     fn full_ambient_is_one_for_arbitrary_normals() {
         let light = DiffuseLight::new(Normal3::Z, 1.0);
-        assert_relative_eq!(light.calc_intensity(Vec3::Z), 1.0);
-        assert_relative_eq!(light.calc_intensity(Vec3::NEG_Z), 1.0);
-        assert_relative_eq!(light.calc_intensity(Vec3::X), 1.0);
+        assert_relative_eq!(light.calc_intensity(Normal3::Z), 1.0);
+        assert_relative_eq!(light.calc_intensity(Normal3::NEG_Z), 1.0);
+        assert_relative_eq!(light.calc_intensity(Normal3::X), 1.0);
     }
 
     #[test]
     fn half_ambient_blends_directional_term() {
         let light = DiffuseLight::new(Normal3::Z, 0.5);
-        assert_relative_eq!(light.calc_intensity(Vec3::Z), 1.0);
-        assert_relative_eq!(light.calc_intensity(Vec3::X), 0.5);
-        assert_relative_eq!(light.calc_intensity(Vec3::NEG_Z), 0.5);
+        assert_relative_eq!(light.calc_intensity(Normal3::Z), 1.0);
+        assert_relative_eq!(light.calc_intensity(Normal3::X), 0.5);
+        assert_relative_eq!(light.calc_intensity(Normal3::NEG_Z), 0.5);
     }
 
     #[test]
     fn non_unit_toward_light_is_normalized() {
         let light = DiffuseLight::new(Vec3::new(0.0, 0.0, 3.0).into(), 0.0);
-        assert_relative_eq!(light.calc_intensity(Vec3::Z), 1.0);
-    }
-
-    #[test]
-    fn non_unit_surface_normal_is_normalized() {
-        let light = DiffuseLight::new(Normal3::Z, 0.0);
-        assert_relative_eq!(light.calc_intensity(Vec3::new(0.0, 0.0, 2.0)), 1.0);
+        assert_relative_eq!(light.calc_intensity(Normal3::Z), 1.0);
     }
 
     #[test]
@@ -109,11 +100,5 @@ mod tests {
             DiffuseLight::new(Normal3::Z, 1.1),
             DiffuseLight::new(Normal3::Z, 1.0),
         );
-    }
-
-    #[test]
-    fn zero_normal_yields_only_ambient_fraction() {
-        let light = DiffuseLight::new(Normal3::Z, 0.3);
-        assert_relative_eq!(light.calc_intensity(Vec3::ZERO), 0.3);
     }
 }

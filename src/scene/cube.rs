@@ -27,7 +27,7 @@ pub struct Edge(pub Vec3, pub Vec3);
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Quad {
     pub corners: [Vec3; 4],
-    pub normal: Vec3,
+    pub normal: Normal3,
 }
 
 /// Axis-aligned box corners plus template facet metadata ready for posing via [`Cube::transform`].
@@ -120,12 +120,12 @@ impl Default for Cube {
         ];
 
         let faces: [CubeFace; 6] = [
-            CubeFace::new(Vec3::NEG_Z, [0, 3, 2, 1]),
-            CubeFace::new(Vec3::Z, [4, 5, 6, 7]),
-            CubeFace::new(Vec3::X, [1, 2, 6, 5]),
-            CubeFace::new(Vec3::NEG_X, [0, 4, 7, 3]),
-            CubeFace::new(Vec3::Y, [3, 7, 6, 2]),
-            CubeFace::new(Vec3::NEG_Y, [0, 1, 5, 4]),
+            CubeFace::new(Normal3::NEG_Z, [0, 3, 2, 1]),
+            CubeFace::new(Normal3::Z, [4, 5, 6, 7]),
+            CubeFace::new(Normal3::X, [1, 2, 6, 5]),
+            CubeFace::new(Normal3::NEG_X, [0, 4, 7, 3]),
+            CubeFace::new(Normal3::Y, [3, 7, 6, 2]),
+            CubeFace::new(Normal3::NEG_Y, [0, 1, 5, 4]),
         ];
 
         Self { vertices, faces }
@@ -203,6 +203,6 @@ mod tests {
         assert_eq!(visible_faces.len(), 1);
 
         let (_, first_face) = visible_faces[0];
-        assert_eq!(first_face.normal, Vec3::NEG_Z);
+        assert_eq!(first_face.normal, Normal3::NEG_Z);
     }
 }

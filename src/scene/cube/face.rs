@@ -1,6 +1,6 @@
 //! Convex quad facet type for [`super::Cube`] hull topology.
 
-use glam::{Mat4, Vec3};
+use glam::Mat4;
 
 use crate::geometry::Normal3;
 
@@ -10,13 +10,13 @@ use crate::geometry::Normal3;
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct CubeFace {
     /// Outward **unit normal** for this hull quad ([`CubeFace::transform`] / [`super::Cube::transform`] keep it coherent with **`vertices`** after each matrix).
-    normal: Vec3,
+    normal: Normal3,
     /// Indices into **`vertices`** for this quad (see parent module’s default **`Cube`** layout).
     verts: [usize; 4],
 }
 
 impl CubeFace {
-    pub fn new(normal: Vec3, verts: [usize; 4]) -> Self {
+    pub fn new(normal: Normal3, verts: [usize; 4]) -> Self {
         Self { normal, verts }
     }
 
@@ -26,7 +26,7 @@ impl CubeFace {
     }
 
     /// Outward **unit** normal in the same spatial frame as the parent [`super::Cube`]'s **`vertices`**.
-    pub fn normal(&self) -> Vec3 {
+    pub fn normal(&self) -> Normal3 {
         self.normal
     }
 
@@ -35,7 +35,7 @@ impl CubeFace {
     /// **Note:** rotations + uniform scaling match analytic normals here; arbitrary **non-uniform** scales should eventually use transpose-inverse of **3×3** (explicitly deferred in this codebase).
     pub fn transform(&self, m: Mat4) -> CubeFace {
         CubeFace {
-            normal: m.transform_vector3(self.normal).normalize(),
+            normal: m.transform_vector3(self.normal.into()).into(),
             verts: self.verts,
         }
     }
@@ -52,7 +52,7 @@ impl CubeFace {
     ///
     /// Grazing faceting (**`dot == 0`**) is **excluded** (not strictly front-facing).
     pub fn is_front_facing(&self, view_direction: Normal3) -> bool {
-        view_direction.dot(self.normal) < 0.0
+        view_direction.dot(self.normal.into()) < 0.0
     }
 }
 
@@ -69,18 +69,18 @@ mod tests {
 
     #[test]
     fn transform_updates_normal() {
-        let original_normal = Vec3::new(0.0, 0.0, 1.0);
-        let expected_normal = Vec3::new(0.0, -1.0, 0.0);
+        let original_normal = Vec3::new(0.0, 0.0, 1.0).into();
+        let expected_normal: Normal3 = Vec3::new(0.0, -1.0, 0.0).into();
         let face = CubeFace::new(original_normal, VERTS);
 
         let m = Mat4::from_rotation_x(FRAC_PI_2);
         let transformed_face = face.transform(m);
-        assert_relative_eq!(expected_normal, transformed_face.normal);
+        assert_relative_eq!(expected_normal, transformed_face.normal());
     }
 
     #[test]
     fn edges_walk_quad_boundary_in_order() {
-        let face = CubeFace::new(Vec3::Z, VERTS);
+        let face = CubeFace::new(Normal3::Z, VERTS);
         assert_eq!(
             face.edges().collect::<Vec<_>>(),
             vec![(1, 2), (2, 3), (3, 4), (4, 1)],
@@ -89,19 +89,19 @@ mod tests {
 
     #[test]
     fn is_front_facing_true_for_neg_z_cap_when_view_is_pos_z() {
-        let face = CubeFace::new(Vec3::NEG_Z, VERTS);
+        let face = CubeFace::new(Normal3::NEG_Z, VERTS);
         assert!(face.is_front_facing(Normal3::Z));
     }
 
     #[test]
     fn is_front_facing_false_for_pos_z_cap_when_view_is_pos_z() {
-        let face = CubeFace::new(Vec3::Z, VERTS);
+        let face = CubeFace::new(Normal3::Z, VERTS);
         assert!(!face.is_front_facing(Normal3::Z));
     }
 
     #[test]
     fn is_front_facing_false_when_grazing() {
-        let face = CubeFace::new(Vec3::X, VERTS);
+        let face = CubeFace::new(Normal3::X, VERTS);
         assert!(!face.is_front_facing(Normal3::Z));
     }
 }

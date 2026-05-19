@@ -5,9 +5,9 @@ edition = "2024"
 default-run = "animated-cube"
 
 [dependencies]
+approx = "0.5"
 glam = { version = "0.32.1", features = ["approx"] }
 webp-animation = "0.10"
 
 [dev-dependencies]
 tempfile = "3"
-approx = "0.5"
