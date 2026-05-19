@@ -1,4 +1,4 @@
-//! Lossless **animated** WebP: orthographic **filled faceted** **cube** (per-face flat colors, back-face culled),
+//! Lossless **animated** WebP: orthographic **filled faceted** **cube** (**`cube_export_light`** × per-face palette, back-face culled),
 //! edge length **0.5** in world space, **three-axis Euler** tumble (**`R_z R_y R_x`** with a common angle)
 //! sampled over **`ANIMATED_CUBE_FRAME_COUNT`** frames.
 
@@ -6,12 +6,12 @@ use std::path::Path;
 
 use glam::{Mat3, Mat4, Vec3};
 
-use thorus_forge::draw_faces;
 use thorus_forge::scene::cube::Cube;
 use thorus_forge::{
     ANIMATED_CUBE_FRAME_COUNT, Camera, FrameBuffer, SCENE_HEIGHT, SCENE_WIDTH, WebpEncoder,
     output_webp_path_from_args,
 };
+use thorus_forge::{DiffuseLight, draw_faces};
 
 /// Timestamp step between successive frames (**ms**); last frame duration uses the same spacing at **`finalize`**.
 ///
@@ -31,6 +31,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let out_path = output_webp_path_from_args();
 
     let camera = Camera::new(SCENE_WIDTH, SCENE_HEIGHT);
+    let light = DiffuseLight::new(glam::Vec3::new(1.0, 1.0, -1.0), 0.25);
+
     let mut framebuffer = FrameBuffer::new(SCENE_WIDTH, SCENE_HEIGHT);
 
     let mut encoder = WebpEncoder::with_frame_spacing(SCENE_WIDTH, SCENE_HEIGHT, FRAME_SPACING_MS)?;
@@ -43,7 +45,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             frame_index,
             ANIMATED_CUBE_FRAME_COUNT,
         ));
-        draw_faces(&mut framebuffer, &camera, &mesh);
+        draw_faces(&mut framebuffer, &camera, &mesh, &light);
 
         encoder.add_frame(&framebuffer)?;
     }

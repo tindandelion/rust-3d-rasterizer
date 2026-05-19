@@ -72,8 +72,7 @@ impl Cube {
     /// Yields **`(slot, quad)`** for each **strictly front‑facing** hull facet ([`CubeFace::is_front_facing`],
     /// **`normal` · `view` < 0** vs **into‑scene** **`view_direction`**). **`slot`** is **`Self::faces`** index
     /// **`0 … 5`** (order fixed by [`Cube::default`], unchanged by [`Cube::transform`]). Each **`quad`**
-    /// has **`corners`** in facet winding and **`normal`** (outward unit vector for shading).
-    /// [`crate::CUBE_FACE_PALETTE`] / [`crate::draw_faces`] use **`slot`** for flat tints.
+    /// has **`corners`** in facet winding and **`normal`** (outward unit vector for [`crate::draw_faces`] lighting).
     ///
     /// Prefer passing [`crate::Camera::direction`] unchanged alongside [`Self::visible_edges`] for coherent view axis.
     pub fn visible_faces(&self, view_direction: Vec3) -> impl Iterator<Item = (usize, Quad)> + '_ {

@@ -63,11 +63,13 @@ pub fn draw_edges(fb: &mut FrameBuffer, camera: &Camera, cube: &Cube, color: Rgb
 
 /// Fills [`Cube::visible_faces`] through **`camera`** (**[`FillQuad`]** per **strictly front‑facing** facet).
 ///
-/// Each surviving facet is filled with **`CUBE_FACE_PALETTE[slot]`**, where **`slot`** (**`faces`** index **`0 … 5`**) matches [`Cube::visible_faces`].
-pub fn draw_faces(fb: &mut FrameBuffer, camera: &Camera, cube: &Cube) {
+/// Each surviving facet uses **`CUBE_FACE_PALETTE[slot]`** scaled by **[`DiffuseLight::calc_intensity`]** on
+/// **`quad.normal`** ([`scene::cube::Quad`]).
+pub fn draw_faces(fb: &mut FrameBuffer, camera: &Camera, cube: &Cube, light: &DiffuseLight) {
     let forward = camera.direction();
     for (face_idx, quad) in cube.visible_faces(forward) {
-        let color = CUBE_FACE_PALETTE[face_idx];
+        let intensity = light.calc_intensity(quad.normal);
+        let color = CUBE_FACE_PALETTE[face_idx].scale(intensity);
         let corners = std::array::from_fn(|i| camera.transform(quad.corners[i]));
         FillQuad::new(corners, color).draw(fb);
     }
