@@ -1,6 +1,6 @@
 //! Triangular hull facet (**CCW winding** vertex indices viewed from outside along the outward [`Normal3`]).
 //!
-//! Stored indices reference a parent mesh **`vertices`** (**[`Cube`](crate::scene::cube::Cube)** / **[`Shape`](crate::scene::shape::Shape)** / **[`Dodecahedron`](crate::scene::dodecahedron::Dodecahedron)** carry **`vertices`** + **`Facet`**s)—**Facet** stays mesh‑agnostic and **does not** embed positions.
+//! Stored indices reference a parent mesh **`vertices`** (**[`Shape`](crate::scene::shape::Shape)**, e.g. [`unit_cube`](crate::scene::cube::unit_cube), [`unit_dodecahedron`](crate::scene::dodecahedron::unit_dodecahedron))—**Facet** stays mesh‑agnostic and **does not** embed positions.
 
 use glam::Mat4;
 
@@ -11,7 +11,7 @@ use crate::geometry::Normal3;
 /// **`verts[k]` ↔ `verts[(k + 1) % 3]`** (**k = 0, 1, 2**) traverses boundary **counter‑clockwise** when looking from outside along **`normal`** toward the facet interior.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Facet {
-    /// Outward **unit** normal (**[`Facet::transform`]** keeps **`normal`** coherent with **`vertices`** after each matrix—same caveat as **`Cube`** **`transform`** **for non‑uniform scales**).
+    /// Outward **unit** normal (**[`Facet::transform`]** keeps **`normal`** coherent with **`vertices`** after each matrix—same caveat as **`Shape::transform`** / **`unit_cube`** **for non‑uniform scales**).
     normal: Normal3,
     /// Indices into the parent mesh **`vertices`** (CCW winding as seen against **`normal`**).
     verts: [usize; 3],
@@ -46,7 +46,7 @@ impl Facet {
         [(v[0], v[1]), (v[1], v[2]), (v[2], v[0])].into_iter()
     }
 
-    /// **`normal` · `view_direction` < 0** for **into‑scene** view (**[`crate::Camera::direction`]**)—mirrors **`Cube`** wireframe classification.
+    /// **`normal` · `view_direction` < 0** for **into‑scene** view (**[`crate::Camera::direction`]**)—mirrors **`unit_cube`** / hull wireframe classification.
     ///
     /// Grazing (**`dot == 0`**) is **not** front-facing.
     pub fn is_front_facing(&self, view_direction: Normal3) -> bool {

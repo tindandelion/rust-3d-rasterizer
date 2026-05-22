@@ -1,6 +1,6 @@
 //! Indexed triangle mesh backed by **`Vec<glam::Vec3>`** + **`Vec<Facet>`**.
 //!
-//! Construction takes arbitrary **vertex positions** + **facet list** (**CCW**, outward **[`Facet::normal`](crate::scene::facet::Facet::normal)**); **[`Shape::transform`](Shape::transform)** poses like **`Cube`** / **`Dodecahedron`** (**[`Facet::transform`](crate::scene::facet::Facet::transform)** per face).
+//! Construction takes arbitrary **vertex positions** + **facet list** (**CCW**, outward **[`Facet::normal`](crate::scene::facet::Facet::normal)**); **[`Shape::transform`](Shape::transform)** poses like procedural **[`unit_cube`](crate::scene::cube::unit_cube)** or **[`unit_dodecahedron`](crate::scene::dodecahedron::unit_dodecahedron)** (**[`Facet::transform`](crate::scene::facet::Facet::transform)** per face).
 
 use glam::{Mat4, Vec3};
 use std::array;
@@ -11,7 +11,7 @@ use crate::{TriMesh, Triangle, geometry::Normal3};
 
 /// Generic mesh: **`vertices[k]`** positions, **`Facet::verts`** index into **`vertices`**.
 ///
-/// Caller must ensure indices are valid; logic matches **[`crate::scene::cube::Cube`]**.
+/// Caller must validate indices against **`vertices`** — canonical **`TriMesh`** examples: **`[unit_cube](crate::scene::cube::unit_cube)`**, **`[unit_dodecahedron](crate::scene::dodecahedron::unit_dodecahedron)`**.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Shape {
     pub vertices: Vec<Vec3>,
@@ -23,7 +23,7 @@ impl Shape {
         Self { vertices, faces }
     }
 
-    /// Applies **`Mat4::transform_point3`** per vertex and **[`Facet::transform`]** per facet (composition matches **`Cube`**).
+    /// Applies **`Mat4::transform_point3`** per vertex and **[`Facet::transform`]** per facet (composition matches **`unit_dodecahedron`** / **`unit_cube`**).
     pub fn transform(&self, m: Mat4) -> Shape {
         Shape {
             vertices: self
@@ -60,7 +60,7 @@ mod tests {
     use glam::Mat4;
 
     /// **`z = 0`**, **`[-½, ½]²`** in **XY**. Two triangles, outward **[`Normal3::NEG_Z`]** —
-    /// visible when **into‑scene** view is **`+Z`** (same rule as **`Cube`** fronts vs
+    /// visible when **into‑scene** view is **`+Z`** (same rule as **`unit_cube`** fronts vs
     /// [`Camera::direction`](crate::Camera::direction)).
     fn flat_square_xy() -> Shape {
         #[rustfmt::skip]

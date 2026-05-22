@@ -1,4 +1,4 @@
-//! **`Dodecahedron`** (same **`[-0.5, 0.5]³`** framing as **`Cube::default`**), diffuse **`CUBE_ALBEDO`**, back-face culled.
+//! **`scene::dodecahedron::unit_dodecahedron`** (same **`[-0.5, 0.5]³`** framing as **`scene::cube::unit_cube`**), diffuse **`CUBE_ALBEDO`**, back-face culled.
 //!
 //! **`0.5`** uniform scale in world space, **three-axis Euler** tumble (**`R_z R_y R_x`** with a common angle) over **`ANIMATED_SCENE_FRAME_COUNT`** frames.
 
@@ -6,7 +6,7 @@ use std::path::Path;
 
 use glam::{Mat3, Mat4, Vec3};
 
-use thorus_forge::scene::dodecahedron::Dodecahedron;
+use thorus_forge::scene::dodecahedron::unit_dodecahedron;
 use thorus_forge::{
     ANIMATED_SCENE_FRAME_COUNT, Camera, FrameBuffer, SCENE_HEIGHT, SCENE_WIDTH, WebpEncoder,
     output_webp_path_from_args,
@@ -18,7 +18,7 @@ use thorus_forge::{DiffuseLight, draw_faces};
 /// **`20 ms`** ⇒ **50 fps** (`1000 / 20`). With **`360`** frames, one full tumble lap samples **`t`** from **0** to **τ** (exclusive of **τ** on the last sample step).
 const FRAME_SPACING_MS: i32 = 20;
 
-/// **World-fixed** Euler tumble (**`R_z R_y R_x`**) with **`0.5`** uniform world scale (same policy as **`still-cube`** / historical cube animation; base **`Dodecahedron::default`** already fills **`[-0.5, 0.5]³`**).
+/// **World-fixed** Euler tumble (**`R_z R_y R_x`**) with **`0.75`** uniform world scale; base **`unit_dodecahedron()`** verts already span **`[-0.5, 0.5]³`** axis box.
 fn model_matrix_euler_sweep(frame_index: u32, lap_frames: u32) -> Mat4 {
     let n = lap_frames.max(1) as f32;
     let t = (frame_index as f32 / n) * std::f32::consts::TAU;
@@ -37,11 +37,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut encoder = WebpEncoder::with_frame_spacing(SCENE_WIDTH, SCENE_HEIGHT, FRAME_SPACING_MS)?;
 
-    let solid = Dodecahedron::default();
+    let base = unit_dodecahedron();
     for frame_index in 0..ANIMATED_SCENE_FRAME_COUNT {
         framebuffer.clear_black();
 
-        let mesh = solid.transform(model_matrix_euler_sweep(
+        let mesh = base.transform(model_matrix_euler_sweep(
             frame_index,
             ANIMATED_SCENE_FRAME_COUNT,
         ));

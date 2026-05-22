@@ -1,4 +1,4 @@
-//! Small procedural scenes (**`Cube`**, **`Dodecahedron`**, **`Shape`**, **`Facet`**, …).
+//! Small procedural scenes (**`Shape`**, **`unit_cube`**, **`unit_dodecahedron`**, **`Facet`**, …).
 
 pub mod cube;
 pub mod dodecahedron;

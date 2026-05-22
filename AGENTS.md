@@ -22,7 +22,7 @@ When behavior or scope is unclear, **prefer the planning docs** over guessing.
 ## Conventions to preserve
 
 - **World/camera intuition:** Unity-style **left-handed**, **+Y up**, **+Z forward** (see spec for clip/screen mapping details).
-- **Geometry API:** **`Cube`**, **`scene::shape::Shape`** (indexed **`Vec<Vec3>`** + **`Vec<Facet>`**), and **`scene::dodecahedron::Dodecahedron`** implement **`TriMesh`**: **`visible_facets`** yields **`Triangle`** (corners **`[Vec3; 3]`**, facet **`Normal3`**) per front **`Facet`**; **`draw_faces`** uses one **`FillTriangle`** draw per **`Triangle`**. **`Dodecahedron::default`** is **Platonic** with **`[-0.5, 0.5]³`** axis bounds (**same as **`Cube::default`**, not Plato “edge = 1” circumradius sizing**). **`Sphere`/torus** add geometry on this stack only; evolve **`Vertex`** only when a milestone needs new attributes.
+- **Geometry API:** **`scene::shape::Shape`** (**indexed **`Vec<Vec3>`** + **`Vec<Facet>`**) implements **`TriMesh`**; procedural **`scene::cube::unit_cube()`** and **`scene::dodecahedron::unit_dodecahedron()`** return **`[-½, ½]³`‑boxed **`TriMesh`** shapes** (Plato dodeca: same axis bounds as **`unit_cube`**, not Plato “edge = 1” circumradius sizing). **`visible_facets`** yields **`Triangle`** (corners **`[Vec3; 3]`**, facet **`Normal3`**) per front **`Facet`**; **`draw_faces`** uses one **`FillTriangle`** draw per **`Triangle`**. **`Sphere`/torus** add geometry on this stack only; evolve **`Vertex`** only when a milestone needs new attributes.
 - **Scope:** Restricted scenes in early phases; procedural meshes; long-term visual target includes a **torus**—follow milestone order in the breakdown doc.
 
 ## How to work in this repo

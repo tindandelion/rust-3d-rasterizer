@@ -4,7 +4,7 @@ use std::path::Path;
 
 use glam::{Mat3, Mat4, Vec3};
 
-use thorus_forge::scene::cube::Cube;
+use thorus_forge::scene::cube::unit_cube;
 use thorus_forge::{
     Camera, FrameBuffer, SCENE_HEIGHT, SCENE_WIDTH, WebpEncoder, output_webp_path_from_args,
 };
@@ -26,7 +26,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let camera = Camera::new(SCENE_WIDTH, SCENE_HEIGHT);
     let light = DiffuseLight::new(glam::Vec3::new(1.0, 1.0, -1.0).into(), 0.25);
 
-    let mesh = Cube::default().transform(model_matrix_still());
+    let mesh = unit_cube().transform(model_matrix_still());
     draw_faces(&mut framebuffer, &camera, &mesh, &light);
 
     let mut encoder = WebpEncoder::new(SCENE_WIDTH, SCENE_HEIGHT)?;
