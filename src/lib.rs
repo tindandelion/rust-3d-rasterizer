@@ -2,6 +2,7 @@
 //!
 //! Shared raster canvas size and **`still-cube`** default output live here (see **`doc/planning/project-spec.md`**).
 
+use std::array;
 use std::env;
 use std::ffi::OsString;
 
@@ -49,18 +50,15 @@ pub fn draw_edges(fb: &mut FrameBuffer, camera: &Camera, cube: &Cube, color: Rgb
     }
 }
 
-/// Fills [`Cube::visible_faces`] through **`camera`** (**two [`FillTriangle`]** raster passes per convex
-/// **[`scene::cube::Quad`]**, fan split **`(v0,v1,v2)`** + **`(v0,v2,v3)`** preserving facet winding).
+/// Filled **`Cube`**: **`FillTriangle::draw`** per **`Triangle`** yielded by **`[`scene::cube::Cube::visible_faces`]** (**[`crate::scene::facet::Facet::is_front_facing`]**, same classifier as **`[`scene::cube::Cube::visible_edges`]**).
 ///
-/// Each surviving facet uses **[`CUBE_ALBEDO`]** scaled by **[`DiffuseLight::calc_intensity`]** on
-/// **`quad.normal`** ([`scene::cube::Quad`]).
+/// **[`DiffuseLight::calc_intensity`]** consumes **`triangle.normal`**; shaded color **`CUBE_ALBEDO`** · intensity.
 pub fn draw_faces(fb: &mut FrameBuffer, camera: &Camera, cube: &Cube, light: &DiffuseLight) {
     let forward = camera.direction();
-    for (_slot, quad) in cube.visible_faces(forward) {
-        let intensity = light.calc_intensity(quad.normal);
+    for triangle in cube.visible_faces(forward) {
+        let intensity = light.calc_intensity(triangle.normal);
         let color = CUBE_ALBEDO.scale(intensity);
-        let corners: [glam::UVec2; 4] = std::array::from_fn(|i| camera.transform(quad.corners[i]));
-        FillTriangle::new([corners[0], corners[1], corners[2]], color).draw(fb);
-        FillTriangle::new([corners[0], corners[2], corners[3]], color).draw(fb);
+        let corners: [glam::UVec2; 3] = array::from_fn(|i| camera.transform(triangle.corners[i]));
+        FillTriangle::new(corners, color).draw(fb);
     }
 }

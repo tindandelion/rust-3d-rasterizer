@@ -1,6 +1,6 @@
 //! Triangular hull facet (**CCW winding** vertex indices viewed from outside along the outward [`Normal3`]).
 //!
-//! Stored indices match the semantics of **`scene::cube::CubeFace`** (parent mesh **`vertices`** array)—this type is mesh-agnostic and **does not** embed positions.
+//! Stored indices reference a parent mesh **`vertices`** (**[`Cube`](crate::scene::cube::Cube)** carries **both**)—**Facet** stays mesh-agnostic and **does not** embed positions.
 
 use glam::Mat4;
 
@@ -11,7 +11,7 @@ use crate::geometry::Normal3;
 /// **`verts[k]` ↔ `verts[(k + 1) % 3]`** (**k = 0, 1, 2**) traverses boundary **counter‑clockwise** when looking from outside along **`normal`** toward the facet interior.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Facet {
-    /// Outward **unit** normal (**[`Facet::transform`]** keeps it coherent with **`vertices`** after each matrix—same caveat as **`scene::cube::CubeFace`** for non‑uniform scales).
+    /// Outward **unit** normal (**[`Facet::transform`]** keeps **`normal`** coherent with **`vertices`** after each matrix—same caveat as **`Cube`** **`transform`** **for non‑uniform scales**).
     normal: Normal3,
     /// Indices into the parent mesh **`vertices`** (CCW winding as seen against **`normal`**).
     verts: [usize; 3],
@@ -46,7 +46,7 @@ impl Facet {
         [(v[0], v[1]), (v[1], v[2]), (v[2], v[0])].into_iter()
     }
 
-    /// **`normal` · `view_direction` < 0** for **into‑scene** view—same facet-facing rule as [`crate::scene::cube::CubeFace::is_front_facing`] (**[`crate::Camera::direction`]**).
+    /// **`normal` · `view_direction` < 0** for **into‑scene** view (**[`crate::Camera::direction`]**)—mirrors **`Cube`** wireframe classification.
     ///
     /// Grazing (**`dot == 0`**) is **not** front-facing.
     pub fn is_front_facing(&self, view_direction: Normal3) -> bool {
@@ -66,7 +66,7 @@ mod tests {
 
     const VERTS: [usize; 3] = [1, 2, 7];
 
-    // Tracer bullets follow `scene::cube::face::CubeFace` coverage (triangle analogue).
+    // Tracer bullets modeled on **`scene::cube`** historical quad-face classifier tests.
 
     #[test]
     fn transform_updates_normal() {
