@@ -18,7 +18,7 @@ pub struct Facet {
 }
 
 impl Facet {
-    pub fn new(normal: Normal3, verts: [usize; 3]) -> Self {
+    pub const fn new(normal: Normal3, verts: [usize; 3]) -> Self {
         Self { normal, verts }
     }
 

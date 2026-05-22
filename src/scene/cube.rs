@@ -22,7 +22,7 @@ pub struct Cube {
 }
 
 /// Two **`Facet`**s per planar hull quad (same **`normal`**, **`(w,x,y)`** + **`(w,y,z)`** given CCW verts **`w…z`** seen from outside along **`normal`**).
-fn facets_from_quad_ccw_corner(normal: Normal3, verts: [usize; 4]) -> [Facet; 2] {
+const fn facets_from_quad_ccw_corner(normal: Normal3, verts: [usize; 4]) -> [Facet; 2] {
     let [w, x, y, z] = verts;
     [Facet::new(normal, [w, x, y]), Facet::new(normal, [w, y, z])]
 }
@@ -56,7 +56,7 @@ impl TriMesh for Cube {
 
 impl Default for Cube {
     fn default() -> Self {
-        let vertices: [Vec3; 8] = [
+        const VERTICES: [Vec3; 8] = [
             Vec3::new(-0.5, -0.5, -0.5),
             Vec3::new(0.5, -0.5, -0.5),
             Vec3::new(0.5, 0.5, -0.5),
@@ -80,7 +80,10 @@ impl Default for Cube {
         let faces: [Facet; 12] =
             array::from_fn(|i| facets_from_quad_ccw_corner(QUADS[i / 2].0, QUADS[i / 2].1)[i % 2]);
 
-        Self { vertices, faces }
+        Self {
+            vertices: VERTICES,
+            faces,
+        }
     }
 }
 
