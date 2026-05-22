@@ -22,7 +22,7 @@ pub mod ortho_camera;
 pub mod scene;
 pub mod webp_encoder;
 
-pub use framebuffer::{FillQuad, FrameBuffer, Line, Rgb};
+pub use framebuffer::{FillTriangle, FrameBuffer, Line, Rgb};
 pub use lighting::DiffuseLight;
 pub use ortho_camera::Camera;
 pub use webp_encoder::WebpEncoder;
@@ -49,7 +49,8 @@ pub fn draw_edges(fb: &mut FrameBuffer, camera: &Camera, cube: &Cube, color: Rgb
     }
 }
 
-/// Fills [`Cube::visible_faces`] through **`camera`** (**[`FillQuad`]** per **strictly front‑facing** facet).
+/// Fills [`Cube::visible_faces`] through **`camera`** (**two [`FillTriangle`]** raster passes per convex
+/// **[`scene::cube::Quad`]**, fan split **`(v0,v1,v2)`** + **`(v0,v2,v3)`** preserving facet winding).
 ///
 /// Each surviving facet uses **[`CUBE_ALBEDO`]** scaled by **[`DiffuseLight::calc_intensity`]** on
 /// **`quad.normal`** ([`scene::cube::Quad`]).
@@ -58,7 +59,8 @@ pub fn draw_faces(fb: &mut FrameBuffer, camera: &Camera, cube: &Cube, light: &Di
     for (_slot, quad) in cube.visible_faces(forward) {
         let intensity = light.calc_intensity(quad.normal);
         let color = CUBE_ALBEDO.scale(intensity);
-        let corners = std::array::from_fn(|i| camera.transform(quad.corners[i]));
-        FillQuad::new(corners, color).draw(fb);
+        let corners: [glam::UVec2; 4] = std::array::from_fn(|i| camera.transform(quad.corners[i]));
+        FillTriangle::new([corners[0], corners[1], corners[2]], color).draw(fb);
+        FillTriangle::new([corners[0], corners[2], corners[3]], color).draw(fb);
     }
 }

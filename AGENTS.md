@@ -22,7 +22,7 @@ When behavior or scope is unclear, **prefer the planning docs** over guessing.
 ## Conventions to preserve
 
 - **World/camera intuition:** Unity-style **left-handed**, **+Y up**, **+Z forward** (see spec for clip/screen mapping details).
-- **Geometry API:** **Pre‑`Dodecahedron` shipped code:** filled **cube** uses **`FillQuad`** / **`[Vertex; 4]`** submits. **`Dodecahedron: triangular mesh`** is the **triangle cutover**: **`[Vertex; 3]`** **+ one** triangle fill for **cube** (**two tris per face**) **and** a **triangulated dodecahedron** demo solid (**pentagons** → **five** triangles each). **`Sphere`/torus** add geometry on that stack only—once **`Dodecahedron`** ships, **do not** keep a parallel **quad** filled path. Evolve `Vertex` only when a milestone needs new attributes.
+- **Geometry API:** **Pre‑`Dodecahedron` shipped code:** **`visible_faces`** still yields **`Quad`** (**`[Vec3; 4]`** per hull facet); **`draw_faces`** rasterizes with **`FillTriangle`** only (**two** per quad: fan **`v0–v1–v2`** + **`v0–v2–v3`**). **`Dodecahedron`** collapses **`scene/cube`** to **`[Vertex; 3]`** submit (**no standalone quad-fill path** remains). **`Sphere`/torus** add geometry on that stack only; evolve **`Vertex`** only when a milestone needs new attributes.
 - **Scope:** Restricted scenes in early phases; procedural meshes; long-term visual target includes a **torus**—follow milestone order in the breakdown doc.
 
 ## How to work in this repo

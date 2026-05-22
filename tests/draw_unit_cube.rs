@@ -8,7 +8,7 @@
 
 use glam::UVec2;
 use thorus_forge::{
-    CUBE_ALBEDO, Camera, DiffuseLight, FillQuad, FrameBuffer, draw_faces, scene::cube::Cube,
+    CUBE_ALBEDO, Camera, DiffuseLight, FillTriangle, FrameBuffer, draw_faces, scene::cube::Cube,
 };
 
 const FB_WIDTH: u32 = 101;
@@ -35,6 +35,7 @@ fn expected_framebuffer_unit_cube_camera_front() -> FrameBuffer {
         UVec2::new(75, 75),
         UVec2::new(75, 25),
     ];
-    FillQuad::new(corners, CUBE_ALBEDO).draw(&mut fb);
+    FillTriangle::new([corners[0], corners[1], corners[2]], CUBE_ALBEDO).draw(&mut fb);
+    FillTriangle::new([corners[0], corners[2], corners[3]], CUBE_ALBEDO).draw(&mut fb);
     fb
 }

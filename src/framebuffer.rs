@@ -1,11 +1,11 @@
 //! RGB framebuffer: `width × height` pixels, three `u8` channels per pixel, row-major.
 
 mod colors;
-mod fill_quad;
+mod fill_triangle;
 mod line;
 
 pub use colors::Rgb;
-pub use fill_quad::FillQuad;
+pub use fill_triangle::FillTriangle;
 pub use line::Line;
 
 #[derive(Clone, Debug, PartialEq, Eq)]

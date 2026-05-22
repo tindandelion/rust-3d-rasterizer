@@ -49,7 +49,7 @@ Optional stretch beyond the original two phases is allowed (e.g. deeper CPU topi
 - **Long-term visual target:** fixed viewpoint, single shape — a **torus**.
 - **Mesh progression:**
   1. **Cube (interim)** — **quad faces** only for the **first** filled-cube milestone (**six** convex quads; **4-vertex** faces). Wireframe can stay edge-based. This is a **deliberate shortcut**: **one** simple **bbox + inner test** raster path before general **triangle** fill.
-  2. **Dodecahedron + cube triangles** — **land** **`[Vertex; 3]`** **filled** rasterization **and refactor the cube** (**two triangles per face**); **delete** **quad submit / `FillQuad`**. Showcase the **triangle stack** on a **regular dodecahedron** (**twelve** pentagonal faces → **triangles**, e.g. **five** tris per face via centroid fan)—a **better demo** shape **and** it **forces** triangles (pentagons are not convex quads in 3D facet form).
+  2. **Dodecahedron + cube triangles** — **refactor **`scene/cube`** to **`[Vertex; 3]`** submit (**two triangles per face**—raster **`FillTriangle`** already in use). Showcase the **triangle stack** on a **regular dodecahedron** (**twelve** pentagonal faces → **triangles**, e.g. **five** tris per face via centroid fan)—a **better demo** shape **and** it **forces** triangles (pentagons are not convex quads in 3D facet form).
   3. **Sphere** — on the unified stack, **procedural tessellation**, **indexed** structure where worthwhile.
   4. **Torus** — capstone CPU mesh complexity before/at GPU transition (**triangle** soup or indexed tris).
 - **Generation:** **procedural** meshes (no asset pipeline required early).
@@ -69,7 +69,7 @@ Phase 1 milestone ambition (from earlier discussion): interpolated vertex attrib
 
 ## Geometry ↔ rasterizer boundary
 
-- **Phase 1 order:** **`[Vertex; 4]` quad stream** only for the **shipped interim** filled **cube** milestone (convex quads in **2D** after projection). The **`Dodecahedron`** milestone **implements** **`[Vertex; 3]`** triangle fill **and refactors `scene/cube`** to **triangles**, **then removes** **`FillQuad` / quad submit** (**one** **`[Vertex; 3]`** stream **+** **one** triangle raster **for solids** onward). **`Sphere`** adds **another mesh** onto that stack. Internal storage may stay indexed; **unfold** at the raster boundary.
+- **Phase 1 order:** **`[Vertex; 4]` quad stream** persists for **`scene/cube`** geometry until **`Dodecahedron`**, **while **`draw_faces`** already rasterizes with **two **`FillTriangle`** fills** per projected quad. **`Dodecahedron`** **refactors `scene/cube`** to **`[Vertex; 3]`** submit (**one** triangle raster type **for solids** onward). **`Sphere`** adds **another mesh** onto that stack. Internal storage may stay indexed; **unfold** at the raster boundary.
 - **`Vertex` evolution:** start with **position only**; add normals, colors, UVs, etc., **only when a milestone requires them**.
 
 ---
@@ -81,7 +81,7 @@ Phase 1 milestone ambition (from earlier discussion): interpolated vertex attrib
 1. **Wireframe** before filled surfaces.
 2. **Lines:** simplest practical approach — **DDA-style** stepping (float increments acceptable).
 3. **Out-of-bounds:** **skip-only** (`set_pixel` guarded); no full line clipping initially.
-4. **Filled convex quads (cube, interim — shipped):** after wireframe is understood, rasterize each **projected quad** as a **4-vertex convex polygon** in **2D**: **axis-aligned bounding box** in pixel space + **inside test** (e.g. **half-plane / edge** tests). **Retire** this helper when **`Dodecahedron`** **refactors the cube** to **triangles**—**no** parallel quad+triangle fill pipelines afterward.
+4. **Filled hull facets (`cube`, interim geometry — shipped):** after wireframe is understood, each **visible **`Quad`**** is rasterized via **two** **half-plane-tested **`FillTriangle`** passes** (bbox scan per triangle). **`Dodecahedron`** collapses **`scene/cube`** to **`[Vertex; 3]`** submit (**same raster**)—**no** second fill primitive thereafter.
 5. **Filled triangles (steady state — `Dodecahedron`):** **commit** **one** tri algorithm (**half-space / barycentric** _or_ scanlines); **same milestone** switches **`scene/cube`** to **`[Vertex; 3]`** and introduces the **triangle** shaded **dodecahedron** (**pentagon facets triangulated**).
 
 6. **Sphere (next mesh):** **procedural** sphere facets on the **existing** **`[Vertex; 3]`** stack; optionally refine **indexed** representation.
