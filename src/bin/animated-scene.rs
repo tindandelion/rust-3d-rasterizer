@@ -23,7 +23,7 @@ fn model_matrix_euler_sweep(frame_index: u32, lap_frames: u32) -> Mat4 {
     let n = lap_frames.max(1) as f32;
     let t = (frame_index as f32 / n) * std::f32::consts::TAU;
     let spin = Mat4::from_rotation_z(t) * Mat4::from_rotation_y(t) * Mat4::from_rotation_x(t);
-    let scale = Mat3::from_diagonal(Vec3::splat(0.5));
+    let scale = Mat3::from_diagonal(Vec3::splat(0.75));
     spin * Mat4::from_mat3(scale)
 }
 

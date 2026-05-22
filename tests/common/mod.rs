@@ -33,7 +33,7 @@ pub struct RenderedWebp {
     pub output_path: PathBuf,
 }
 
-/// Resolves `CARGO_BIN_EXE_<binary_name>` where **`binary_name`** is the hyphenated Cargo target (**`still-cube`**, **`still-dodec`**, **`animated-scene`**, …).
+/// Resolves `CARGO_BIN_EXE_<binary_name>` where **`binary_name`** is the hyphenated Cargo target (**`still-cube`**, **`animated-scene`**, …).
 fn cargo_bin_exe_path(binary_name: &str) -> PathBuf {
     let key = format!("CARGO_BIN_EXE_{binary_name}");
     std::env::var_os(&key)
@@ -46,7 +46,7 @@ fn cargo_bin_exe_path(binary_name: &str) -> PathBuf {
         })
 }
 
-/// Creates a temp workspace, runs **`binary_name`** (**`still-cube`**, **`still-dodec`**, **`animated-scene`**, …)
+/// Creates a temp workspace, runs **`binary_name`** (**`still-cube`**, **`animated-scene`**, …)
 /// once with **`current_dir`** = that directory and a single CLI arg = relative **`.webp`** path.
 pub fn run_integration_binary(
     binary_name: &str,
