@@ -81,8 +81,9 @@ As one might argue, this data type lumps together different concepts, such as th
 
 ## What comes next
 
-Basic shading on the cube is done. The [project breakdown][project-breakdown] points at **Sphere: triangular mesh** next — a procedural sphere as triangular facets, refactoring the cube to two triangles per face, and dropping the quad fill path so we do not maintain quad and triangle rasterizers in parallel.
+Basic shading on the cube is done. The natural follow-on was a full **triangular mesh** cutover; we took that in [Meet new shape: Dodecahedron][post-meet-new-shape-dodecahedron] — cube refactored to two triangles per face, `FillQuad` retired, and a shaded dodecahedron as the new animated demo. After that, the [project breakdown][project-breakdown] points at **Sphere: triangular mesh** — procedural tessellation on the same stack.
 
+[post-meet-new-shape-dodecahedron]: {{site.baseurl}}/{% post_url 2026-05-22-meet-new-shape-dodecahedron %}
 [post-near-face-classified-as-back]: {{site.baseurl}}/{% post_url 2026-05-19-the-near-face-was-classified-as-back %}
 [post-cube-paints-its-six-faces]: {{site.baseurl}}/{% post_url 2026-05-18-the-cube-paints-its-six-faces %}
 [version-0-0-8]: https://github.com/tindandelion/rust-3d-rasterizer/tree/0.0.8
