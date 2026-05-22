@@ -48,9 +48,10 @@ Optional stretch beyond the original two phases is allowed (e.g. deeper CPU topi
 - **Restricted scenes:** no general frustum clipping homework in phase 1; geometry stays inside the volume by construction.
 - **Long-term visual target:** fixed viewpoint, single shape — a **torus**.
 - **Mesh progression:**
-  1. **Cube (interim)** — **quad faces** only for the **first** filled-cube milestone (**six** convex quads; **4-vertex** faces). Wireframe can stay edge-based. This is a **deliberate shortcut**: **one** simple **bbox + inner test** raster path before a general **triangle** fill exists.
-  2. **Sphere + cube unification** — add the **sphere** as **triangular facets** and **refactor the cube** to a **triangle mesh** as well (**two triangles per face**, or equivalent). **Remove** the **quad** submission/fill path—**do not** maintain **two** filled primitives long-term; everything share **one** **`[Vertex; 3]`** stream + **triangle** rasterizer after this milestone.
-  3. **Torus** — capstone CPU mesh complexity before/at GPU transition (**triangle** soup or indexed tris).
+  1. **Cube (interim)** — **quad faces** only for the **first** filled-cube milestone (**six** convex quads; **4-vertex** faces). Wireframe can stay edge-based. This is a **deliberate shortcut**: **one** simple **bbox + inner test** raster path before general **triangle** fill.
+  2. **Dodecahedron + cube triangles** — **land** **`[Vertex; 3]`** **filled** rasterization **and refactor the cube** (**two triangles per face**); **delete** **quad submit / `FillQuad`**. Showcase the **triangle stack** on a **regular dodecahedron** (**twelve** pentagonal faces → **triangles**, e.g. **five** tris per face via centroid fan)—a **better demo** shape **and** it **forces** triangles (pentagons are not convex quads in 3D facet form).
+  3. **Sphere** — on the unified stack, **procedural tessellation**, **indexed** structure where worthwhile.
+  4. **Torus** — capstone CPU mesh complexity before/at GPU transition (**triangle** soup or indexed tris).
 - **Generation:** **procedural** meshes (no asset pipeline required early).
 
 ---
@@ -58,6 +59,7 @@ Optional stretch beyond the original two phases is allowed (e.g. deeper CPU topi
 ## Shading progression
 
 - **Cube:** faceted first.
+- **Dodecahedron:** faceted (**pentagonal** faces shaded as planar facets; triangulation is a **submission** detail).
 - **Sphere:** faceted first as well (low tessellation reads as a polyhedron).
 - **Smooth shading:** implemented as an explicit **sub-step after** faceted shading works on the relevant shapes (do not mix concerns early).
 
@@ -67,7 +69,7 @@ Phase 1 milestone ambition (from earlier discussion): interpolated vertex attrib
 
 ## Geometry ↔ rasterizer boundary
 
-- **Phase 1 order:** **`[Vertex; 4]` quad stream** only for the **interim** filled **cube** milestone (convex quads in 2D after projection). From the **sphere + cube triangle refactor** milestone onward, **everything** uses a **`[Vertex; 3]` triangle stream** (cube, sphere, torus—**one** code path). Internal storage may stay indexed; **unfold** at the raster boundary.
+- **Phase 1 order:** **`[Vertex; 4]` quad stream** only for the **shipped interim** filled **cube** milestone (convex quads in **2D** after projection). The **`Dodecahedron`** milestone **implements** **`[Vertex; 3]`** triangle fill **and refactors `scene/cube`** to **triangles**, **then removes** **`FillQuad` / quad submit** (**one** **`[Vertex; 3]`** stream **+** **one** triangle raster **for solids** onward). **`Sphere`** adds **another mesh** onto that stack. Internal storage may stay indexed; **unfold** at the raster boundary.
 - **`Vertex` evolution:** start with **position only**; add normals, colors, UVs, etc., **only when a milestone requires them**.
 
 ---
@@ -79,11 +81,14 @@ Phase 1 milestone ambition (from earlier discussion): interpolated vertex attrib
 1. **Wireframe** before filled surfaces.
 2. **Lines:** simplest practical approach — **DDA-style** stepping (float increments acceptable).
 3. **Out-of-bounds:** **skip-only** (`set_pixel` guarded); no full line clipping initially.
-4. **Filled convex quads (cube, interim):** after wireframe is understood, rasterize each **projected quad** as a **4-vertex convex polygon** in **2D**: **axis-aligned bounding box** in pixel space + **inside test** (e.g. **half-plane / edge** tests). **Retire** this helper when step **5** lands—**no** parallel quad+triangle fill pipelines in steady state.
-5. **Filled triangles (steady state):** land with **sphere** and the **cube→triangle mesh refactor**; pick **one** tri fill algorithm (**half-space / barycentric** _or_ scanlines) and use it for **all** meshes afterward.
-6. Early fills may use **flat colors per face**; fancier per-primitive/debug coloring was explicitly **not** required early.
+4. **Filled convex quads (cube, interim — shipped):** after wireframe is understood, rasterize each **projected quad** as a **4-vertex convex polygon** in **2D**: **axis-aligned bounding box** in pixel space + **inside test** (e.g. **half-plane / edge** tests). **Retire** this helper when **`Dodecahedron`** **refactors the cube** to **triangles**—**no** parallel quad+triangle fill pipelines afterward.
+5. **Filled triangles (steady state — `Dodecahedron`):** **commit** **one** tri algorithm (**half-space / barycentric** _or_ scanlines); **same milestone** switches **`scene/cube`** to **`[Vertex; 3]`** and introduces the **triangle** shaded **dodecahedron** (**pentagon facets triangulated**).
 
-**Breakdown alignment:** Hull **edges + lines + back-face classification** are already exercised (`doc/planning/project-breakdown.md`). The next **cube** milestone uses **quad-stream** fill (**depth deferred**); optional **edge overlay** from surviving quads remains a debugging aid. The **sphere** milestone **replaces** that with **triangles only**.
+6. **Sphere (next mesh):** **procedural** sphere facets on the **existing** **`[Vertex; 3]`** stack; optionally refine **indexed** representation.
+
+7. Early fills may use **flat colors per face**; fancier per-primitive/debug coloring was explicitly **not** required early.
+
+**Breakdown alignment:** Hull **edges + lines + back-face classification** are already exercised (`doc/planning/project-breakdown.md`). The shipped **cube** milestones implemented **quad-stream** fills (**depth deferred**). **`Dodecahedron`** is the **triangle cutover** (**cube refactor + raster + dodecahedron demo**); **`Sphere`** grows **sphere geometry only**.
 
 ### Parallel raster approaches
 
@@ -121,7 +126,7 @@ Phase 1 milestone ambition (from earlier discussion): interpolated vertex attrib
 
 1. **wgpu convention alignment pass** — depth range, front-face winding, NDC handedness, relationship to framebuffer row order vs Unity/world intuition.
 2. **Golden image / pixel-diff tests** — adopt when eyeballing saturates (WebP decode path or pre-encode buffer compare).
-3. **Filled-triangle algorithm choice** — commit when **sphere + cube triangle refactor** lands (half-space/barycentric vs scanlines); **interim cube quads** use **bbox + inner test** until that milestone **replaces** them.
+3. **Filled-triangle algorithm choice** — commit when **`Dodecahedron`** lands (half-space/barycentric vs scanlines); **shipped interim cube quads** keep **bbox + inner test** until that **same** **`Dodecahedron`** milestone **retires** them.
 4. **Cross-platform** — revisit when/if portability becomes a goal.
 
 ---
