@@ -23,12 +23,12 @@ pub mod ortho_camera;
 pub mod scene;
 pub mod webp_encoder;
 
-pub use framebuffer::{FillTriangle, FrameBuffer, Line, Rgb};
+pub use framebuffer::{FillTriangle, FrameBuffer, Rgb};
 pub use lighting::DiffuseLight;
 pub use ortho_camera::Camera;
 pub use webp_encoder::WebpEncoder;
 
-use scene::cube::{Cube, Edge};
+use scene::cube::Cube;
 
 /// Single **`Rgb`** **albedo** for filled cube rendering ([`draw_faces`]) — saturated blue (**`#346ED2`**) tuned for diffuse shading.
 pub const CUBE_ALBEDO: Rgb = Rgb(52, 110, 210);
@@ -40,22 +40,12 @@ pub fn output_webp_path_from_args() -> OsString {
         .unwrap_or_else(|| DEFAULT_OUT_PATH.into())
 }
 
-/// Rasterize [`scene::cube::Cube::visible_edges`] through **`camera`** (**DDA** in [`Line::draw`]).
-///
-/// View direction comes from [`Camera::direction`] (same axis used for **front‑facing** classification as [`Cube::visible_faces`]).
-pub fn draw_edges(fb: &mut FrameBuffer, camera: &Camera, cube: &Cube, color: Rgb) {
-    let forward = camera.direction();
-    for Edge(a, b) in cube.visible_edges(forward) {
-        Line::new(camera.transform(a), camera.transform(b), color).draw(fb);
-    }
-}
-
-/// Filled **`Cube`**: **`FillTriangle::draw`** per **`Triangle`** yielded by **`[`scene::cube::Cube::visible_faces`]** (**[`crate::scene::facet::Facet::is_front_facing`]**, same classifier as **`[`scene::cube::Cube::visible_edges`]**).
+/// Filled **`Cube`**: **`FillTriangle::draw`** per **[`scene::cube::Triangle`]** from **[`Cube::visible_facets`](crate::scene::cube::Cube::visible_facets)** (**[`Facet::is_front_facing`](crate::scene::facet::Facet::is_front_facing)**).
 ///
 /// **[`DiffuseLight::calc_intensity`]** consumes **`triangle.normal`**; shaded color **`CUBE_ALBEDO`** · intensity.
 pub fn draw_faces(fb: &mut FrameBuffer, camera: &Camera, cube: &Cube, light: &DiffuseLight) {
     let forward = camera.direction();
-    for triangle in cube.visible_faces(forward) {
+    for triangle in cube.visible_facets(forward) {
         let intensity = light.calc_intensity(triangle.normal);
         let color = CUBE_ALBEDO.scale(intensity);
         let corners: [glam::UVec2; 3] = array::from_fn(|i| camera.transform(triangle.corners[i]));

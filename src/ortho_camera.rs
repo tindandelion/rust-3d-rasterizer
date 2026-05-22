@@ -73,7 +73,7 @@ impl Camera {
     /// Unit vector in world space pointing **into** the scene (**view / forward**).
     ///
     /// Matches this module’s fixed pose (**`+Z`** forward, left-handed — see module docs). Used for
-    /// front‑facing classification for [`crate::scene::cube::Cube::visible_edges`] / [`crate::scene::cube::Cube::visible_faces`].
+    /// front‑facing classification for [`crate::scene::cube::Cube::visible_facets`].
     pub fn direction(&self) -> Normal3 {
         Normal3::Z
     }
