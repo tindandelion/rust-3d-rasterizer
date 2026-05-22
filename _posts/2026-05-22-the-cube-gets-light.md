@@ -1,17 +1,17 @@
 ---
 layout: post
 title: "The Cube Gets Light"
-date: 2026-05-20 
+date: 2026-05-22 08:00:00 +0200
 authors: Sergey and Cursor
 ---
 
-[Version 0.0.7][post-near-face-classified-as-back] fixed front-face culling so we were finally painting the side of the cube that faces the camera. The filled cube from [Version 0.0.6][post-cube-paints-its-six-faces] still used six flat tints — enough to prove that we can render the cube, but still looking a bit cartoonish. This new version closes the the important milestone: we learn how to apply _shading_ to cube's faces, so is starts to look as if it was illuminated by the sun.
+[Version 0.0.7][post-near-face-classified-as-back] fixed front-face culling so we were finally painting the side of the cube that faces the camera. The filled cube from [Version 0.0.6][post-cube-paints-its-six-faces] still used six flat tints — enough to prove that we can render the cube, but still looking a bit cartoonish. This new version closes an important milestone: we learn how to apply _shading_ to the cube's faces, so it starts to look as if it was illuminated by the sun.
 
 [Version 0.0.8 on GitHub][version-0-0-8]{: .no-github-icon}
 
 ## What you will see
 
-We still use the same orthographic camera, same rotating cube — but the cube is no longer a rainbow block. Every face of the cube how has the same base color; what varies is how much light reaches it. Facets turned toward the “sun” read brighter; facets in shadow fall darker. The picture now start to look slightly more realistic.
+We still use the same orthographic camera, same rotating cube — but the cube is no longer a rainbow block. Every face of the cube now has the same base color; what varies is how much light reaches it. Facets turned toward the “sun” read brighter; facets in shadow fall darker. The picture now starts to look slightly more realistic.
 
 ![Animated diffuse-lit blue cube with per-face shading](https://raw.githubusercontent.com/tindandelion/rust-3d-rasterizer/0.0.8/doc/output/current.webp)
 
@@ -21,35 +21,35 @@ Introducing light adds "realism" to rendered 3D scenes. However, if we try to mo
 
 To avoid these traps, in 3D graphics we usually use approximate models that are easier to understand and less compute-intensive, but still give us quite good results, depending on the circumstances and requirements. 
 
-For this miletone, we've chosen one of the simplest models to implement: _directional light source_ combined with _diffuse shading_. Let's dive into what that means. 
+For this milestone, we've chosen one of the simplest models to implement: _directional light source_ combined with _diffuse shading_. Let's dive into what that means. 
 
 ### The light source: directional light 
 
-Out of many light source models, [directional light][directional-light] is the simplest one. It is characterised by a single vector: _the direction_ from which the light is coming from;  all rays emitted by such a light are parallel to each other. The effect of this kind of light source is that, if you have a flat surface, it will be illuminated uniformly at each point. 
+Out of many light source models, [directional light][directional-light] is the simplest one. It is characterized by a single vector: _the direction_ from which the light is coming from;  all rays emitted by such a light are parallel to each other. The effect of this kind of light source is that, if you have a flat surface, it will be illuminated uniformly at each point. 
 
 In nature, we see the example of the directional light every day: it's the Sun. Though it's not 100% precise, we can think of the Sun as the directional light: it's located so far away from Earth, that all light rays that reach us are effectively parallel. 
 
-Two other characteristics to reason about are light _intensity_ and _color_. For the purposes of our current miletone, we'll assume that the light is **white** (just like the Sun), and the intensity is just a coefficient in the range of [0.0, 1.0]. 
+Two other characteristics to reason about are light _intensity_ and _color_. For the purposes of our current milestone, we'll assume that the light is **white** (just like the Sun), and the intensity is just a coefficient in the range of [0.0, 1.0]. 
 
 ### Ambient light 
 
 _Ambient light_ is yet another approximation of a physical world. To understand it, let's consider a sunny day on Earth. There's no complete darkness: even the objects in shade receive some light, indirectly: mostly from the atmosphere, or reflected light from other objects nearby. 
 
-Modelling this type of lighting precisely using the Sun as the light source and tracking all reflections adds a lot of complexity to the lighting model, so we come up with an approximate solution: an _ambient light_, which is characterised only by its intensity. We declare that an ambient light contributes some light to every point in the scene, no matter where that point is. 
+Modeling this type of lighting precisely using the Sun as the light source and tracking all reflections adds a lot of complexity to the lighting model, so we come up with an approximate solution: an _ambient light_, which is characterized only by its intensity. We declare that an ambient light contributes some light to every point in the scene, no matter where that point is. 
 
-The ambient light of non-zero intensity allows us to see the obejcts in there scene even if the light from the light source doesn't reach them. 
+The ambient light of non-zero intensity allows us to see the objects in the scene even if the light from the light source doesn't reach them. 
 
 ### Surface material: diffuse reflection 
 
-The way the object's sureface interacts with light is another big part of the entire equation. We see the solid non-transparent objects because their surface absorbs and reflects light. Depending on how objects reflect light, we can classify them broadly into "matte" and "glossy" ones. For the time being, we're going to focus only on the matte objects. They're simpler to reason about, which makes them a good starting point to implement. 
+The way the object's surface interacts with light is another big part of the entire equation. We see the solid non-transparent objects because their surface absorbs and reflects light. Depending on how objects reflect light, we can classify them broadly into "matte" and "glossy" ones. For the time being, we're going to focus only on the matte objects. They're simpler to reason about, which makes them a good starting point to implement. 
 
-The property that makes such surfaces simple is that their color or luminosity stays the same no matter from which point you're looking at them. In other words, the intensity of the reflected light is independent of the viewer's position. It does depend on the orientation of the surface with respect to the light's source though. Let's see how we can derive the base equation for the intensity of the reflected light. 
+The property that makes such surfaces simple is that their color or luminosity stays the same no matter from which point you're looking at them. In other words, the intensity of the reflected light is independent of the viewer's position. It does depend on the orientation of the surface with respect to the light source though. Let's see how we can derive the base equation for the intensity of the reflected light. 
 
 ## Modeling diffuse reflection 
 
 Intuitively, we know that the objects perpendicular to the rays of light shine the brightest, and the more you turn them, the dimmer they look. Let's take a look at the picture to see why that happens: 
 
-[Picture]
+![Perpendicular vs tilted face: effective light beam width Imax versus I]({{site.baseurl}}/assets/images/lambertian-diffuse-derivation.svg)
 
 On the left, you see a cube face that's oriented perpendicular to the light's direction. We could say that it is exposed to the beam of light with the "width" $I_{\max}$. Intuitively, the "wider" this beam, the more overall light energy the cube's face receives. 
 
@@ -59,7 +59,7 @@ $$
 I = I_{\max}\sin(\alpha) = I_{\max}\sin(90^{\circ} - \beta) = I_{\max}\cos(\beta)
 $$
 
-To calculate $\beta$, we can look at the vectors $\mathbf{L}$ (direction towards light), and $\mathbf{n}$. Both are *normals*, therefore by the properties of the dot product, we know that $\cos(\beta) = \mathbf{L} \cdot \mathbf{n}$. Practically, we should also clamp the value of $\cos(\beta)$ to the range $[0, 1]$, because for negative values that means that the cube face is facing away from the light, so it doesn't get illuminated at all. 
+To calculate $\beta$, we can look at the vectors $\mathbf{L}$ (direction toward light), and $\mathbf{n}$. Both are *unit vectors*, therefore by the properties of the dot product, we know that $\cos(\beta) = \mathbf{L} \cdot \mathbf{n}$. Practically, we should also clamp the value of $\cos(\beta)$ to the range $[0, 1]$, because for negative values that means that the cube face is facing away from the light, so it doesn't get illuminated at all. 
 
 Therefore, we arrive at the final formula that relates face's illumination, its orientation, and the light direction: 
 
@@ -71,13 +71,15 @@ In computer graphics, this formula is called [Lambertian diffuse][lambert].
 
 ## Implementation details
 
-We've implemented shading in the [`DiffuseLight`][source-diffuse-light] data type. The name of this data type is rather misleading, because in fact it packs a few concepts together: 
+We've implemented shading in the [`DiffuseLight`][source-diffuse-light] data type. The name is misleading, because the struct packs several ideas that textbooks usually keep separate: 
 
 * The directional light, represented by `toward_light` vector; 
 * Both ambient light and directional light contributions: `ambient_factor` and `diffuse_factor`; 
 * Lighting model, represented by [`calc_intensity`][source-calc-intensity] method that calculates the light intensity for a surface represented by the argument `normal`. 
 
-As one might argue, this data type lumps together different concepts, such as the light properties, material properties, and general scene properties. This critique is true: we might need to refactor that data type (or at least rename it) in the future. For now, it serves the purpose of providing a simple interface to calculate the cube's face shading though.
+"Diffuse" here really means the Lambert term $\max(0, \hat{\mathbf{n}} \cdot \hat{\mathbf{L}})$, but the type also owns ambient weighting and the toward-light direction — scene-level choices, not material properties. Albedo still lives separately in [`CUBE_ALBEDO`][source-cube-albedo]; [`draw_faces`][source-draw-faces] multiplies that base color by whatever `calc_intensity` returns. So the name suggests "material shader" while the fields describe "how this scene is lit."
+
+That mismatch is intentional for now. A fuller design might split a `DirectionalLight` (direction only) from an ambient term and from per-surface albedo, or rename this helper to something like `SceneLighting` once we have more than one mesh or light. Renaming alone would not buy much yet; the real refactor is when the sphere milestone forces shared lighting code across triangle facets. Until then, one small struct keeps the cube exporters readable: construct a `DiffuseLight`, pass it to `draw_faces`, and every visible quad picks up shading without a separate lighting pass.
 
 ## What comes next
 

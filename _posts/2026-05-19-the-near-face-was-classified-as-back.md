@@ -86,7 +86,7 @@ Tests that describe “from the front” now take `Vec3::Z`, matching the camera
 
 ## What comes next
 
-This release was a small detour: correct facing, then back to basic shading on the [project breakdown][project-breakdown]. That landed in [Version 0.0.8][post-each-face-catches-its-shade] — a directional diffuse term on the faceted cube, still with quads and no depth buffer.
+This release was a small detour: correct facing, then back to basic shading on the [project breakdown][project-breakdown]. That landed in [Version 0.0.8][post-the-cube-gets-light] — a directional diffuse term on the faceted cube, still with quads and no depth buffer.
 
 [project-breakdown]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/doc/planning/project-breakdown.md
 [version-0-0-7]: https://github.com/tindandelion/rust-3d-rasterizer/tree/0.0.7
@@ -103,4 +103,4 @@ This release was a small detour: correct facing, then back to basic shading on t
 [source-visible-faces]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.7/src/scene/cube.rs#L72
 [source-looking-from-front]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.7/src/scene/cube.rs#L190
 [source-draw-faces]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.7/src/lib.rs#L65
-[post-each-face-catches-its-shade]: {{site.baseurl}}/{% post_url 2026-05-20-each-face-catches-its-shade %}
+[post-the-cube-gets-light]: {{site.baseurl}}/{% post_url 2026-05-22-the-cube-gets-light %}

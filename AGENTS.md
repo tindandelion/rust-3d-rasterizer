@@ -53,6 +53,7 @@ Note the `baseurl: /rust-3d-rasterizer` in `_config.yml` — always use `{{ "...
 - **Styles**: edit `assets/main.scss`. Keep overrides scoped; don't fork the Minima stylesheet wholesale.
 - **External code links** point to the `main` branch of `rust-3d-rasterizer` (see `_pages/index.md` for examples).
 - **Bold in diary posts**: use sparingly — only to highlight truly important bits (e.g. one pivotal outcome or diagnosis). Prefer plain prose; use backticks for code and identifiers. Do not bold routine terms, axes, counts, or milestone names for decoration.
+- **Italics for new terms**: when introducing a graphics or project term for the first time in a post, set it in italics (e.g. `_directional light_`, `_ambient light_`). After that first mention, use plain text unless the term is also a code identifier (then use backticks).
 
 ## Don't
 

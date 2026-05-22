@@ -58,6 +58,7 @@ layout: post
 title: "Short Human Title"
 date: YYYY-MM-DD HH:MM:SS +ZZZZ
 authors: Sergey and Cursor
+# tags: [bugfix]   # optional — see Writing Style
 ---
 ```
 
@@ -73,13 +74,40 @@ The tag scheme is plain `x.x.x`, not `vx.x.x`.
 
 ## Writing Style
 
-- Write as a project diary, not a changelog.
-- Treat Sergey and Cursor as pair-programming collaborators.
-- Explain what we focused on, what we discussed, and why design/implementation choices were made.
-- Keep milestone scope honest; do not overclaim beyond current code.
-- Prefer concrete examples from the session logs over generic summaries.
-- Mention next steps when they naturally follow from `project-breakdown.md`.
-- Use sentence-style capitalization for section/subsection headers inside posts (for example, `## Why the new output uses radial spokes`, not title case). Post titles may still use title case.
+### Default: tutorial diary
+
+Write as a **project diary**, not a changelog — but lean **tutorial / educational** unless the post is tagged otherwise (see below). Treat Sergey and Cursor as pair-programming collaborators.
+
+Almost every milestone post introduces **new graphics or pipeline concepts**. The reader should finish the post **familiar with those ideas** — what they mean, why we use them, and how they fit this milestone — not just aware that the code changed. Structure for learning:
+
+1. **Hook** — what changed visually and how it connects to the previous release.
+2. **What you will see** — concrete demo/output before theory.
+3. **Concepts** — explain models, conventions, or math the milestone depends on (subsections per idea; analogies and diagrams where they help).
+4. **Implementation** — brief bridge to code (see below).
+5. **What comes next** — natural follow-on from `project-breakdown.md` when applicable.
+
+Prefer patient, accessible prose over expert shorthand. Use session logs and transcripts for *accuracy* and *motivation*, but teach the concepts even if the session was a long debug thread.
+
+Keep milestone scope honest; do not overclaim beyond current code. Prefer concrete examples from the session logs over generic summaries. Use sentence-style capitalization for section/subsection headers inside posts (for example, `## Why the new output uses radial spokes`, not title case). Post titles may still use title case.
+
+### Introducing terms
+
+Follow `AGENTS.md`: set a term in **italics** on its **first** mention in the post (e.g. `_directional light_`, `_Lambertian diffuse_`). Later mentions use plain text unless the word is also a Rust identifier (then backticks). Link the first meaningful mention to Wikipedia, docs, or prior diary posts when helpful.
+
+### Implementation sections
+
+Keep **implementation details short** by default: name the main types/functions, how they map to the concepts above, and one or two design notes worth remembering. Link symbols to GitHub on first meaningful mention.
+
+Expand implementation only when the code is **genuinely tricky** — subtle bugs, sign conventions, naming mismatches that teach something, or refactors that are hard to infer from the diff alone. Do not walk file-by-file through straightforward wiring.
+
+### Exceptions: `bugfix` and `refactor` tags
+
+Optional front matter: `tags: bugfix` or `tags: refactor`.
+
+- **`bugfix`** — investigative narrative is fine (symptom → reproduction → diagnosis → fix). Still explain any convention the reader must not repeat, but skip the full tutorial arc if the post is mainly about a mistake and its patch.
+- **`refactor`** — focus on what moved, why, and what stays the same for readers of older posts; concept primers only where the refactor changes mental models.
+
+Untagged milestone posts should follow the tutorial diary shape above (see e.g. `_posts/2026-05-22-the-cube-gets-light.md` for tone and depth on concepts vs. code).
 
 ## Math and formulas
 
