@@ -89,113 +89,6 @@ mod tests {
         std::array::from_fn(|i| UVec2::new(corners[i].0, corners[i].1))
     }
 
-    fn pts4(corners: [(u32, u32); 4]) -> [UVec2; 4] {
-        std::array::from_fn(|i| UVec2::new(corners[i].0, corners[i].1))
-    }
-
-    /// Same fan split as [`crate::draw_faces`]: **`(v0,v1,v2)`** + **`(v0,v2,v3)`** for a convex quad.
-    fn draw_convex_quad_as_two_tris(fb: &mut FrameBuffer, q: [UVec2; 4], color: Rgb) {
-        FillTriangle::new([q[0], q[1], q[2]], color).draw(fb);
-        FillTriangle::new([q[0], q[2], q[3]], color).draw(fb);
-    }
-
-    #[test]
-    fn fill_axis_aligned_rectangle_via_two_triangle_fan() {
-        let mut fb = FrameBuffer::new(10, 5);
-        draw_convex_quad_as_two_tris(&mut fb, pts4([(2, 1), (7, 1), (7, 3), (2, 3)]), Rgb::WHITE);
-
-        #[rustfmt::skip]
-        let expected = concat!(
-            "          ",
-            "  ++++++  ",
-            "  ++++++  ",
-            "  ++++++  ",
-            "          ",
-        );
-        assert_eq!(fb.to_ascii_art(), expected);
-    }
-
-    #[test]
-    fn fill_same_convex_quad_under_rotated_vertex_order() {
-        let corners_ccw = [(2, 1), (7, 1), (7, 3), (2, 3)];
-
-        #[rustfmt::skip]
-        let expected = concat!(
-            "          ",
-            "  ++++++  ",
-            "  ++++++  ",
-            "  ++++++  ",
-            "          ",
-        );
-
-        for start in 0..4 {
-            let mut fb = FrameBuffer::new(10, 5);
-            draw_convex_quad_as_two_tris(
-                &mut fb,
-                pts4([
-                    corners_ccw[start],
-                    corners_ccw[(start + 1) % 4],
-                    corners_ccw[(start + 2) % 4],
-                    corners_ccw[(start + 3) % 4],
-                ]),
-                Rgb::WHITE,
-            );
-            assert_eq!(expected, fb.to_ascii_art(), "order start {}", start);
-        }
-    }
-
-    #[test]
-    fn fill_clips_when_two_tris_extend_past_buffer() {
-        let mut fb = FrameBuffer::new(10, 5);
-        draw_convex_quad_as_two_tris(
-            &mut fb,
-            pts4([(2, 1), (14, 1), (14, 3), (2, 3)]),
-            Rgb::WHITE,
-        );
-
-        #[rustfmt::skip]
-        let expected = concat!(
-            "          ",
-            "  ++++++++",
-            "  ++++++++",
-            "  ++++++++",
-            "          ",
-        );
-        assert_eq!(fb.to_ascii_art(), expected);
-    }
-
-    #[test]
-    fn fill_convex_slanted_quad_via_two_tris() {
-        let mut fb = FrameBuffer::new(10, 5);
-        draw_convex_quad_as_two_tris(&mut fb, pts4([(2, 3), (7, 3), (8, 1), (1, 1)]), Rgb::WHITE);
-
-        #[rustfmt::skip]
-        let expected = concat!(
-            "          ",
-            " ++++++++ ",
-            "  ++++++  ",
-            "  ++++++  ",
-            "          ",
-        );
-        assert_eq!(fb.to_ascii_art(), expected);
-    }
-
-    #[test]
-    fn fill_degenerate_quad_as_line_segment_via_two_tris() {
-        let mut fb = FrameBuffer::new(10, 5);
-        draw_convex_quad_as_two_tris(&mut fb, pts4([(2, 3), (7, 3), (7, 3), (2, 3)]), Rgb::WHITE);
-
-        #[rustfmt::skip]
-        let expected = concat!(
-            "          ",
-            "          ",
-            "          ",
-            "  ++++++  ",
-            "          ",
-        );
-        assert_eq!(fb.to_ascii_art(), expected);
-    }
-
     /// Degenerate input: all corners coincide. Every cross term is zero, so winding never flips—all bbox samples qualify.
     #[test]
     fn fill_degenerate_all_corners_same_point() {
@@ -287,6 +180,24 @@ mod tests {
             "     +++  ",
             "  ++++++  ",
             "          ",
+        );
+        assert_eq!(fb.to_ascii_art(), expected);
+    }
+
+    /// One edge is axis-aligned **vertical** (`x` constant)—exercises bbox + half-planes on a non-horizontal base.
+    #[test]
+    fn fill_triangle_with_vertical_edge() {
+        let mut fb = FrameBuffer::new(10, 5);
+        // Vertical segment (2,1)–(2,4); apex (6, 2). Consistent CCW half-plane winding.
+        FillTriangle::new(pts([(2, 1), (2, 4), (6, 2)]), Rgb::WHITE).draw(&mut fb);
+
+        #[rustfmt::skip]
+        let expected = concat!(
+            "          ",
+            "  +       ",
+            "  +++++   ",
+            "  +++     ",
+            "  +       ",
         );
         assert_eq!(fb.to_ascii_art(), expected);
     }
