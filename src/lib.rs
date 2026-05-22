@@ -1,6 +1,6 @@
 //! **Thorus Forge** — software rasterizer building blocks: RGB framebuffer, orthographic screen mapping, lossless WebP encode.
 //!
-//! Shared raster canvas size and **`still-cube`** default output live here (see **`doc/planning/project-spec.md`**).
+//! Shared raster canvas size and export defaults live here (**`still-cube`**, **`still-dodec`**, **`animated-scene`** default output — see **`doc/planning/project-spec.md`**).
 
 use std::array;
 use std::env;
@@ -13,8 +13,8 @@ pub const SCENE_HEIGHT: u32 = 600;
 
 pub const DEFAULT_OUT_PATH: &str = "scene.webp";
 
-/// Frame count for the **`animated-cube`** lossless WebP (integration tests must agree).
-pub const ANIMATED_CUBE_FRAME_COUNT: u32 = 360;
+/// Frame count for the **`animated-scene`** lossless WebP (integration tests must agree).
+pub const ANIMATED_SCENE_FRAME_COUNT: u32 = 360;
 
 pub mod framebuffer;
 pub mod geometry;

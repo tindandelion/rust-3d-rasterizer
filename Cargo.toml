@@ -2,7 +2,7 @@
 name = "thorus-forge"
 version = "0.1.0"
 edition = "2024"
-default-run = "animated-cube"
+default-run = "animated-scene"
 
 [dependencies]
 approx = "0.5"
