@@ -62,10 +62,10 @@ mod tests {
     #[test]
     fn unit_cube_corner_and_face_counts() {
         let mesh = unit_cube();
-        assert_eq!(mesh.vertices.len(), 8);
-        assert_eq!(mesh.faces.len(), 12);
+        assert_eq!(mesh.vertices().len(), 8);
+        assert_eq!(mesh.faces().len(), 12);
         assert!(
-            mesh.vertices
+            mesh.vertices()
                 .iter()
                 .all(|p| p.x.abs() <= 0.5 && p.y.abs() <= 0.5 && p.z.abs() <= 0.5),
         );

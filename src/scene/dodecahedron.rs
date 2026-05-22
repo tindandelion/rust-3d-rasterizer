@@ -129,13 +129,13 @@ mod tests {
     fn vertices_match_cube_axis_half_extent() {
         let mesh = unit_dodecahedron();
         let half = 0.5_f32;
-        for p in &mesh.vertices {
+        for p in mesh.vertices() {
             assert!(
                 p.x.abs() <= half + 1e-4 && p.y.abs() <= half + 1e-4 && p.z.abs() <= half + 1e-4,
                 "vertices must stay inside [-0.5, 0.5]^3 like unit_cube ({p:?})",
             );
         }
-        let max_coord = mesh.vertices.iter().fold(0_f32, |acc, p| {
+        let max_coord = mesh.vertices().iter().fold(0_f32, |acc, p| {
             acc.max(p.x.abs().max(p.y.abs()).max(p.z.abs()))
         });
         assert_relative_eq!(max_coord, half, epsilon = 1e-4);
@@ -151,7 +151,7 @@ mod tests {
             for (u, v) in [(i, j), (j, k), (k, i)] {
                 let key = if u < v { (u, v) } else { (v, u) };
                 seen.entry(key)
-                    .or_insert_with(|| d.vertices[u].distance(d.vertices[v]));
+                    .or_insert_with(|| d.vertices()[u].distance(d.vertices()[v]));
             }
         }
         let shortest = seen.values().copied().fold(f32::INFINITY, f32::min);

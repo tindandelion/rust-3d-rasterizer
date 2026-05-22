@@ -9,18 +9,28 @@ use super::facet::Facet;
 
 use crate::{TriMesh, Triangle, geometry::Normal3};
 
-/// Generic mesh: **`vertices[k]`** positions, **`Facet::verts`** index into **`vertices`**.
+/// Generic mesh: **`Facet::verts`** index into vertex positions from **[`vertices`](Shape::vertices)**.
 ///
-/// Caller must validate indices against **`vertices`** — canonical **`TriMesh`** examples: **`[unit_cube](crate::scene::cube::unit_cube)`**, **`[unit_dodecahedron](crate::scene::dodecahedron::unit_dodecahedron)`**.
+/// Canonical **`TriMesh`** examples: **`[unit_cube](crate::scene::cube::unit_cube)`**, **`[unit_dodecahedron](crate::scene::dodecahedron::unit_dodecahedron)`**.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Shape {
-    pub vertices: Vec<Vec3>,
-    pub faces: Vec<Facet>,
+    vertices: Vec<Vec3>,
+    faces: Vec<Facet>,
 }
 
 impl Shape {
     pub fn new(vertices: Vec<Vec3>, faces: Vec<Facet>) -> Self {
         Self { vertices, faces }
+    }
+
+    #[inline]
+    pub fn vertices(&self) -> &[Vec3] {
+        self.vertices.as_slice()
+    }
+
+    #[inline]
+    pub fn faces(&self) -> &[Facet] {
+        self.faces.as_slice()
     }
 
     /// Applies **`Mat4::transform_point3`** per vertex and **[`Facet::transform`]** per facet (composition matches **`unit_dodecahedron`** / **`unit_cube`**).
