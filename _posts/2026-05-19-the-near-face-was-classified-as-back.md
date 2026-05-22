@@ -103,4 +103,4 @@ This release was a small detour: correct facing, then back to basic shading on t
 [source-visible-faces]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.7/src/scene/cube.rs#L72
 [source-looking-from-front]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.7/src/scene/cube.rs#L190
 [source-draw-faces]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.7/src/lib.rs#L65
-[post-each-face-catches-its-shade]: {{site.baseurl}}/{% post_url 2026-05-19-each-face-catches-its-shade %}
+[post-each-face-catches-its-shade]: {{site.baseurl}}/{% post_url 2026-05-20-each-face-catches-its-shade %}
