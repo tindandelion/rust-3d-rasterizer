@@ -72,8 +72,8 @@ impl Camera {
 
     /// Unit vector in world space pointing **into** the scene (**view / forward**).
     ///
-    /// Matches this module’s fixed pose (**`+Z`** forward, left-handed — see module docs). Used for
-    /// front‑facing classification for [`crate::scene::cube::Cube::visible_facets`].
+    /// Matches this module’s fixed pose (**`+Z`** forward, left-handed — see module docs). Consumed by
+    /// [`TriMesh::visible_facets`](crate::TriMesh) / [`Facet::is_front_facing`](crate::scene::facet::Facet::is_front_facing).
     pub fn direction(&self) -> Normal3 {
         Normal3::Z
     }

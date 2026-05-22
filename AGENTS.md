@@ -22,7 +22,7 @@ When behavior or scope is unclear, **prefer the planning docs** over guessing.
 ## Conventions to preserve
 
 - **World/camera intuition:** Unity-style **left-handed**, **+Y up**, **+Z forward** (see spec for clip/screen mapping details).
-- **Geometry API:** **`Cube::visible_facets`** yields **`Triangle`** (corners **`[Vec3; 3]`**, facet **`Normal3`**) per front-facing **`Facet`**; **`draw_faces`** uses one **`FillTriangle`** draw per **`Triangle`**. **`Dodecahedron`** generalizes **`scene/cube`** toward **`[Vertex; 3]`** submit only (**no standalone quad-fill path** remains). **`Sphere`/torus** add geometry on that stack only; evolve **`Vertex`** only when a milestone needs new attributes.
+- **Geometry API:** **`Cube`** and **`scene::dodecahedron::Dodecahedron`** implement **`TriMesh`**: **`visible_facets`** yields **`Triangle`** (corners **`[Vec3; 3]`**, facet **`Normal3`**) per front **`Facet`**; **`draw_faces`** uses one **`FillTriangle`** draw per **`Triangle`**. **`Sphere`/torus** add geometry on this stack only; evolve **`Vertex`** only when a milestone needs new attributes.
 - **Scope:** Restricted scenes in early phases; procedural meshes; long-term visual target includes a **torus**—follow milestone order in the breakdown doc.
 
 ## How to work in this repo

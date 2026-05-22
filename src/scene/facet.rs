@@ -1,6 +1,6 @@
 //! Triangular hull facet (**CCW winding** vertex indices viewed from outside along the outward [`Normal3`]).
 //!
-//! Stored indices reference a parent mesh **`vertices`** (**[`Cube`](crate::scene::cube::Cube)** carries **both**)—**Facet** stays mesh-agnostic and **does not** embed positions.
+//! Stored indices reference a parent mesh **`vertices`** (**[`Cube`](crate::scene::cube::Cube)** / **[`Dodecahedron`](crate::scene::dodecahedron::Dodecahedron)** carry **`vertices`** + **`Facet`**s)—**Facet** stays mesh‑agnostic and **does not** embed positions.
 
 use glam::Mat4;
 

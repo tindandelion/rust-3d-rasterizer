@@ -10,7 +10,7 @@ use std::array;
 
 use super::facet::Facet;
 
-use crate::{Shape, Triangle, geometry::Normal3};
+use crate::{TriMesh, Triangle, geometry::Normal3};
 
 /// Axis-aligned box corners plus triangular facet topology ready for posing via [`Cube::transform`].
 ///
@@ -39,7 +39,7 @@ impl Cube {
     }
 }
 
-impl Shape for Cube {
+impl TriMesh for Cube {
     fn visible_facets(&self, view_direction: Normal3) -> impl Iterator<Item = Triangle> + '_ {
         self.faces
             .iter()

@@ -49,16 +49,21 @@ pub struct Triangle {
     pub normal: Normal3,
 }
 
-pub trait Shape {
+pub trait TriMesh {
     fn visible_facets(&self, view_direction: Normal3) -> impl Iterator<Item = Triangle> + '_;
 }
 
-/// Filled **`Cube`**: **`FillTriangle::draw`** per **[`scene::cube::Triangle`]** from **[`Cube::visible_facets`](crate::scene::cube::Cube::visible_facets)** (**[`Facet::is_front_facing`](crate::scene::facet::Facet::is_front_facing)**).
+/// Filled mesh: **[`FillTriangle::draw`](framebuffer::FillTriangle::draw)** per [`Triangle`] from **[`TriMesh::visible_facets`]**, with **[`DiffuseLight::calc_intensity`]** on each facet normal.
 ///
 /// **[`DiffuseLight::calc_intensity`]** consumes **`triangle.normal`**; shaded color **`CUBE_ALBEDO`** · intensity.
-pub fn draw_faces(fb: &mut FrameBuffer, camera: &Camera, shape: &impl Shape, light: &DiffuseLight) {
+pub fn draw_faces(
+    fb: &mut FrameBuffer,
+    camera: &Camera,
+    mesh: &impl TriMesh,
+    light: &DiffuseLight,
+) {
     let forward = camera.direction();
-    for triangle in shape.visible_facets(forward) {
+    for triangle in mesh.visible_facets(forward) {
         let intensity = light.calc_intensity(triangle.normal);
         let color = CUBE_ALBEDO.scale(intensity);
         let corners: [glam::UVec2; 3] = array::from_fn(|i| camera.transform(triangle.corners[i]));
