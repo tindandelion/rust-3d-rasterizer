@@ -10,14 +10,7 @@ use std::array;
 
 use super::facet::Facet;
 
-use crate::geometry::Normal3;
-
-/// One strictly front-filled **triangle** in world space: **`corners`** + outward **facet** **[`Normal3`]**.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Triangle {
-    pub corners: [Vec3; 3],
-    pub normal: Normal3,
-}
+use crate::{Shape, Triangle, geometry::Normal3};
 
 /// Axis-aligned box corners plus triangular facet topology ready for posing via [`Cube::transform`].
 ///
@@ -44,9 +37,10 @@ impl Cube {
             faces: array::from_fn(|i| self.faces[i].transform(m)),
         }
     }
+}
 
-    /// One **`Triangle`** per visible **`Facet`** (world **`corners`** plus that facet’s **`normal`**).
-    pub fn visible_facets(&self, view_direction: Normal3) -> impl Iterator<Item = Triangle> + '_ {
+impl Shape for Cube {
+    fn visible_facets(&self, view_direction: Normal3) -> impl Iterator<Item = Triangle> + '_ {
         self.faces
             .iter()
             .filter(move |f| f.is_front_facing(view_direction))

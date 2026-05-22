@@ -28,7 +28,7 @@ pub use lighting::DiffuseLight;
 pub use ortho_camera::Camera;
 pub use webp_encoder::WebpEncoder;
 
-use scene::cube::Cube;
+use crate::geometry::Normal3;
 
 /// Single **`Rgb`** **albedo** for filled cube rendering ([`draw_faces`]) — saturated blue (**`#346ED2`**) tuned for diffuse shading.
 pub const CUBE_ALBEDO: Rgb = Rgb(52, 110, 210);
@@ -40,12 +40,25 @@ pub fn output_webp_path_from_args() -> OsString {
         .unwrap_or_else(|| DEFAULT_OUT_PATH.into())
 }
 
+type Vertex = glam::Vec3;
+
+/// One strictly front-filled **triangle** in world space: **`corners`** + outward **facet** **[`Normal3`]**.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Triangle {
+    pub corners: [Vertex; 3],
+    pub normal: Normal3,
+}
+
+pub trait Shape {
+    fn visible_facets(&self, view_direction: Normal3) -> impl Iterator<Item = Triangle> + '_;
+}
+
 /// Filled **`Cube`**: **`FillTriangle::draw`** per **[`scene::cube::Triangle`]** from **[`Cube::visible_facets`](crate::scene::cube::Cube::visible_facets)** (**[`Facet::is_front_facing`](crate::scene::facet::Facet::is_front_facing)**).
 ///
 /// **[`DiffuseLight::calc_intensity`]** consumes **`triangle.normal`**; shaded color **`CUBE_ALBEDO`** · intensity.
-pub fn draw_faces(fb: &mut FrameBuffer, camera: &Camera, cube: &Cube, light: &DiffuseLight) {
+pub fn draw_faces(fb: &mut FrameBuffer, camera: &Camera, shape: &impl Shape, light: &DiffuseLight) {
     let forward = camera.direction();
-    for triangle in cube.visible_facets(forward) {
+    for triangle in shape.visible_facets(forward) {
         let intensity = light.calc_intensity(triangle.normal);
         let color = CUBE_ALBEDO.scale(intensity);
         let corners: [glam::UVec2; 3] = array::from_fn(|i| camera.transform(triangle.corners[i]));
