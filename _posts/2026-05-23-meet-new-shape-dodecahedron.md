@@ -1,7 +1,7 @@
 ---
 layout: post
-title: "Meet new shape: Dodecahedron"
-date: 2026-05-22 12:00:00 +0200
+title: "Meet New Shape: Dodecahedron"
+date: 2026-05-23 12:00:00 +0200
 authors: Sergey and Cursor
 ---
 
