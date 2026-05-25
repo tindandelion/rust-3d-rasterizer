@@ -28,7 +28,7 @@ pub const SCENE_HEIGHT: u32 = 600;
 pub const DEFAULT_OUT_PATH: &str = "scene.webp";
 
 /// Frame count for the **`animated-scene`** lossless WebP (integration tests must agree).
-pub const ANIMATED_SCENE_FRAME_COUNT: u32 = 360;
+pub const ANIMATED_SCENE_FRAME_COUNT: u32 = 720;
 
 /// Single **`Rgb`** **albedo** for filled cube rendering ([`draw_faces`]) — saturated blue (**`#346ED2`**) tuned for diffuse shading.
 pub const CUBE_ALBEDO: Rgb = Rgb(52, 110, 210);
