@@ -54,20 +54,19 @@ use crate::geometry::Normal3;
 #[derive(Clone, Copy, Debug)]
 pub struct Camera {
     direction: Normal3,
+    viewport_transform: Mat4,
     transform_matrix: Mat4,
 }
 
 impl Camera {
-    pub fn at_position(position: Vec3, viewport_width: u32, viewport_height: u32) -> Self {
+    pub fn for_viewport(viewport_width: u32, viewport_height: u32) -> Self {
         assert!(viewport_width > 0 && viewport_height > 0);
-
-        let (direction, world_camera_transform) = world_to_camera(position);
         let viewport_transform = ndc_viewport_matrix(viewport_width, viewport_height);
+        Self::with_viewport_transform(Vec3::new(0.0, 0.0, -1.0), viewport_transform)
+    }
 
-        Self {
-            direction: direction.into(),
-            transform_matrix: viewport_transform * world_camera_transform,
-        }
+    pub fn move_to(self, position: Vec3) -> Self {
+        Self::with_viewport_transform(position, self.viewport_transform)
     }
 
     /// Unit vector in world space pointing **into** the scene (**view / forward**).
@@ -82,6 +81,16 @@ impl Camera {
     pub fn transform(&self, world_point: Vec3) -> UVec2 {
         let p = self.transform_matrix * world_point.extend(1.0);
         UVec2::new(p.x.round() as u32, p.y.round() as u32)
+    }
+
+    fn with_viewport_transform(position: Vec3, viewport_transform: Mat4) -> Self {
+        let (direction, world_camera_transform) = world_to_camera(position);
+
+        Self {
+            direction: direction.into(),
+            viewport_transform: viewport_transform,
+            transform_matrix: viewport_transform * world_camera_transform,
+        }
     }
 }
 
@@ -125,17 +134,15 @@ mod tests {
     mod camera_at_default_pos {
         use super::super::*;
 
-        const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.0, -1.0);
-
         #[test]
         fn direction_is_pos_z_forward() {
-            let camera = Camera::at_position(CAMERA_POS, 800, 600);
+            let camera = Camera::for_viewport(800, 600);
             assert_eq!(camera.direction(), Normal3::Z);
         }
 
         #[test]
         fn world_center_maps_to_viewport_center() {
-            let camera = Camera::at_position(CAMERA_POS, 101, 51);
+            let camera = Camera::for_viewport(101, 51);
             assert_eq!(
                 camera.transform(Vec3::new(0.0, 0.0, 0.0)),
                 UVec2::new(50, 25),
@@ -144,7 +151,7 @@ mod tests {
 
         #[test]
         fn corners_map_to_expected_pixels() {
-            let camera = Camera::at_position(CAMERA_POS, 101, 51);
+            let camera = Camera::for_viewport(101, 51);
 
             assert_eq!(
                 camera.transform(Vec3::new(-1.0, -1.0, 0.0)),
@@ -166,7 +173,7 @@ mod tests {
 
         #[test]
         fn non_square_viewport_preserves_equal_axis_span_in_pixels() {
-            let camera = Camera::at_position(CAMERA_POS, 100, 50);
+            let camera = Camera::for_viewport(100, 50);
 
             let left = camera.transform(Vec3::new(-1.0, 0.0, 0.0)).x;
             let right = camera.transform(Vec3::new(1.0, 0.0, 0.0)).x;
@@ -178,7 +185,7 @@ mod tests {
 
         #[test]
         fn world_z_shift_does_not_change_screen_xy() {
-            let camera = Camera::at_position(CAMERA_POS, 640, 480);
+            let camera = Camera::for_viewport(640, 480);
 
             let a = Vec3::new(0.12, -0.34, 5.0);
             let b = Vec3::new(0.12, -0.34, -900.0);
@@ -195,7 +202,7 @@ mod tests {
         #[test]
         fn camera_direction() {
             let camera_pos: Vec3 = Vec3::new(0.0, 1.0, -1.0);
-            let camera = Camera::at_position(camera_pos, 101, 101);
+            let camera = Camera::for_viewport(101, 101).move_to(camera_pos);
 
             assert_relative_eq!(
                 Vec3::new(0.0, -consts::SQRT_2 / 2.0, consts::SQRT_2 / 2.0),
@@ -206,7 +213,7 @@ mod tests {
         #[test]
         fn camera_position_becomes_new_origin() {
             let camera_pos: Vec3 = Vec3::new(0.0, -1.0, -1.0);
-            let camera = Camera::at_position(camera_pos, 101, 101);
+            let camera = Camera::for_viewport(101, 101).move_to(camera_pos);
 
             let camera_pt = camera.transform(camera_pos);
             assert_eq!(UVec2::new(50, 50), camera_pt);
@@ -215,7 +222,7 @@ mod tests {
         #[test]
         fn rotate_camera_to_look_at_world_center() {
             let camera_pos: Vec3 = Vec3::new(1.0, 1.0, -1.0);
-            let camera = Camera::at_position(camera_pos, 101, 101);
+            let camera = Camera::for_viewport(101, 101).move_to(camera_pos);
 
             let camera_pt = camera.transform(Vec3::ZERO);
             assert_eq!(UVec2::new(50, 50), camera_pt);
@@ -224,7 +231,7 @@ mod tests {
         #[test]
         fn camera_moves_along_z_axis() {
             let camera_pos = Vec3::new(0.0, 0.0, -1.0);
-            let camera = Camera::at_position(camera_pos, 101, 101);
+            let camera = Camera::for_viewport(101, 101).move_to(camera_pos);
 
             let camera_pt = camera.transform(Vec3::new(1.0, 1.0, 0.0));
             assert_eq!(UVec2::new(100, 0), camera_pt);
@@ -233,7 +240,7 @@ mod tests {
         #[test]
         fn camera_at_zero_aligns_with_world_center() {
             let camera_pos = Vec3::new(0.0, 0.0, 0.0);
-            let camera = Camera::at_position(camera_pos, 101, 101);
+            let camera = Camera::for_viewport(101, 101).move_to(camera_pos);
 
             let camera_pt = camera.transform(Vec3::new(1.0, 1.0, 1.0));
 
@@ -243,7 +250,7 @@ mod tests {
         #[test]
         fn camera_at_arbitrary_position() {
             let camera_pos = Vec3::new(1.0, 1.0, -1.0);
-            let camera = Camera::at_position(camera_pos, 101, 101);
+            let camera = Camera::for_viewport(101, 101).move_to(camera_pos);
 
             let camera_pt = camera.transform(Vec3::new(1.0, 1.0, 0.0));
             assert_eq!(UVec2::new(85, 30), camera_pt);

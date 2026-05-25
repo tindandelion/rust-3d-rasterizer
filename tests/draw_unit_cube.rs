@@ -19,7 +19,7 @@ const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.0, -1.0);
 #[test]
 fn draw_unit_cube() {
     let mut fb = FrameBuffer::new(FB_WIDTH, FB_HEIGHT);
-    let camera = Camera::at_position(CAMERA_POS, FB_WIDTH, FB_HEIGHT);
+    let camera = Camera::for_viewport(FB_WIDTH, FB_HEIGHT).move_to(CAMERA_POS);
     let light = DiffuseLight::new(-camera.direction(), 0.1);
     let mesh = unit_cube();
 

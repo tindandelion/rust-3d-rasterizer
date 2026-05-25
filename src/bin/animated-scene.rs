@@ -31,18 +31,17 @@ fn model_matrix_euler_sweep(frame_index: u32, lap_frames: u32) -> Mat4 {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let out_path = output_webp_path_from_args();
 
-    let camera = Camera::at_position(CAMERA_POS, SCENE_WIDTH, SCENE_HEIGHT);
+    let mut framebuffer = FrameBuffer::new(SCENE_WIDTH, SCENE_HEIGHT);
+    let mut encoder = WebpEncoder::with_frame_spacing(SCENE_WIDTH, SCENE_HEIGHT, FRAME_SPACING_MS)?;
     let light = DiffuseLight::new(glam::Vec3::new(1.0, 1.0, -1.0).into(), 0.25);
 
-    let mut framebuffer = FrameBuffer::new(SCENE_WIDTH, SCENE_HEIGHT);
+    let shape = unit_dodecahedron();
+    let camera = Camera::for_viewport(SCENE_WIDTH, SCENE_HEIGHT).move_to(CAMERA_POS);
 
-    let mut encoder = WebpEncoder::with_frame_spacing(SCENE_WIDTH, SCENE_HEIGHT, FRAME_SPACING_MS)?;
-
-    let base = unit_dodecahedron();
     for frame_index in 0..ANIMATED_SCENE_FRAME_COUNT {
         framebuffer.clear_black();
 
-        let mesh = base.transform(model_matrix_euler_sweep(
+        let mesh = shape.transform(model_matrix_euler_sweep(
             frame_index,
             ANIMATED_SCENE_FRAME_COUNT,
         ));
