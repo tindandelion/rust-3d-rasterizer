@@ -1,8 +1,8 @@
 //! **`scene::dodecahedron::unit_dodecahedron`** (same **`[-0.5, 0.5]³`** framing as **`scene::cube::unit_cube`**),
 //! diffuse **`CUBE_ALBEDO`**, back-face culled — **two-phase** **`ANIMATED_SCENE_FRAME_COUNT`**-frame clip (**double** the older single‑phase length).
 //!
-//! 1. **Camera orbit (`… / 2` frames):** **eye** **`(0, 0.2, −1)` → … → `(0, 0.2, −1)`** by **`360°`** around **`+Y`** on **`xz`** radius **`CAMERA_ORBIT_RADIUS`**, **`y = 0.2`** (**`(sin θ, 0.2, −cos θ)`**); scaled dodecahedron **does not tumble** (**`0.75`** uniform scale only).
-//! 2. **Model tumble (`… / 2` frames):** **camera** pinned at **`(0, 0.2, −1)`**; **`0.75`** uniform world scale plus **three-axis Euler** tumble (**`R_z R_y R_x`** with a common angle).
+//! 1. **Camera orbit (`… / 2` frames):** **eye** **`(0, 0.2, −1)` → … → `(0, 0.2, −1)`** by **`360°`** around **`+Y`** on **`xz`** radius **`CAMERA_ORBIT_RADIUS`**, **`y = 0.2`** (**`(sin θ, 0.2, −cos θ)`**); **cubic ease‑in‑out** on angle per lap (slow ends, quicker middle); scaled dodecahedron **does not tumble** (**`0.75`** uniform scale only).
+//! 2. **Model tumble (`… / 2` frames):** **camera** pinned at **`(0, 0.2, −1)`**; **`0.75`** uniform world scale plus **three-axis Euler** tumble (**`R_z R_y R_x`** with a common eased angle — same pacing as orbit).
 
 use std::path::Path;
 
@@ -28,6 +28,19 @@ fn half_lap_frames() -> u32 {
     ANIMATED_SCENE_FRAME_COUNT / 2
 }
 
+/// **Ease‑in‑out (cubic):** slow at the ends, faster in the middle — applied separately to **each** animation half (**orbit**, **tumble**).
+///
+/// **`u`** is linear progress in **`[0, 1]`** (**`frame_index / lap_frames`** in this bin); **`0 → 1`** and **`d/du`** zero at **`u ∈ {0, 1}`** so motion eases without overshoot.
+fn ease_in_out_cubic(u: f32) -> f32 {
+    let u = u.clamp(0.0, 1.0);
+    if u < 0.5 {
+        4.0 * u * u * u
+    } else {
+        let v = -2.0 * u + 2.0;
+        1.0 - v * v * v / 2.0
+    }
+}
+
 /// **Eye** position on the **`xz`** circle (**`CAMERA_ORBIT_RADIUS`**) framing **`Vec3::ZERO`**, **`+Y`** up.
 /// **`angle = 0`** yields **`CAMERA_DEFAULT_EYE`** (**`−Z`** at **`CAMERA_EYE_Y`**); angle increases toward **world +X** (**right‑hand wrap** around **+Y**).
 fn camera_eye_orbit(angle: f32) -> Vec3 {
@@ -47,7 +60,8 @@ fn model_matrix_scaled_only() -> Mat4 {
 /// **`frame_index`** in **`0‥lap_frames`**; base **`unit_dodecahedron()`** verts span **`[-0.5, 0.5]³`** axis box.
 fn model_matrix_euler_sweep(frame_index: u32, lap_frames: u32) -> Mat4 {
     let n = lap_frames.max(1) as f32;
-    let t = (frame_index as f32 / n) * std::f32::consts::TAU;
+    let u = frame_index as f32 / n;
+    let t = ease_in_out_cubic(u) * std::f32::consts::TAU;
     let spin = Mat4::from_rotation_z(t) * Mat4::from_rotation_y(t) * Mat4::from_rotation_x(t);
     let scale = Mat3::from_diagonal(Vec3::splat(0.75));
     spin * Mat4::from_mat3(scale)
@@ -73,7 +87,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let (camera_pos, mesh) = if frame_index < half {
             let n = half.max(1) as f32;
-            let angle = (frame_index as f32 / n) * std::f32::consts::TAU;
+            let u = frame_index as f32 / n;
+            let angle = ease_in_out_cubic(u) * std::f32::consts::TAU;
             let eye = camera_eye_orbit(angle);
             let mesh = shape.transform(model_matrix_scaled_only());
             (eye, mesh)
