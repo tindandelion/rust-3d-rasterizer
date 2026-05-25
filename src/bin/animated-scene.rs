@@ -1,8 +1,8 @@
 //! **`scene::dodecahedron::unit_dodecahedron`** (same **`[-0.5, 0.5]³`** framing as **`scene::cube::unit_cube`**),
 //! diffuse **`CUBE_ALBEDO`**, back-face culled — **two-phase** **`ANIMATED_SCENE_FRAME_COUNT`**-frame clip (**double** the older single‑phase length).
 //!
-//! 1. **Camera orbit (`… / 2` frames):** **eye** **`(0, 0.3, −1)` → … → `(0, 0.3, −1)`** by **`360°`** around **`+Y`** on **`xz`** radius **`CAMERA_ORBIT_RADIUS`**, **`y = 0.3`** (**`(sin θ, 0.3, −cos θ)`**); scaled dodecahedron **does not tumble** (**`0.75`** uniform scale only).
-//! 2. **Model tumble (`… / 2` frames):** **camera** pinned at **`(0, 0.3, −1)`**; **`0.75`** uniform world scale plus **three-axis Euler** tumble (**`R_z R_y R_x`** with a common angle).
+//! 1. **Camera orbit (`… / 2` frames):** **eye** **`(0, 0.2, −1)` → … → `(0, 0.2, −1)`** by **`360°`** around **`+Y`** on **`xz`** radius **`CAMERA_ORBIT_RADIUS`**, **`y = 0.2`** (**`(sin θ, 0.2, −cos θ)`**); scaled dodecahedron **does not tumble** (**`0.75`** uniform scale only).
+//! 2. **Model tumble (`… / 2` frames):** **camera** pinned at **`(0, 0.2, −1)`**; **`0.75`** uniform world scale plus **three-axis Euler** tumble (**`R_z R_y R_x`** with a common angle).
 
 use std::path::Path;
 
@@ -21,7 +21,7 @@ use thorus_forge::{DiffuseLight, draw_faces};
 const FRAME_SPACING_MS: i32 = 20;
 const CAMERA_ORBIT_RADIUS: f32 = 1.0;
 /// **`y`** elevation shared by default **orbit** start/end and **tumble** pin (horizontal circle **`y =`** this).
-const CAMERA_EYE_Y: f32 = 0.3;
+const CAMERA_EYE_Y: f32 = 0.2;
 const CAMERA_DEFAULT_EYE: Vec3 = Vec3::new(0.0, CAMERA_EYE_Y, -CAMERA_ORBIT_RADIUS);
 
 fn half_lap_frames() -> u32 {
@@ -58,7 +58,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut framebuffer = FrameBuffer::new(SCENE_WIDTH, SCENE_HEIGHT);
     let mut encoder = WebpEncoder::with_frame_spacing(SCENE_WIDTH, SCENE_HEIGHT, FRAME_SPACING_MS)?;
-    let light = DiffuseLight::new(glam::Vec3::new(1.0, 1.0, -1.0).into(), 0.25);
+    let light = DiffuseLight::new(glam::Vec3::new(1.0, 0.5, -1.0).into(), 0.25);
 
     let shape = unit_dodecahedron();
     let half = half_lap_frames();
