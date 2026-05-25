@@ -6,7 +6,7 @@
 //! **`scale = (min(w,h) − 1) / 2`** is an integer, so unit-cube **`±0.5`** corners land exactly on
 //! **`FILLED_MIN…FILLED_LAST`** (**no** intermediate **`f32::round`**).
 
-use glam::UVec2;
+use glam::{UVec2, Vec3};
 use thorus_forge::{
     CUBE_ALBEDO, Camera, DiffuseLight, FillTriangle, FrameBuffer, draw_faces,
     scene::cube::unit_cube,
@@ -14,11 +14,12 @@ use thorus_forge::{
 
 const FB_WIDTH: u32 = 101;
 const FB_HEIGHT: u32 = 101;
+const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.0, -1.0);
 
 #[test]
 fn draw_unit_cube() {
     let mut fb = FrameBuffer::new(FB_WIDTH, FB_HEIGHT);
-    let camera = Camera::new(FB_WIDTH, FB_HEIGHT);
+    let camera = Camera::at_position(CAMERA_POS, FB_WIDTH, FB_HEIGHT);
     let light = DiffuseLight::new(-camera.direction(), 0.1);
     let mesh = unit_cube();
 

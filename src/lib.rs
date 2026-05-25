@@ -6,16 +6,6 @@ use std::array;
 use std::env;
 use std::ffi::OsString;
 
-/// Raster width in pixels (golden stills / integration tests must agree).
-pub const SCENE_WIDTH: u32 = 800;
-/// Raster height in pixels (golden stills / integration tests must agree).
-pub const SCENE_HEIGHT: u32 = 600;
-
-pub const DEFAULT_OUT_PATH: &str = "scene.webp";
-
-/// Frame count for the **`animated-scene`** lossless WebP (integration tests must agree).
-pub const ANIMATED_SCENE_FRAME_COUNT: u32 = 360;
-
 pub mod framebuffer;
 pub mod geometry;
 pub mod lighting;
@@ -29,6 +19,16 @@ pub use ortho_camera::Camera;
 pub use webp_encoder::WebpEncoder;
 
 use crate::geometry::Normal3;
+
+/// Raster width in pixels (golden stills / integration tests must agree).
+pub const SCENE_WIDTH: u32 = 800;
+/// Raster height in pixels (golden stills / integration tests must agree).
+pub const SCENE_HEIGHT: u32 = 600;
+
+pub const DEFAULT_OUT_PATH: &str = "scene.webp";
+
+/// Frame count for the **`animated-scene`** lossless WebP (integration tests must agree).
+pub const ANIMATED_SCENE_FRAME_COUNT: u32 = 360;
 
 /// Single **`Rgb`** **albedo** for filled cube rendering ([`draw_faces`]) — saturated blue (**`#346ED2`**) tuned for diffuse shading.
 pub const CUBE_ALBEDO: Rgb = Rgb(52, 110, 210);

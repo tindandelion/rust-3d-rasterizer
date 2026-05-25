@@ -17,6 +17,7 @@ use thorus_forge::{DiffuseLight, draw_faces};
 ///
 /// **`20 ms`** ⇒ **50 fps** (`1000 / 20`). With **`360`** frames, one full tumble lap samples **`t`** from **0** to **τ** (exclusive of **τ** on the last sample step).
 const FRAME_SPACING_MS: i32 = 20;
+const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.0, -1.0);
 
 /// **World-fixed** Euler tumble (**`R_z R_y R_x`**) with **`0.75`** uniform world scale; base **`unit_dodecahedron()`** verts already span **`[-0.5, 0.5]³`** axis box.
 fn model_matrix_euler_sweep(frame_index: u32, lap_frames: u32) -> Mat4 {
@@ -30,7 +31,7 @@ fn model_matrix_euler_sweep(frame_index: u32, lap_frames: u32) -> Mat4 {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let out_path = output_webp_path_from_args();
 
-    let camera = Camera::new(SCENE_WIDTH, SCENE_HEIGHT);
+    let camera = Camera::at_position(CAMERA_POS, SCENE_WIDTH, SCENE_HEIGHT);
     let light = DiffuseLight::new(glam::Vec3::new(1.0, 1.0, -1.0).into(), 0.25);
 
     let mut framebuffer = FrameBuffer::new(SCENE_WIDTH, SCENE_HEIGHT);

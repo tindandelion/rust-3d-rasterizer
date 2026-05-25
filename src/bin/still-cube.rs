@@ -11,10 +11,10 @@ use thorus_forge::{
 use thorus_forge::{DiffuseLight, draw_faces};
 
 const TILT: f32 = std::f32::consts::FRAC_PI_4;
+const CAMERA_POS: Vec3 = Vec3::new(0.1, 0.4, -1.0);
 
-/// **π/4** tilt on **X** then **Y**, **0.5** uniform scale (matches golden still / readable ortho cube).
 fn model_matrix_still() -> Mat4 {
-    let base = Mat3::from_rotation_x(TILT) * Mat3::from_rotation_y(TILT);
+    let base = Mat3::from_rotation_y(TILT);
     let scale = Mat3::from_diagonal(Vec3::splat(0.5));
     Mat4::from_mat3(base * scale)
 }
@@ -23,7 +23,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let out_path = output_webp_path_from_args();
 
     let mut framebuffer = FrameBuffer::new(SCENE_WIDTH, SCENE_HEIGHT);
-    let camera = Camera::new(SCENE_WIDTH, SCENE_HEIGHT);
+    let camera = Camera::at_position(CAMERA_POS, SCENE_WIDTH, SCENE_HEIGHT);
     let light = DiffuseLight::new(glam::Vec3::new(1.0, 1.0, -1.0).into(), 0.25);
 
     let mesh = unit_cube().transform(model_matrix_still());
