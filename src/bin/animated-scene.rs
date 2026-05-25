@@ -10,15 +10,11 @@ use glam::{Mat3, Mat4, Vec3};
 
 use thorus_forge::scene::dodecahedron::unit_dodecahedron;
 use thorus_forge::{
-    ANIMATED_SCENE_FRAME_COUNT, Camera, FrameBuffer, SCENE_HEIGHT, SCENE_WIDTH, WebpEncoder,
-    output_webp_path_from_args,
+    ANIMATED_SCENE_FRAME_COUNT, ANIMATED_SCENE_FRAME_SPACING_MS, Camera, FrameBuffer, SCENE_HEIGHT,
+    SCENE_WIDTH, WebpEncoder, output_webp_path_from_args,
 };
 use thorus_forge::{DiffuseLight, draw_faces};
 
-/// Timestamp step between successive frames (**ms**); last frame duration uses the same spacing at **`finalize`**.
-///
-/// **`20 ms`** ⇒ **50 fps** (`1000 / 20`).
-const FRAME_SPACING_MS: i32 = 20;
 const CAMERA_ORBIT_RADIUS: f32 = 1.0;
 /// **`y`** elevation shared by default **orbit** start/end and **tumble** pin (horizontal circle **`y =`** this).
 const CAMERA_EYE_Y: f32 = 0.2;
@@ -71,7 +67,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let out_path = output_webp_path_from_args();
 
     let mut framebuffer = FrameBuffer::new(SCENE_WIDTH, SCENE_HEIGHT);
-    let mut encoder = WebpEncoder::with_frame_spacing(SCENE_WIDTH, SCENE_HEIGHT, FRAME_SPACING_MS)?;
+    let mut encoder = WebpEncoder::with_frame_spacing(
+        SCENE_WIDTH,
+        SCENE_HEIGHT,
+        ANIMATED_SCENE_FRAME_SPACING_MS,
+    )?;
     let light = DiffuseLight::new(glam::Vec3::new(1.0, 0.5, -1.0).into(), 0.25);
 
     let shape = unit_dodecahedron();

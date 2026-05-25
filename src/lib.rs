@@ -30,6 +30,12 @@ pub const DEFAULT_OUT_PATH: &str = "scene.webp";
 /// Frame count for the **`animated-scene`** lossless WebP (integration tests must agree).
 pub const ANIMATED_SCENE_FRAME_COUNT: u32 = 720;
 
+/// Milliseconds between successive **`animated-scene`** frame timestamps (**`1000 / 20` ⇒ 50 fps**).
+///
+/// `libwebp` may merge identical consecutive frames in the mux, but the **animation timeline** (sum
+/// of frame durations) still matches **`ANIMATED_SCENE_FRAME_COUNT ×` this value**.
+pub const ANIMATED_SCENE_FRAME_SPACING_MS: i32 = 20;
+
 /// Single **`Rgb`** **albedo** for filled cube rendering ([`draw_faces`]) — saturated blue (**`#346ED2`**) tuned for diffuse shading.
 pub const CUBE_ALBEDO: Rgb = Rgb(52, 110, 210);
 
