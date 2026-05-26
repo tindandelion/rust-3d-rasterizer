@@ -62,7 +62,9 @@ At the scene level, [`draw_faces`][source-draw-faces] is now generic over `TriMe
 
 ## What comes next
 
-The same pipeline now accepts any `TriMesh` solid. The open milestone is **[Sphere: triangular mesh][project-breakdown-sphere]** — procedural sphere tessellation on that path, with room to tighten indexed mesh structure (shared vertices vs triangle soup). After that come smooth shading, a depth buffer, the torus, and eventually perspective projection — still in the [breakdown order][project-breakdown-0-0-9] we sketched when we added the dodecahedron step.
+The same pipeline now accepts any `TriMesh` solid. We took a brief detour first — see [We Can Move the Camera Now!][post-walk-around-scene] for the flexible look-at camera — then return to **[Sphere: triangular mesh][project-breakdown-sphere]** — procedural sphere tessellation on that path, with room to tighten indexed mesh structure (shared vertices vs triangle soup). After that come smooth shading, a depth buffer, the torus, and eventually perspective projection — still in the [breakdown order][project-breakdown-0-0-9] we sketched when we added the dodecahedron step.
+
+[post-walk-around-scene]: {{site.baseurl}}{% post_url 2026-05-25-walk-around-the-scene %}
 
 [dodecahedron-wikipedia]: https://en.wikipedia.org/wiki/Regular_dodecahedron
 [post-cube-gets-light]: {{site.baseurl}}{% post_url 2026-05-22-the-cube-gets-light %}
