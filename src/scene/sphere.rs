@@ -33,20 +33,13 @@ pub fn unit_sphere() -> Shape {
     }
 
     for f in FACETS {
-        let normal = Normal3::from_vertices_ccw(&[vertices[f[0]], vertices[f[1]], vertices[f[2]]]);
+        let corners = [vertices[f[0]], vertices[f[1]], vertices[f[2]]];
+        let normal = Normal3::from_vertices_ccw(&corners);
         let facet = Facet::new(normal, f);
         faces.push(facet);
     }
 
     Shape::new(vertices, faces)
-}
-
-impl Normal3 {
-    pub fn from_vertices_ccw(vertices: &[Vec3]) -> Self {
-        let vec1 = vertices[1] - vertices[0];
-        let vec2 = vertices[2] - vertices[1];
-        vec2.cross(vec1).into()
-    }
 }
 
 #[cfg(test)]

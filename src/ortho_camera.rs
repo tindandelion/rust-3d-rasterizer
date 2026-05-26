@@ -100,7 +100,7 @@ impl Camera {
 
         Self {
             direction: direction.into(),
-            viewport_transform: viewport_transform,
+            viewport_transform,
             transform_matrix: viewport_transform * world_camera_transform,
         }
     }

@@ -1,4 +1,4 @@
-//! Lossless WebP still: **filled** **cube** — uniform **`CUBE_ALBEDO`** blue, **`DiffuseLight`**, back-face culled; edge length **0.5** in world space.
+//! Lossless WebP still: **filled** **octasphere** (`unit_sphere` seed) — uniform **`CUBE_ALBEDO`** blue, **`DiffuseLight`**, back-face culled; **0.5** uniform scale in world space.
 
 use std::path::Path;
 
@@ -10,7 +10,6 @@ use thorus_forge::{
 };
 use thorus_forge::{DiffuseLight, draw_faces};
 
-const TILT: f32 = std::f32::consts::FRAC_PI_4;
 const CAMERA_POS: Vec3 = Vec3::new(0.1, 0.4, -1.0);
 
 fn model_matrix_still() -> Mat4 {

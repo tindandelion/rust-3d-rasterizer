@@ -14,6 +14,16 @@ impl Normal3 {
     pub const Z: Self = Self(Vec3::Z);
     pub const NEG_Z: Self = Self(Vec3::NEG_Z);
 
+    /// Outward-facing unit normal for triangle corners **`vertices[0]` → `vertices[1]` → `vertices[2]`**
+    /// in the same winding sense as **[`crate::scene::facet::Facet`]**: CCW viewed from outside along the normal,
+    /// two edge vectors anchored at **`vertices[0]`**, cross **\((v_2 - v_0) \times (v_1 - v_0)\)**.
+    pub fn from_vertices_ccw(vertices: &[Vec3; 3]) -> Self {
+        let v0 = vertices[0];
+        let vec1 = vertices[1] - v0;
+        let vec2 = vertices[2] - v0;
+        vec2.cross(vec1).into()
+    }
+
     pub fn dot(&self, other: Self) -> f32 {
         self.0.dot(other.0)
     }
@@ -102,5 +112,42 @@ mod tests {
         let a = Normal3::from(v);
         let b = Normal3::from(v + Vec3::new(1e-8, 0.0, 0.0));
         assert_relative_eq!(a, b);
+    }
+
+    // Same corner order as `scene::sphere` facet indices [4, 1, 0] (+ octant).
+    #[test]
+    fn from_vertices_ccw_octahedron_positive_octant() {
+        let corners = [
+            Vec3::new(0.0, 0.0, 1.0),
+            Vec3::new(0.0, 1.0, 0.0),
+            Vec3::new(1.0, 0.0, 0.0),
+        ];
+        let n = Normal3::from_vertices_ccw(&corners);
+        assert_relative_eq!(n, Normal3::from(Vec3::ONE));
+        assert_relative_eq!(n.length_squared(), 1.0);
+    }
+
+    #[test]
+    fn from_vertices_ccw_swapping_last_two_corners_flips_normal() {
+        let corners = [
+            Vec3::new(0.0, 0.0, 1.0),
+            Vec3::new(0.0, 1.0, 0.0),
+            Vec3::new(1.0, 0.0, 0.0),
+        ];
+        let swapped = [
+            Vec3::new(0.0, 0.0, 1.0),
+            Vec3::new(1.0, 0.0, 0.0),
+            Vec3::new(0.0, 1.0, 0.0),
+        ];
+        let a = Normal3::from_vertices_ccw(&corners);
+        let b = Normal3::from_vertices_ccw(&swapped);
+        assert_relative_eq!(a, -b);
+    }
+
+    #[test]
+    #[should_panic(expected = "Normal3 requires a non-zero Vec3")]
+    fn from_vertices_ccw_collinear_corners_panics() {
+        let corners = [Vec3::ZERO, Vec3::X, Vec3::new(2.0, 0.0, 0.0)];
+        let _ = Normal3::from_vertices_ccw(&corners);
     }
 }
