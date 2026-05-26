@@ -18,9 +18,8 @@ impl Normal3 {
     /// in the same winding sense as **[`crate::scene::facet::Facet`]**: CCW viewed from outside along the normal,
     /// two edge vectors anchored at **`vertices[0]`**, cross **\((v_2 - v_0) \times (v_1 - v_0)\)**.
     pub fn from_vertices_ccw(vertices: &[Vec3; 3]) -> Self {
-        let v0 = vertices[0];
-        let vec1 = vertices[1] - v0;
-        let vec2 = vertices[2] - v0;
+        let vec1 = vertices[1] - vertices[0];
+        let vec2 = vertices[2] - vertices[0];
         vec2.cross(vec1).into()
     }
 
