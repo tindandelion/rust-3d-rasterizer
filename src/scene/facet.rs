@@ -2,7 +2,7 @@
 //!
 //! Stored indices reference a parent mesh **`vertices`** (**[`Shape`](crate::scene::shape::Shape)**, e.g. [`unit_cube`](crate::scene::cube::unit_cube), [`unit_dodecahedron`](crate::scene::dodecahedron::unit_dodecahedron))—**Facet** stays mesh‑agnostic and **does not** embed positions.
 
-use glam::Mat4;
+use glam::{Mat4, Vec3};
 
 use crate::geometry::Normal3;
 
@@ -25,6 +25,14 @@ impl Facet {
     /// Indices into the parent **`vertices`** (winding follows [`Self::edges`] CCW traversal).
     pub fn verts(&self) -> &[usize; 3] {
         &self.verts
+    }
+
+    pub fn retrieve_vertices(&self, vertices: &[Vec3]) -> [Vec3; 3] {
+        [
+            vertices[self.verts[0]],
+            vertices[self.verts[1]],
+            vertices[self.verts[2]],
+        ]
     }
 
     /// Outward unit normal in **`vertices`** space.

@@ -74,7 +74,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
     let light = DiffuseLight::new(glam::Vec3::new(1.0, 0.5, -1.0).into(), 0.25);
 
-    let shape = unit_sphere();
+    let shape = unit_sphere(0);
     let half = half_lap_frames();
     assert_eq!(
         ANIMATED_SCENE_FRAME_COUNT,
