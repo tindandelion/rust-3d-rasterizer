@@ -66,25 +66,25 @@ impl OctoSplitter {
     }
 
     pub fn split_facet(&mut self, facet: &Facet) -> [Facet; 4] {
-        let [i_a, i_b, i_c] = facet.verts();
+        let &[i_a, i_b, i_c] = facet.verts();
         let [a, b, c] = facet.retrieve_vertices(&self.vertices);
-        let (i_m_ab, m_ab) = self.split_edge(*i_a, *i_b);
-        let (i_m_ac, m_ac) = self.split_edge(*i_a, *i_c);
-        let (i_m_bc, m_bc) = self.split_edge(*i_b, *i_c);
+        let (i_m_ab, m_ab) = self.split_edge(i_a, i_b);
+        let (i_m_ac, m_ac) = self.split_edge(i_a, i_c);
+        let (i_m_bc, m_bc) = self.split_edge(i_b, i_c);
 
         let facet_1 = Facet::new(
             Normal3::from_vertices_ccw(&[a, m_ab, m_ac]),
-            [*i_a, i_m_ab, i_m_ac],
+            [i_a, i_m_ab, i_m_ac],
         );
 
         let facet_2 = Facet::new(
             Normal3::from_vertices_ccw(&[b, m_bc, m_ab]),
-            [*i_b, i_m_bc, i_m_ab],
+            [i_b, i_m_bc, i_m_ab],
         );
 
         let facet_3 = Facet::new(
             Normal3::from_vertices_ccw(&[c, m_ac, m_bc]),
-            [*i_c, i_m_ac, i_m_bc],
+            [i_c, i_m_ac, i_m_bc],
         );
 
         let facet_4 = Facet::new(
@@ -129,6 +129,7 @@ pub fn unit_sphere(splits: usize) -> Shape {
 
 #[cfg(test)]
 mod tests {
+    use approx::assert_relative_eq;
     use glam::Vec3;
 
     use crate::geometry::Normal3;
@@ -179,5 +180,15 @@ mod tests {
         let sphere = unit_sphere(2);
         assert_eq!(128, sphere.faces().len());
         assert_eq!(66, sphere.vertices().len());
+    }
+
+    #[test]
+    fn unit_sphere_vertices_lie_on_unit_sphere() {
+        for splits in 0..=3 {
+            let mesh = unit_sphere(splits);
+            for p in mesh.vertices() {
+                assert_relative_eq!(1.0, p.length());
+            }
+        }
     }
 }
