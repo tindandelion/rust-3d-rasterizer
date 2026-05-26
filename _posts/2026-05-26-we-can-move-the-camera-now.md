@@ -26,7 +26,7 @@ Things get more interesting when the camera starts moving. To simplify the camer
 
 * We can place the camera at any arbitrary position in the scene; 
 * The camera always looks at the scene center (world origin).
-* Camera's _up_ stays aligned with $+Y$ world axis: vertical lines in the scene stay vertical on screen (in other words, there's no roll).
+* The camera's _up_ stays aligned with the $+Y$ world axis: vertical lines in the scene stay vertical on screen (in other words, there's no roll).
 
 ![Different camera orientations]({{site.baseurl}}/assets/images/camera-orientations.svg)
 
@@ -34,7 +34,7 @@ With those rules the camera frame is both _translated_ and _rotated_ relative to
 
 It leads to two distinct steps in the projection pipeline to render the shape: 
 
-* First, we convert the shape vertex coordinates from world to camera's coordinate space; 
+* First, we convert the shape's vertex coordinates from world to the camera's coordinate space; 
 * Second, we apply the viewport transform that maps 3D coordinates into the 2D pixel space. 
 
 ## Transforming coordinate systems
@@ -76,11 +76,11 @@ The second formula is the one we need: take a mesh vertex in the world, multiply
 
 ### Rotation matrix
 
-The question then becomes: _how can we build that transformation matrix for the camera?_ Let's have a look at the constraints we've set before: 
+The question then becomes: _how can we build that transformation matrix for the camera?_ Let's have a look at the constraints we set earlier: 
 
 1. The camera sits at position $\mathbf{c}$ in the scene.
 2. It looks at the world's center $\mathbf{0}$.
-3. It stays upright relative to world's $+Y$ axis.
+3. It stays upright relative to the world's $+Y$ axis.
 
 They give us enough information to build $\mathbf{C}$, one basis vector at a time.
 
@@ -90,7 +90,7 @@ $$
 \mathbf{c_z} = \frac{\mathbf{0} - \mathbf{c}}{\|\mathbf{0} - \mathbf{c}\|} = -\frac{\mathbf{c}}{\|\mathbf{c}\|}
 $$
 
-Having $\mathbf{c_z}$, we can now derive the up vector $\mathbf{c_y}$ ($Y'$ axis). We want camera up as close to world $+Y$ as possible while staying perpendicular to $\mathbf{c_z}$. Let's take a look at this picture to see how we can derive $\mathbf{c_y}$ from world's $\mathbf{y} = (0,1,0)$ and $\mathbf{c_z}$, using the auxiliary vector $\mathbf{u}$:
+Having $\mathbf{c_z}$, we can now derive the up vector $\mathbf{c_y}$ ($Y'$ axis). We want the camera up as close to world $+Y$ as possible while staying perpendicular to $\mathbf{c_z}$. Let's take a look at this picture to see how we can derive $\mathbf{c_y}$ from the world's $\mathbf{y} = (0,1,0)$ and $\mathbf{c_z}$, using the auxiliary vector $\mathbf{u}$:
 
 ![Derivation of c_y]({{site.baseurl}}/assets/images/derivation-of-c_y.svg)
 
@@ -120,13 +120,13 @@ $$
 \mathbf{V} = \bigl(\mathbf{T}(\mathbf{c})\,\mathbf{C}\bigr)^{-1}
 $$
 
-where $\mathbf{T}(\mathbf{c})$ is translation by the camera position. Intuitively that means "subtract the camera offset and rotate into camera axes". We could write it by hand staying in the 3D space: 
+where $\mathbf{T}(\mathbf{c})$ is translation by the camera position. Intuitively that means "subtract the camera offset and rotate into camera axes". We could write it by hand in 3D space: 
 
 $$\mathbf{p_c} = \mathbf{C}^{-1}(\mathbf{p_w} - \mathbf{c})$$
 
 though in homogeneous coordinates it is more compact and aligns well with other kinds of transforms.  
 
-It's also worth noting that basis matrix $\mathbf{C}$ is [_orthonormal_][orthonormal-basis], which means that $\mathbf{C}^{-1} = \mathbf{C}^T$, and also $\mathbf{T}^{-1}(\mathbf{c}) = \mathbf{T}(\mathbf{-c})$. Using these properties, we can write the view matrix without an explicit inverse: 
+It's also worth noting that the basis matrix $\mathbf{C}$ is [_orthonormal_][orthonormal-basis], which means that $\mathbf{C}^{-1} = \mathbf{C}^T$, and also $\mathbf{T}^{-1}(\mathbf{c}) = \mathbf{T}(\mathbf{-c})$. Using these properties, we can write the view matrix without an explicit inverse: 
 
 $$
 \mathbf{V} = \mathbf{C}^T\,\mathbf{T}(\mathbf{-c})
@@ -143,7 +143,7 @@ For now, Sergey decided not to bother coming up with fallbacks for those cases: 
 
 ## Implementation details
 
-All that calculation goes into the [`Camera`][source-ortho-camera] data type. The API of this type still stays small; we only add the ability to move the camera around the scene:
+All that calculation goes into the [`Camera`][source-ortho-camera] data type. The API of this type remains small; we only add the ability to move the camera around the scene:
 
 - [`Camera::for_viewport`][source-for-viewport] — default eye $(0, 0, -1)$, target at the origin (replaces `Camera::new`).
 - [`Camera::move_to`][source-move-to] — new eye, same target and world-up policy; rebuilds view and stored forward.
