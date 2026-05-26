@@ -5,37 +5,47 @@ date: 2026-05-25 08:00:00 +0200
 authors: Sergey and Cursor
 ---
 
-Our 3D renderer becomes more potent: after the [exercise with the dodecahedron][post-dodecahedron], it acquired the ability to render an arbitrary shape, as long as we can represent it as a triangular mesh. It is quite restricted in other area, though: we can only render the scene from a single fixed point of view. Sergey wanted to add a bit more flexibility: what if we could position our camera at (almost) any point in the scene? This led us to an interesting quest in linear algebra: _transforming coordinate spaces_ between the world and the camera. 
+After the [exercise with the dodecahedron][post-dodecahedron], the renderer can draw any shape we can express as a triangular mesh — but only from one baked viewpoint. Sergey wanted more flexibility: place the camera at (almost) any point in the scene while it still looks at the center and keeps the horizon level. That led to a short quest in linear algebra: transforming coordinate spaces between _world_ and _view_ coordinate systems.
 
 [Version 0.0.10 on GitHub][version-0-0-10]{: .no-github-icon}
 
 ## What you will see
 
-Having completed this exercise, we can now move the camera around the scene. Our animation now demonstrates this newly acquired ability. You'll still see the shaded dodecahedron, but notice that there is a change: 
+This milestone divides our demo animation clip into two parts. You still see the shaded dodecahedron, but now the animation is show-casing different kinds of scene transformation:
 
-1. The first half of the animation is the camera circling around the shape; 
-2. The second half is our well known rotation of the shape, when viewed from the fixed PoV.
+1. The first half of the clip orbit the camera around the dodecahedron on a circle in the XZ plane;
+2. The the second half pins the camera and bring back the familiar Euler tumble of the model, viewed from a fixed eye.
 
 ![Two-phase clip: camera orbit around a static dodecahedron, then model tumble with a fixed camera](https://raw.githubusercontent.com/tindandelion/rust-3d-rasterizer/0.0.10/doc/output/current.webp)
 
-## World and view coordinates 
+## World and view coordinates
 
-Until now, we had a fixed camera position that greatly simplified our life: we assumed that the camera was located at the point $(0, 0, -1)$, looking at the world's zero point. With this camera position, the math is very easy: camera's coordinate system basically aligns with the world's coordinates; the only difference is that $Z$ coordinate is shifted. But since in orthographic projection we discard Z coordinates anyways, that difference didn't affect anything. So with the camera in that position, we could safely assume that _world coordinates_ and _view coordinates_ are the same. 
+Until now we assumed the camera sat at $(0, 0, -1)$, looking at the world's origin. With that pose the math to convert between world and camera coordinates stayed easy: the camera's axes line up with the world's, and the only offset is along $Z$. Because [orthographic projection][orthographic-projection] drops depth for screen placement anyway, that $Z$ shift never changed affected positions — so we could treat world space and view space as the same.
 
-Things start to get more interesting when we start moving the camera around. Let's imagine that we can place the camera in any arbitrary point in the scene, but with some restrictions on the camera orientation: 
+Things get more interesting when the eye moves. To simplify things slightly, let's consider the following ability to place the camera:
 
-* The camera still looks at the world's center; 
-* The camera is oriented vertically: vertical lines in the scene stay vertical in the camera's view. 
+* We can place the camera at any arbitrary position in the scene; 
+* The camera always looks at the scene center (world origin).
+* _Camera up_ stays aligned with $+Y$ world axis: vertical lines in the scene stay vertical on screen (there's no roll).
 
 ![Different camera orientations]({{site.baseurl}}/assets/images/camera-orientations.svg)
 
-In that case, the camera's coordinate system becomes both _translated_ and _rotated_ relative to the world's system. We can't use shape's vertex coordiantes as-is anymore. In order to build a correct projection from the camera's poit of view, we first need to transform all world (global) coordinates into the camera's (local) coordinate system, and then apply the projection transfromation that gives us the resulting screen coordinates in pixels. 
+With those rules the camera frame is both _translated_ and _rotated_ relative to the world. It means that we can no longer use mesh vertex coordinates straight away. First, we need to transform all world coordinates in $XYZ$ into the coordinates in the local camera coordinate system $X'Y'Z'$. That transformation will give us a view into the scene **what it looks like from the camera's point of view**. 
+
+It leads to two distinct steps in the projection pipeline: 
+
+* First, we convert the shape vertex coordinates from world to camera's coordinate space; 
+* Second, we apply the viewport transform that maps 3D coordinates into the 2D pixel space. 
 
 ## Transforming coordinate systems
 
-When it comes to transforming coordinate systems, linear algebra comes to help us a lot. Let's see how. 
+To learn how to transform the coordinates between different spaces, we need a bit of linear algebra first. 
 
-First of all, the camera coordinate system can be specified as 3 _basis vectors_, one for each axis of the 3D space: 
+As we know, the 3D space can be specified by three [_basis vectors_][link?] that span the coordinate space. For the world coordinates, we assume the [natural basis][link?], specified by unit vectors: 
+
+<insert the vectors e_x, e_y, e_z>
+
+The camera frame is specified by its own basis vectors, each of which can be expressed in the *world coordinate system*:
 
 $$
 \mathbf{c_x} = \begin{pmatrix} c_{x1} \\ c_{x2} \\ c_{x3}\end{pmatrix}
@@ -45,9 +55,9 @@ $$
 \mathbf{c_z} = \begin{pmatrix} c_{z1} \\ c_{z2} \\ c_{z3}\end{pmatrix}
 $$
 
-Notice that coordinates for these vectors are given in terms of *world coordinate system*; in other words, it's a description _how the camera's coordinate system is oriented in the world_.  
+Those vectors gives us a description of how the camera's axes sit inside the world.
 
-We can combine these vectors into 3x3 matrix $\mathbf{C} = \begin{pmatrix}\ \mathbf{c_x}; \mathbf{c_y}; \mathbf{c_z} \end{pmatrix}$. This becomes a _transformation matrix_ that relates points between camera and world spaces. In particular, given the point coordinates in the camera's system $\mathbf{p_c}$, we can find its coordinates in the world's space $\mathbf{p_w}$, and vice versa, using simple formulas:  
+Stack them as columns of a $3 \times 3$ transformation matrix $\mathbf{C} = \begin{pmatrix}\ \mathbf{c_x} & \mathbf{c_y} & \mathbf{c_z}\end{pmatrix}$. That matrix relates camera-space and world-space points:
 
 $$
 \begin{gather}
@@ -56,67 +66,89 @@ $$
 \end{gather}
 $$
 
-Let's apply now this knowledge to build the rotation matrix that will align camera and world spaces. 
+The second formula is the one we need each frame: take a vertex in the world, multiply by $\mathbf{C}^{-1}$, and you have coordinates in the camera space.
 
-## First step: rotation matrix 
+## First step: rotation matrix
 
-Remember the conditions we've specified for the camera: they are sufficient to build the camera basis: 
+The question then becomes: _how can we build the transformation matrix for the camera?_. Let's have a look at the constraints we've set before: 
 
-1. The camera is placed at position $\mathbf{c}$ in the scene; 
-2. The camera looks at the world's center $\mathbf{0}$;
-3. The camera is oriented vertically. 
+1. The camera sits at position $\mathbf{c}$ in the scene.
+2. It looks at the world's center $\mathbf{0}$.
+3. It stays upright relative to world $+\mathrm{Y}$.
 
-We'll start from finding the $\mathbf{c_z}$ vector. That's the easiest to find using camera position and the fact that it looks at the world's center: 
+They give use enough information to build $\mathbf{C}$, one vector by one.
+
+We start with the **forward ($\mathbf{c_z}$)** vector ($Z'$ axis). Into-scene is from the camera position toward the target:
 
 $$
 \mathbf{c_z} = \frac{\mathbf{0} - \mathbf{c}}{\|\mathbf{0} - \mathbf{c}\|} = -\frac{\mathbf{c}}{\|\mathbf{c}\|}
 $$
 
-Once we have $\mathbf{c_z}$, we can use it to find $\mathbf{c_y}$. First of all, we know that it's going to be perpendicular to $\mathbf{c_z}$. Second, we know that it's going to lie in the plane spanned by $\mathbf{c_z}$ and world's Y axis (by condition 3 above). To find it, let's have a look at the picture: 
+**Up ($\mathbf{c_y}$).** We want camera up as close to world $+Y$ as possible while staying perpendicular to $\mathbf{c_z}$. Let's take a look at this picture to see how we can derive $\mathbf{c_y}$ from world's $\mathbf{y} = (0,1,0)$ and $\mathbf{c_z}$, using the auxiliary vector $\mathbf{u}$:
 
 ![Derivation of c_y]({{site.baseurl}}/assets/images/derivation-of-c_y.svg)
 
 $$
+\mathbf{u} = (\mathbf{y} \cdot \mathbf{c_z})\,\mathbf{c_z}
+\qquad
 \mathbf{c_y} = \frac{\mathbf{y} - \mathbf{u}}{\|\mathbf{y} - \mathbf{u}\|}
 $$
 
-We've expressed $\mathbf{c_y}$ in terms of world's Y axis and the auxillary vector $\mathbf{u}$. In its turn, $\mathbf{u}$ is a vector projection of Y onto $\mathbf{c_z}$: 
-
-$$
-\mathbf{u} = (\mathbf{y} \cdot \mathbf{c_z}) \mathbf{c_z}
-$$
-
-Finally, what's left is to find $\mathbf{c_x}$. Since we already have $\mathbf{c_z}$ and $\mathbf{c_y}$, it becomes a trivial cross product operation: 
+With $\mathbf{c_y}$ and $\mathbf{c_z}$ in hand, we can now calculate the **right ($\mathbf{c_x}$)** basis vector to complete the frame. It becomes a [cross product][cross-product] (operand order matters in our left-handed scene):
 
 $$
 \mathbf{c_x} = \mathbf{c_y} \times \mathbf{c_z}
 $$
 
-Notice that the order of operands in the cross product matters: because we use left-hand coordinate system, we should use [left-hand rule][link-to-cross-product] to determine the direction of the X axis. 
+Those three unit vectors are exactly the columns of $\mathbf{C}$.
 
-## Combining rotation and translation 
+## Combining rotation and translation
 
-TBD
+Rotation alone would leave the camera's origin sitting on top of the world's origin. We also need to account for the translation component of our view transform, that places the camera origin at $\mathbf{c}$. Unfortunately, translation cannot be expressed in the matrix form in "normal" 3D space: in order to combine it with rotation, we need to move to 4D [homogeneous coordinate space][link?]. Luckily, we can re-use our 3D rotation marix $\mathbf{C}$, adjusted for homogeneous coordinates. 
 
-## Implementation
+In homogeneous coordinates we build a $4 \times 4$ matrix that first applies the rotation $\mathbf{C}$, then translates by $\mathbf{c}$ — that composite maps a point from camera space into world space. Inverting it gives is the _view matrix_ that maps world points into the camera frame:
 
-The public surface is small and mirrors how exporters use it:
+$$
+\mathbf{V} = \bigl(\mathbf{T}(\mathbf{c})\,\mathbf{C}\bigr)^{-1}
+$$
 
-- [`Camera::for_viewport`][source-for-viewport] — default eye **`(0, 0, −1)`**, target at origin (replaces the old `Camera::new`).
-- [`Camera::move_to`][source-move-to] — same viewport mapping, new eye; rebuilds view and stored forward direction.
-- [`Camera::transform`][source-transform] — world **`Vec3` → `UVec2`** through the precomputed matrix.
+where $\mathbf{T}(\mathbf{c})$ is translation by the camera position. Intuitively that means "subtract the camera offset and rotate into camera axes". We could write it by hand staying in the 3D space: 
+
+$$\mathbf{p_c} = \mathbf{C}^{-1}(\mathbf{p_w} - \mathbf{c})$$
+
+though in homogeneous coordinates it is more compact and aligns well with other kinds of transforms.  
+
+## Some camera positions are forbidden 
+
+With the math above, we can place the camera at _almost_ any arbitrary point in the scene. There are a few exceptions, though: 
+
+* We can't place the camera at the world's origin. That would yield a zero `forward` vector in our current implementation; 
+* We can't place the camera on the on the $\pm Y$ line through the origin: that would result in the zero-length `up` vector.
+
+For now, Sergey decided not to bother coming up with fallbacks for those cases: they will `panic!` today. Just place your cameras correctly, folks! 
+
+## Implementation details
+
+All that calculation goes into the `Camera` data type. The API of this type still stays small, we only add the ability to move the camera around the scene:
+
+- [`Camera::for_viewport`][source-for-viewport] — default eye $(0, 0, -1)$, target at the origin (replaces `Camera::new`).
+- [`Camera::move_to`][source-move-to] — new eye, same target and world-up policy; rebuilds view and stored forward.
+- [`Camera::transform`][source-transform] — world `Vec3` → pixel `UVec2` through the precomputed matrix.
 - [`Camera::direction`][source-direction] — world-space into-scene unit vector for culling and lighting.
 
-[`still-cube`][source-still-cube] calls **`move_to((0.1, 0.4, −1.0))`** so the filled cube still uses the π/4 tilt, but from a slightly raised, offset viewpoint. [`animated-scene`][source-animated-scene] drives **`camera_eye_orbit(angle)`** on the first **360** frames — **`(sin θ, 0.2, −cos θ)`** on a unit-radius **xz** circle — then pins **`(0, 0.2, −1)`** while the mesh tumbles. [`ANIMATED_SCENE_FRAME_COUNT`][source-frame-count] doubled to **720** to fit both halves.
+Our [`animated-scene`][source-animated-scene] binary uses `Camera::move_to` to make a full circle around the dodecahedron, to show-case our new ability. 
 
 ## What comes next
 
-The detour is landed; we can return to the [sphere milestone][project-breakdown-sphere] on the unified triangle path. Perspective projection later will reuse the same eye / target / world-up convention and only swap the projection half of the matrix stack. Depth buffer work still waits until self-overlap matters (torus and beyond).
+This exercise was a bit of a detour into the world of linear algebra and space transformations. 
+
+Now we can return to the [sphere milestone][project-breakdown-sphere]. Perspective projection later will reuse the same eye / target / world-up convention and only swap the projection half of the matrix stack. Depth buffer work still waits until self-overlap matters (torus and beyond).
 
 [post-dodecahedron]: {{site.baseurl}}{% post_url 2026-05-23-meet-new-shape-dodecahedron %}
-[project-breakdown-0-0-9]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.9/doc/planning/project-breakdown.md
 [version-0-0-10]: https://github.com/tindandelion/rust-3d-rasterizer/tree/0.0.10
 [project-breakdown-sphere]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.10/doc/planning/project-breakdown.md#--sphere-triangular-mesh--procedural-tessellation
+[orthographic-projection]: {{site.baseurl}}{% post_url 2026-05-15-a-cube-takes-shape %}
+[cross-product]: https://en.wikipedia.org/wiki/Cross_product
 [glam-crate]: https://docs.rs/glam
 [source-ortho-camera]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.10/src/ortho_camera.rs
 [source-world-to-camera]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.10/src/ortho_camera.rs#L124
@@ -124,9 +156,6 @@ The detour is landed; we can return to the [sphere milestone][project-breakdown-
 [source-move-to]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.10/src/ortho_camera.rs#L78
 [source-transform]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.10/src/ortho_camera.rs#L96
 [source-direction]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.10/src/ortho_camera.rs#L89
-[source-direction-0-0-9]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.9/src/ortho_camera.rs#L75
-[source-transform-0-0-9]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.9/src/ortho_camera.rs#L80
-[source-visible-facets]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.10/src/lib.rs#L52
 [source-still-cube]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.10/src/bin/still-cube.rs
 [source-animated-scene]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.10/src/bin/animated-scene.rs
 [source-frame-count]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.10/src/lib.rs#L35
