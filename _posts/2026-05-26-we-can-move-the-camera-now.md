@@ -84,13 +84,13 @@ The question then becomes: _how can we build that transformation matrix for the 
 
 They give us enough information to build $\mathbf{C}$, one basis vector at a time.
 
-We start with the **forward ($\mathbf{c_z}$)** vector ($Z'$ axis). It goes into the scene from the camera position and toward the target:
+We start with the forward vector $\mathbf{c_z}$ ($Z'$ axis). It goes into the scene from the camera position and toward the target:
 
 $$
 \mathbf{c_z} = \frac{\mathbf{0} - \mathbf{c}}{\|\mathbf{0} - \mathbf{c}\|} = -\frac{\mathbf{c}}{\|\mathbf{c}\|}
 $$
 
-Having $\mathbf{c_z}$, we can now look into the **up ($\mathbf{c_y}$)** vector ($Y'$ axis). We want camera up as close to world $+Y$ as possible while staying perpendicular to $\mathbf{c_z}$. Let's take a look at this picture to see how we can derive $\mathbf{c_y}$ from world's $\mathbf{y} = (0,1,0)$ and $\mathbf{c_z}$, using the auxiliary vector $\mathbf{u}$:
+Having $\mathbf{c_z}$, we can now derive the up vector $\mathbf{c_y}$ ($Y'$ axis). We want camera up as close to world $+Y$ as possible while staying perpendicular to $\mathbf{c_z}$. Let's take a look at this picture to see how we can derive $\mathbf{c_y}$ from world's $\mathbf{y} = (0,1,0)$ and $\mathbf{c_z}$, using the auxiliary vector $\mathbf{u}$:
 
 ![Derivation of c_y]({{site.baseurl}}/assets/images/derivation-of-c_y.svg)
 
@@ -102,7 +102,7 @@ $$
 
 For reference: this step is part of the [Gram–Schmidt process][gram-schmidt], which builds an orthonormal basis from a set of linearly independent vectors.
 
-With $\mathbf{c_y}$ and $\mathbf{c_z}$ in hand, we can now calculate the **right ($\mathbf{c_x}$)** basis vector to complete the frame. It becomes a [cross product][cross-product] (operand order matters in our left-handed scene):
+With $\mathbf{c_y}$ and $\mathbf{c_z}$ in hand, we can now calculate the right basis vector $\mathbf{c_x}$ to complete the frame. It becomes a [cross product][cross-product] (operand order matters in our left-handed scene):
 
 $$
 \mathbf{c_x} = \mathbf{c_y} \times \mathbf{c_z}
@@ -168,13 +168,9 @@ Now we can return to the [sphere milestone][project-breakdown-sphere]. Perspecti
 [cross-product]: https://en.wikipedia.org/wiki/Cross_product
 [gram-schmidt]: https://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt_process
 [orthonormal-basis]: https://en.wikipedia.org/wiki/Orthonormal_basis
-[glam-crate]: https://docs.rs/glam
 [source-ortho-camera]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.10/src/ortho_camera.rs
-[source-world-to-camera]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.10/src/ortho_camera.rs#L124
 [source-for-viewport]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.10/src/ortho_camera.rs#L72
 [source-move-to]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.10/src/ortho_camera.rs#L78
 [source-transform]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.10/src/ortho_camera.rs#L96
 [source-direction]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.10/src/ortho_camera.rs#L89
-[source-still-cube]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.10/src/bin/still-cube.rs
 [source-animated-scene]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.10/src/bin/animated-scene.rs
-[source-frame-count]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.10/src/lib.rs#L35
