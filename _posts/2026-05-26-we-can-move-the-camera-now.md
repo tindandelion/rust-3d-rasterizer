@@ -1,11 +1,11 @@
 ---
 layout: post
 title: "We Can Move the Camera Now!"
-date: 2026-05-25 08:00:00 +0200
+date: 2026-05-26 08:00:00 +0200
 authors: Sergey and Cursor
 ---
 
-After the [exercise with the dodecahedron][post-dodecahedron], the renderer can draw any shape we can express as a triangular mesh — but only from one baked viewpoint. Sergey wanted more flexibility: place the camera at (almost) any point in the scene while it still looks at the center of the scene. That requirement led us to a short quest in linear algebra: transforming coordinate spaces between _world_ and _view_ coordinate systems.
+After the [exercise with the dodecahedron][post-dodecahedron], the renderer can draw any shape we can express as a triangular mesh — but only from one baked-in viewpoint. Sergey wanted more flexibility: place the camera at (almost) any point in the scene, while it still points at the center. This challenge led us to a short quest in linear algebra: transforming coordinate spaces between _world_ and _view_ coordinate systems.
 
 [Version 0.0.10 on GitHub][version-0-0-10]{: .no-github-icon}
 
@@ -74,7 +74,7 @@ $$
 
 The second formula is the one we need: take a mesh vertex in the world, multiply by $\mathbf{C}^{-1}$, and you have coordinates in the camera space.
 
-## First step: rotation matrix
+### Rotation matrix
 
 The question then becomes: _how can we build that transformation matrix for the camera?_ Let's have a look at the constraints we've set before: 
 
@@ -100,7 +100,7 @@ $$
 \mathbf{c_y} = \frac{\mathbf{y} - \mathbf{u}}{\|\mathbf{y} - \mathbf{u}\|}
 $$
 
-Just for the reference: this equation is a part of [Gram-Schmidt algorithm][link?] that allows you to build an orthonormal basis from a set of arbitrary linear independent vectors.
+For reference: this step is part of the [Gram–Schmidt process][gram-schmidt], which builds an orthonormal basis from a set of linearly independent vectors.
 
 With $\mathbf{c_y}$ and $\mathbf{c_z}$ in hand, we can now calculate the **right ($\mathbf{c_x}$)** basis vector to complete the frame. It becomes a [cross product][cross-product] (operand order matters in our left-handed scene):
 
@@ -110,7 +110,7 @@ $$
 
 Those three unit vectors are exactly the columns of $\mathbf{C}$.
 
-## Combining rotation and translation
+### Combining rotation and translation
 
 Rotation alone would leave the camera's origin sitting on top of the world's origin. We also need to account for the translation component of our view transform, which places the camera origin at $\mathbf{c}$. However, translation cannot be expressed as a matrix in ordinary 3D space: in order to combine it with rotation, we need to move to 4D [_homogeneous coordinates_][homogeneous-coordinates]. Luckily, we can reuse our 3D rotation matrix $\mathbf{C}$, adjusted for homogeneous coordinates.
 
@@ -126,13 +126,13 @@ $$\mathbf{p_c} = \mathbf{C}^{-1}(\mathbf{p_w} - \mathbf{c})$$
 
 though in homogeneous coordinates it is more compact and aligns well with other kinds of transforms.  
 
-It's also worth noting that our basis $\mathbf{c}$ is [_orthonormal_][link?], which means that $\mathbf{C}^{-1} = \mathbf{C}^T$, and also $\mathbf{T}^{-1}(\mathbf{c}) = \mathbf{T}(\mathbf{-c})$. Using these properties, we can write the view matrix avoiding the inverse: 
+It's also worth noting that basis matrix $\mathbf{C}$ is [_orthonormal_][orthonormal-basis], which means that $\mathbf{C}^{-1} = \mathbf{C}^T$, and also $\mathbf{T}^{-1}(\mathbf{c}) = \mathbf{T}(\mathbf{-c})$. Using these properties, we can write the view matrix without an explicit inverse: 
 
 $$
 \mathbf{V} = \mathbf{C}^T\,\mathbf{T}(\mathbf{-c})
 $$
 
-## Some camera positions are forbidden 
+### Some camera positions are forbidden 
 
 With the math above, we can place the camera at _almost_ any arbitrary point in the scene. There are a few exceptions, though: 
 
@@ -166,6 +166,8 @@ Now we can return to the [sphere milestone][project-breakdown-sphere]. Perspecti
 [standard-basis]: https://en.wikipedia.org/wiki/Standard_basis
 [homogeneous-coordinates]: https://en.wikipedia.org/wiki/Homogeneous_coordinates
 [cross-product]: https://en.wikipedia.org/wiki/Cross_product
+[gram-schmidt]: https://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt_process
+[orthonormal-basis]: https://en.wikipedia.org/wiki/Orthonormal_basis
 [glam-crate]: https://docs.rs/glam
 [source-ortho-camera]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.10/src/ortho_camera.rs
 [source-world-to-camera]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.10/src/ortho_camera.rs#L124

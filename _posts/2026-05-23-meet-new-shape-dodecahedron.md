@@ -62,10 +62,11 @@ At the scene level, [`draw_faces`][source-draw-faces] is now generic over `TriMe
 
 ## What comes next
 
-The same pipeline now accepts any `TriMesh` solid. We took a brief detour first — see [We Can Move the Camera Now!][post-walk-around-scene] for the flexible look-at camera — then return to **[Sphere: triangular mesh][project-breakdown-sphere]** — procedural sphere tessellation on that path, with room to tighten indexed mesh structure (shared vertices vs triangle soup). After that come smooth shading, a depth buffer, the torus, and eventually perspective projection — still in the [breakdown order][project-breakdown-0-0-9] we sketched when we added the dodecahedron step.
+According to the plan, our next milestone was [learn to render the sphere][project-breakdown-sphere], but Sergey decided to take a small detour from the plan and have some fun with linear algebra. So, our next milestone becomes to learn how to [move the camera around][post-walk-around-scene], so that we could render the scene from an arbitrary point of view. 
 
-[post-walk-around-scene]: {{site.baseurl}}{% post_url 2026-05-25-walk-around-the-scene %}
+After that, we will come back to the planned route, unless Sergey decides to take another detour to explore yet another topic. Stay tuned! 
 
+[post-walk-around-scene]: {{site.baseurl}}{% post_url 2026-05-26-we-can-move-the-camera-now %}
 [dodecahedron-wikipedia]: https://en.wikipedia.org/wiki/Regular_dodecahedron
 [post-cube-gets-light]: {{site.baseurl}}{% post_url 2026-05-22-the-cube-gets-light %}
 [post-cube-paints-six-faces]: {{site.baseurl}}{% post_url 2026-05-18-the-cube-paints-its-six-faces %}
