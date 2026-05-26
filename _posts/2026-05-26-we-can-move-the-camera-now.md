@@ -150,7 +150,7 @@ All that calculation goes into the [`Camera`][source-ortho-camera] data type. Th
 - [`Camera::transform`][source-transform] — world `Vec3` → pixel `UVec2` through the precomputed matrix.
 - [`Camera::direction`][source-direction] — world-space into-scene unit vector for culling and lighting.
 
-Our [`animated-scene`][source-animated-scene] binary uses `Camera::move_to` to make a full circle around the dodecahedron, showcasing our new ability. 
+Our [`animated-scene`][source-animated-scene] binary uses `Camera::move_to` to make a full circle around the dodecahedron, showcasing this new capability. 
 
 ## What comes next
 
