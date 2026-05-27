@@ -64,10 +64,15 @@ This document describes how I plan to approach the project iteratively.
 - **Shipped:** **`shapes::sphere(splits)`** (**`src/shapes/sphere.rs`**) — octahedron seed, iterative edge-midpoint subdivision with a midpoint cache; indexed **`Shape`** / **`Facet`** storage; **`still-sphere`** bin (**`sphere(0)`**); **`animated-scene`** uses **`sphere(4)`** via **`draw_facets`**.
 - **Outcome:** **Faceted** shaded sphere (low tessellation should still read “polyhedral”).
 
-### [ ] Sphere: smooth shading
+### [ ] Sphere: Gouraud shading — interpolated diffuse
 
-- **Goal:** Learn **smooth shading** via **interpolated normals** (and renormalizing per fragment if you go that route).
-- **Outcome:** Same sphere mesh with **smooth** shading.
+- **Goal:** Learn **smooth shading** via **per-vertex normals** and **interpolated lighting**. Attach **radial normals** at sphere vertices; evaluate existing **`DiffuseLight`** (Lambert + ambient) **at each corner**; extend the scanline rasterizer to **interpolate intensity** (or shaded RGB) across edges and horizontal spans. **Faceted** path for **cube / dodecahedron** stays unchanged (**per-face **`UnitVec3`**).
+- **Outcome:** Same **`shapes::sphere`** mesh reads as a **smooth diffuse** surface (low tessellation may still show **Mach bands** or missed tight highlights—that motivates **Phong** next).
+
+### [ ] Sphere: Phong shading — interpolated normals + specular
+
+- **Goal:** **Per-pixel** lighting: interpolate **vertex normals** in screen space, **renormalize** per fragment, then evaluate lighting. Extend the lighting model with **Blinn–Phong specular** (**half-vector**, one **shininess** exponent, modest **specular weight** on top of ambient + diffuse; **view direction** from **`Camera::direction`** is sufficient under orthographic projection). **Defer specular on Gouraud**—highlights computed only at vertices smear or vanish.
+- **Outcome:** Same sphere mesh with **smoother diffuse** and **visible specular highlights**; lighting path **reused** on **filled torus** (**see **`Torus: filled + smooth shading`**).
 
 ### [ ] Depth buffer (**opaque occlusion**)
 
@@ -86,8 +91,8 @@ This document describes how I plan to approach the project iteratively.
 
 ### [ ] Torus: filled + smooth shading
 
-- **Goal:** Apply the same **triangle** filled pipeline as **cube/sphere** to the torus (**orthographic camera** retained through this milestone—the **projection matrix** swaps in **`Perspective projection`**, **next**).
-- **Outcome:** **Smooth-shaded filled torus** under **orthographic projection** (**CPU rasterizer capstone mesh** before **`Perspective projection`** and **Phase 2**).
+- **Goal:** Apply the same **triangle** filled pipeline as **cube/sphere** to the torus, reusing the **Phong** path (**interpolated normals + Blinn–Phong specular** from **`Sphere: Phong shading`**). **Orthographic camera** retained through this milestone—the **projection matrix** swaps in **`Perspective projection`**, **next**.
+- **Outcome:** **Phong-shaded filled torus** under **orthographic projection** (**CPU rasterizer capstone mesh** before **`Perspective projection`** and **Phase 2**).
 
 ### [ ] Perspective projection (CPU)
 
@@ -105,7 +110,7 @@ This document describes how I plan to approach the project iteratively.
 
 - **Current module layout:** **`geometry`** — **`Shape`**, **`Facet`**, **`UnitVec3`** (re-exported; private **`geometry/{shape,facet,unit_vec3}.rs`**). **`shapes`** — **`cube()`**, **`dodecahedron()`**, **`sphere(splits)`** (re-exported; private **`shapes/{cube,dodecahedron,sphere}.rs`**). **`TriMesh`**, **`Triangle`**, **`draw_facets`**, scene constants — **`src/lib.rs`**. Export bins — **`src/bin/`**.
 - **Animated export:** **`animated-scene`** (**`src/bin/animated-scene.rs`**) is the **two-phase** **lossless animated WebP** binary (formerly **`animated-cube`**): **`sphere(4)`** mesh, **`0.75`** uniform world scale, **`720`** frames (**`360`** camera orbit **`+`** **`360`** model tumble) at **`ANIMATED_SCENE_FRAME_SPACING_MS`**. **`still-cube`** is the **`shapes::cube()`** orthographic still (**π/4 X/Y tilt**, **½** scale). **`still-sphere`** exports a faceted **`shapes::sphere(0)`** still (**½** scale).
-- **Iteration order:** **`Camera: arbitrary eye`** **[x]** is **orthogonal** to **orthographic vs perspective**: **orbit-style **`look-at`** (eye anywhere sensible, target **scene center** defaulting to **world origin**, **world +Y up**) is **landed** in **`ortho_camera`**. **`Sphere: triangular mesh`** **[x]** (**`shapes::sphere`**). **`Sphere: smooth shading`** and **`Depth buffer`** remain open. **`Perspective projection`** still follows **filled torus** and **inherits** that **`look-at`** policy (**projection** swaps to **`w`** divide afterward). **Overall rhythm:** **cube + dodecahedron + sphere (triangle **`TriMesh`** + **`ScanlineFillTriangle`**) → depth → torus** stays **orthographic** first (simpler **\(w\)**-free correctness). **`Depth buffer`** sits **before torus** for **tube/hole overlap** under **orthographic** **`z`**; revisit **\(z_{\text{NDC}}\)** / depth behavior once **perspective** lands (**see `Perspective projection`**).
+- **Iteration order:** **`Camera: arbitrary eye`** **[x]** is **orthogonal** to **orthographic vs perspective**: **orbit-style **`look-at`** (eye anywhere sensible, target **scene center** defaulting to **world origin**, **world +Y up**) is **landed** in **`ortho_camera`**. **`Sphere: triangular mesh`** **[x]** (**`shapes::sphere`**). **`Sphere: Gouraud shading`**, **`Sphere: Phong shading`**, and **`Depth buffer`** remain open (**Gouraud → Phong → depth → torus**). **`Perspective projection`** still follows **filled torus** and **inherits** that **`look-at`** policy (**projection** swaps to **`w`** divide afterward). **Overall rhythm:** **cube + dodecahedron + sphere (triangle **`TriMesh`** + **`ScanlineFillTriangle`**) → Gouraud → Phong → depth → torus** stays **orthographic** first (simpler **\(w\)**-free correctness). **`Depth buffer`** sits **before torus** for **tube/hole overlap** under **orthographic** **`z`**; revisit **\(z_{\text{NDC}}\)** / depth behavior once **perspective** lands (**see `Perspective projection`**).
 - **Golden image regression tests:** add when eyeballing saturates — decode `.webp` to RGB and compare, or compare raw framebuffer bytes **before** encode (still vs animated).
 - **Live window** (`winit` + framebuffer blit): optional after disk-export workflow is boring—pairs naturally with animation (**real-time** rotation instead of writing WebPs).
 - **PNG / ffmpeg:** optional escape hatches for tooling compatibility or pixel-diff tooling that prefers PNG—**not** the default deliverable.

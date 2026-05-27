@@ -50,7 +50,7 @@ Optional stretch beyond the original two phases is allowed (e.g. deeper CPU topi
 - **Mesh progression:**
   1. **Cube (interim)** — **quad faces** only for the **first** filled-cube milestone (**six** convex quads; **4-vertex** faces). Wireframe can stay edge-based. This is a **deliberate shortcut**: **one** simple **bbox + inner test** raster path before general **triangle** fill.
   2. **Dodecahedron + cube triangles** — **shipped:** **`shapes::cube()`** seeds **twelve **`Facet`** wedges** (two per hull quad); **`shapes::dodecahedron()`** adds a **regular dodecahedron** (**`three.js`** detail 0 tri list). Both return **`geometry::Shape`** for **`TriMesh::visible_facets`** → **`draw_facets`** (**`ScanlineFillTriangle`**).
-  3. **Sphere** — **shipped (faceted):** **`shapes::sphere(splits)`** (octahedron seed + edge midpoint subdivision); **`still-sphere`** export bin. Smooth shading remains a separate milestone.
+  3. **Sphere** — **shipped (faceted):** **`shapes::sphere(splits)`** (octahedron seed + edge midpoint subdivision); **`still-sphere`** export bin. **Gouraud** then **Phong** (with **Blinn–Phong specular**) remain separate milestones (**see `doc/planning/project-breakdown.md`**).
   4. **Torus** — capstone CPU mesh complexity before/at GPU transition (**triangle** soup or indexed tris).
 - **Generation:** **procedural** meshes (no asset pipeline required early).
 
@@ -60,8 +60,8 @@ Optional stretch beyond the original two phases is allowed (e.g. deeper CPU topi
 
 - **Cube:** faceted first.
 - **Dodecahedron:** faceted (**pentagonal** faces shaded as planar facets; triangulation is a **submission** detail).
-- **Sphere:** faceted first as well (low tessellation reads as a polyhedron).
-- **Smooth shading:** implemented as an explicit **sub-step after** faceted shading works on the relevant shapes (do not mix concerns early).
+- **Sphere:** faceted first as well (low tessellation reads as a polyhedron); then **Gouraud** (**per-vertex normals**, interpolate **diffuse intensity**), then **Phong** (**interpolate normals**, renormalize per fragment, **Blinn–Phong specular** on top of existing ambient + diffuse). **Do not mix** Gouraud / Phong / specular with faceted work on the same milestone.
+- **Torus (filled):** reuse the **Phong** lighting path from the sphere milestones.
 
 Phase 1 milestone ambition (from earlier discussion): interpolated vertex attributes (**level 3**) before treating phase 1 as complete; **perspective-correct texturing (**level 4**)** remains optional stretch (“phase 4” feeling).
 
