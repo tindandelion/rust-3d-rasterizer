@@ -6,13 +6,21 @@ use crate::{geometry::Normal3, scene::facet::Facet};
 
 use super::shape::Shape;
 
-struct OctoSplitter {
+pub fn unit_sphere(splits: usize) -> Shape {
+    let mut octo_splitter = OctaSplitter::new();
+    for _ in 0..splits {
+        octo_splitter.split_facets();
+    }
+    octo_splitter.build()
+}
+
+struct OctaSplitter {
     vertices: Vec<Vec3>,
     facets: Vec<Facet>,
     midpoint_cache: HashMap<(usize, usize), usize>,
 }
 
-impl OctoSplitter {
+impl OctaSplitter {
     const VERTICES: [[f32; 3]; 6] = [
         [1.0, 0.0, 0.0],
         [0.0, 1.0, 0.0],
@@ -117,14 +125,6 @@ impl OctoSplitter {
         self.midpoint_cache.insert(cache_key, vertex_idx);
         (vertex_idx, new_vertex)
     }
-}
-
-pub fn unit_sphere(splits: usize) -> Shape {
-    let mut octo_splitter = OctoSplitter::new();
-    for _ in 0..splits {
-        octo_splitter.split_facets();
-    }
-    octo_splitter.build()
 }
 
 #[cfg(test)]
