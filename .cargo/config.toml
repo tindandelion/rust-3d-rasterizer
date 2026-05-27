@@ -1,2 +1,2 @@
 [alias]
-update-doc = "run -- doc/output/current.webp"
+update-doc = "run --release -- doc/output/current.webp"
