@@ -36,7 +36,7 @@ pub const ANIMATED_SCENE_FRAME_COUNT: u32 = 720;
 /// of frame durations) still matches **`ANIMATED_SCENE_FRAME_COUNT ×` this value**.
 pub const ANIMATED_SCENE_FRAME_SPACING_MS: i32 = 20;
 
-/// Single **`Rgb`** **albedo** for filled cube rendering ([`draw_faces`]) — saturated blue (**`#346ED2`**) tuned for diffuse shading.
+/// Single **`Rgb`** **albedo** for filled mesh rendering ([`draw_facets`]) — saturated blue (**`#346ED2`**) tuned for diffuse shading.
 pub const CUBE_ALBEDO: Rgb = Rgb(52, 110, 210);
 
 /// Output **`.webp`** path for export binaries: first **argv** argument if set, else [`DEFAULT_OUT_PATH`].
@@ -62,7 +62,7 @@ pub trait TriMesh {
 /// Filled mesh: **[`FillTriangle::draw`](framebuffer::FillTriangle::draw)** per [`Triangle`] from **[`TriMesh::visible_facets`]**, with **[`DiffuseLight::calc_intensity`]** on each facet normal.
 ///
 /// **[`DiffuseLight::calc_intensity`]** consumes **`triangle.normal`**; shaded color **`CUBE_ALBEDO`** · intensity.
-pub fn draw_faces(
+pub fn draw_facets(
     fb: &mut FrameBuffer,
     camera: &Camera,
     mesh: &impl TriMesh,

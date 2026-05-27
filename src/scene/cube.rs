@@ -42,13 +42,13 @@ const UNIT_CUBE_QUADS: [(Normal3, [usize; 4]); 6] = [
 /// Canonical axis-aligned **`[-½, ½]³`** mesh (**eight verts**, twelve wedge **`Facet`**s (**`(w,x,y)` **`(w,y,z)`** per planar quad)).
 #[must_use]
 pub fn unit_cube() -> Shape {
-    let mut faces = Vec::with_capacity(12);
+    let mut facets = Vec::with_capacity(12);
     for &(normal, corners) in &UNIT_CUBE_QUADS {
         let [a, b] = facets_from_quad_ccw_corner(normal, corners);
-        faces.push(a);
-        faces.push(b);
+        facets.push(a);
+        facets.push(b);
     }
-    Shape::new(UNIT_CUBE_VERTICES.into_iter().collect(), faces)
+    Shape::new(UNIT_CUBE_VERTICES.into_iter().collect(), facets)
 }
 
 #[cfg(test)]
@@ -60,10 +60,10 @@ mod tests {
     use std::f32::consts::FRAC_PI_4;
 
     #[test]
-    fn unit_cube_corner_and_face_counts() {
+    fn unit_cube_corner_and_facet_counts() {
         let mesh = unit_cube();
         assert_eq!(mesh.vertices().len(), 8);
-        assert_eq!(mesh.faces().len(), 12);
+        assert_eq!(mesh.facets().len(), 12);
         assert!(
             mesh.vertices()
                 .iter()

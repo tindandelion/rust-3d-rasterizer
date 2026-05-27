@@ -87,15 +87,15 @@ fn platonic_scaled_vertices_array() -> [Vec3; 20] {
 
 /// Default **scaled Platonic dodecahedron** as **`Shape`**: **20** verts, **36** wedge **`Facet`**s (**`three.js`** detail **0** tri list).
 ///
-/// Pose with **`Shape::transform`** ( **`Mat4`** per-corner + **`Facet::transform`** per face).
+/// Pose with **`Shape::transform`** ( **`Mat4`** per-corner + **`Facet::transform`** per facet).
 pub fn unit_dodecahedron() -> Shape {
     let vertices_arr = platonic_scaled_vertices_array();
-    let faces: Vec<Facet> = THREE_JS_DETAIL0_TRIANGLES
+    let facets: Vec<Facet> = THREE_JS_DETAIL0_TRIANGLES
         .into_iter()
         .map(|tri| facet_from_corners(&vertices_arr, tri))
         .collect();
 
-    Shape::new(vertices_arr.into_iter().collect(), faces)
+    Shape::new(vertices_arr.into_iter().collect(), facets)
 }
 
 /// Outward **CCW** facet (left‑handed view along **`Normal3`**) matching [`Facet::is_front_facing`].

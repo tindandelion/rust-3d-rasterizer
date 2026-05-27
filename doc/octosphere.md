@@ -2,7 +2,7 @@
 
 This note captures the **octahedron + iterative midpoint subdivision → unit sphere** approach for building a triangular mesh sphere. It aligns with the open milestone **Sphere: triangular mesh — procedural tessellation** in `doc/planning/project-breakdown.md` and fits the unified **`TriMesh` / triangle** raster path used after the **Dodecahedron** milestone.
 
-**Coordinate intuition** elsewhere in this project: Unity-style left-handed world, **+Y up**, **+Z forward** (`doc/planning/project-spec.md`). The octasphere geometry is **agnostic** until you attach model/world transforms; winding must match whichever **facet-facing / back-face** convention the CPU path uses (`draw_faces`, `FillTriangle`).
+**Coordinate intuition** elsewhere in this project: Unity-style left-handed world, **+Y up**, **+Z forward** (`doc/planning/project-spec.md`). The octasphere geometry is **agnostic** until you attach model/world transforms; winding must match whichever **facet-facing / back-face** convention the CPU path uses (`draw_facets`, `FillTriangle`).
 
 ---
 

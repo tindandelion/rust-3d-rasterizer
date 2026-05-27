@@ -27,7 +27,7 @@ impl Facet {
         &self.verts
     }
 
-    pub fn retrieve_vertices(&self, vertices: &[Vec3]) -> [Vec3; 3] {
+    pub fn resolve_vertices(&self, vertices: &[Vec3]) -> [Vec3; 3] {
         [
             vertices[self.verts[0]],
             vertices[self.verts[1]],
@@ -74,7 +74,7 @@ mod tests {
 
     const VERTS: [usize; 3] = [1, 2, 7];
 
-    // Tracer bullets modeled on **`scene::cube`** historical quad-face classifier tests.
+    // Tracer bullets modeled on **`scene::cube`** historical hull-quad facet classifier tests.
 
     #[test]
     fn transform_updates_normal() {

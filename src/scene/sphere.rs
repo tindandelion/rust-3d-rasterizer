@@ -7,11 +7,11 @@ use crate::{geometry::Normal3, scene::facet::Facet};
 use super::shape::Shape;
 
 pub fn unit_sphere(splits: usize) -> Shape {
-    let mut octo_splitter = OctaSplitter::new();
+    let mut splitter = OctaSplitter::new();
     for _ in 0..splits {
-        octo_splitter.split_facets();
+        splitter.split_facets();
     }
-    octo_splitter.build()
+    splitter.build()
 }
 
 struct OctaSplitter {
@@ -51,7 +51,7 @@ impl OctaSplitter {
             .iter()
             .map(|f| {
                 let corners = [vertices[f[0]], vertices[f[1]], vertices[f[2]]];
-                let normal = Normal3::from_vertices_ccw(&corners);
+                let normal = Normal3::from_points_ccw(&corners);
                 Facet::new(normal, *f)
             })
             .collect();
@@ -75,28 +75,26 @@ impl OctaSplitter {
 
     pub fn split_facet(&mut self, facet: &Facet) -> [Facet; 4] {
         let &[i_a, i_b, i_c] = facet.verts();
-        let [a, b, c] = facet.retrieve_vertices(&self.vertices);
+        let [a, b, c] = facet.resolve_vertices(&self.vertices);
+
         let (i_m_ab, m_ab) = self.split_edge(i_a, i_b);
         let (i_m_ac, m_ac) = self.split_edge(i_a, i_c);
         let (i_m_bc, m_bc) = self.split_edge(i_b, i_c);
 
         let facet_1 = Facet::new(
-            Normal3::from_vertices_ccw(&[a, m_ab, m_ac]),
+            Normal3::from_points_ccw(&[a, m_ab, m_ac]),
             [i_a, i_m_ab, i_m_ac],
         );
-
         let facet_2 = Facet::new(
-            Normal3::from_vertices_ccw(&[b, m_bc, m_ab]),
+            Normal3::from_points_ccw(&[b, m_bc, m_ab]),
             [i_b, i_m_bc, i_m_ab],
         );
-
         let facet_3 = Facet::new(
-            Normal3::from_vertices_ccw(&[c, m_ac, m_bc]),
+            Normal3::from_points_ccw(&[c, m_ac, m_bc]),
             [i_c, i_m_ac, i_m_bc],
         );
-
         let facet_4 = Facet::new(
-            Normal3::from_vertices_ccw(&[m_ab, m_bc, m_ac]),
+            Normal3::from_points_ccw(&[m_ab, m_bc, m_ac]),
             [i_m_ab, i_m_bc, i_m_ac],
         );
         [facet_1, facet_2, facet_3, facet_4]
@@ -141,27 +139,24 @@ mod tests {
         let sphere = unit_sphere(0);
 
         assert_eq!(6, sphere.vertices().len());
-        assert_eq!(8, sphere.faces().len());
+        assert_eq!(8, sphere.facets().len());
     }
 
     #[test]
     fn initial_unit_sphere_normals() {
-        let expected_normals: Vec<Normal3> = vec![
-            Vec3::new(1.0, 1.0, -1.0),
-            Vec3::new(-1.0, 1.0, -1.0),
-            Vec3::new(-1.0, 1.0, 1.0),
-            Vec3::new(1.0, 1.0, 1.0),
-            Vec3::new(1.0, -1.0, -1.0),
-            Vec3::new(-1.0, -1.0, -1.0),
-            Vec3::new(-1.0, -1.0, 1.0),
-            Vec3::new(1.0, -1.0, 1.0),
-        ]
-        .iter()
-        .map(|&v| v.into())
-        .collect();
+        let expected_normals: [Normal3; 8] = [
+            Vec3::new(1.0, 1.0, -1.0).into(),
+            Vec3::new(-1.0, 1.0, -1.0).into(),
+            Vec3::new(-1.0, 1.0, 1.0).into(),
+            Vec3::new(1.0, 1.0, 1.0).into(),
+            Vec3::new(1.0, -1.0, -1.0).into(),
+            Vec3::new(-1.0, -1.0, -1.0).into(),
+            Vec3::new(-1.0, -1.0, 1.0).into(),
+            Vec3::new(1.0, -1.0, 1.0).into(),
+        ];
 
         let sphere = unit_sphere(0);
-        let facets = sphere.faces();
+        let facets = sphere.facets();
 
         for (i, facet) in facets.iter().enumerate() {
             assert_eq!(expected_normals[i], facet.normal());
@@ -171,14 +166,14 @@ mod tests {
     #[test]
     fn unit_sphere_with_one_split() {
         let sphere = unit_sphere(1);
-        assert_eq!(32, sphere.faces().len());
+        assert_eq!(32, sphere.facets().len());
         assert_eq!(18, sphere.vertices().len());
     }
 
     #[test]
     fn unit_sphere_with_two_splits() {
         let sphere = unit_sphere(2);
-        assert_eq!(128, sphere.faces().len());
+        assert_eq!(128, sphere.facets().len());
         assert_eq!(66, sphere.vertices().len());
     }
 

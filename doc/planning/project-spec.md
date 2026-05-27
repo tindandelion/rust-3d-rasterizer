@@ -69,7 +69,7 @@ Phase 1 milestone ambition (from earlier discussion): interpolated vertex attrib
 
 ## Geometry ↔ rasterizer boundary
 
-- **Phase 1 order:** **`[Vertex; 4]` quad stream** persists for **`scene/cube`** geometry until **`Dodecahedron`**, **while **`draw_faces`** already rasterizes with **two **`FillTriangle`** fills** per projected quad. **`Dodecahedron`** **refactors `scene/cube`** to **`[Vertex; 3]`** submit (**one** triangle raster type **for solids** onward). **`Sphere`** adds **another mesh** onto that stack. Internal storage may stay indexed; **unfold** at the raster boundary.
+- **Phase 1 order:** **`[Vertex; 4]` quad stream** persists for **`scene/cube`** geometry until **`Dodecahedron`**, **while **`draw_facets`** already rasterizes with **two **`FillTriangle`** fills** per projected quad. **`Dodecahedron`** **refactors `scene/cube`** to **`[Vertex; 3]`** submit (**one** triangle raster type **for solids** onward). **`Sphere`** adds **another mesh** onto that stack. Internal storage may stay indexed; **unfold** at the raster boundary.
 - **`Vertex` evolution:** start with **position only**; add normals, colors, UVs, etc., **only when a milestone requires them**.
 
 ---

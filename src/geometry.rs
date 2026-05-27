@@ -17,7 +17,7 @@ impl Normal3 {
     /// Outward-facing unit normal for triangle corners **`vertices[0]` → `vertices[1]` → `vertices[2]`**
     /// in the same winding sense as **[`crate::scene::facet::Facet`]**: CCW viewed from outside along the normal,
     /// two edge vectors anchored at **`vertices[0]`**, cross **\((v_2 - v_0) \times (v_1 - v_0)\)**.
-    pub fn from_vertices_ccw(vertices: &[Vec3; 3]) -> Self {
+    pub fn from_points_ccw(vertices: &[Vec3; 3]) -> Self {
         let vec1 = vertices[1] - vertices[0];
         let vec2 = vertices[2] - vertices[0];
         vec2.cross(vec1).into()
@@ -121,7 +121,7 @@ mod tests {
             Vec3::new(0.0, 1.0, 0.0),
             Vec3::new(1.0, 0.0, 0.0),
         ];
-        let n = Normal3::from_vertices_ccw(&corners);
+        let n = Normal3::from_points_ccw(&corners);
         assert_relative_eq!(n, Normal3::from(Vec3::ONE));
         assert_relative_eq!(n.length_squared(), 1.0);
     }
@@ -138,8 +138,8 @@ mod tests {
             Vec3::new(1.0, 0.0, 0.0),
             Vec3::new(0.0, 1.0, 0.0),
         ];
-        let a = Normal3::from_vertices_ccw(&corners);
-        let b = Normal3::from_vertices_ccw(&swapped);
+        let a = Normal3::from_points_ccw(&corners);
+        let b = Normal3::from_points_ccw(&swapped);
         assert_relative_eq!(a, -b);
     }
 
@@ -147,6 +147,6 @@ mod tests {
     #[should_panic(expected = "Normal3 requires a non-zero Vec3")]
     fn from_vertices_ccw_collinear_corners_panics() {
         let corners = [Vec3::ZERO, Vec3::X, Vec3::new(2.0, 0.0, 0.0)];
-        let _ = Normal3::from_vertices_ccw(&corners);
+        let _ = Normal3::from_points_ccw(&corners);
     }
 }

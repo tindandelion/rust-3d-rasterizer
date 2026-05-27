@@ -8,7 +8,7 @@ use thorus_forge::scene::sphere::unit_sphere;
 use thorus_forge::{
     Camera, FrameBuffer, SCENE_HEIGHT, SCENE_WIDTH, WebpEncoder, output_webp_path_from_args,
 };
-use thorus_forge::{DiffuseLight, draw_faces};
+use thorus_forge::{DiffuseLight, draw_facets};
 
 const CAMERA_POS: Vec3 = Vec3::new(0.1, 0.4, -1.0);
 
@@ -25,7 +25,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let light = DiffuseLight::new(glam::Vec3::new(1.0, 1.0, -1.0).into(), 0.1);
 
     let mesh = unit_sphere(0).transform(model_matrix_still());
-    draw_faces(&mut framebuffer, &camera, &mesh, &light);
+    draw_facets(&mut framebuffer, &camera, &mesh, &light);
 
     let mut encoder = WebpEncoder::new(SCENE_WIDTH, SCENE_HEIGHT)?;
     encoder.add_frame(&framebuffer)?;

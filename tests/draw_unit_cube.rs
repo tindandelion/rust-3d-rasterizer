@@ -8,7 +8,7 @@
 
 use glam::{UVec2, Vec3};
 use thorus_forge::{
-    CUBE_ALBEDO, Camera, DiffuseLight, FillTriangle, FrameBuffer, draw_faces,
+    CUBE_ALBEDO, Camera, DiffuseLight, FillTriangle, FrameBuffer, draw_facets,
     scene::cube::unit_cube,
 };
 
@@ -23,7 +23,7 @@ fn draw_unit_cube() {
     let light = DiffuseLight::new(-camera.direction(), 0.1);
     let mesh = unit_cube();
 
-    draw_faces(&mut fb, &camera, &mesh, &light);
+    draw_facets(&mut fb, &camera, &mesh, &light);
 
     let expected = expected_framebuffer_unit_cube_camera_front();
     assert_eq!(fb, expected);

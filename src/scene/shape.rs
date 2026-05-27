@@ -1,6 +1,6 @@
 //! Indexed triangle mesh backed by **`Vec<glam::Vec3>`** + **`Vec<Facet>`**.
 //!
-//! Construction takes arbitrary **vertex positions** + **facet list** (**CCW**, outward **[`Facet::normal`](crate::scene::facet::Facet::normal)**); **[`Shape::transform`](Shape::transform)** poses like procedural **[`unit_cube`](crate::scene::cube::unit_cube)** or **[`unit_dodecahedron`](crate::scene::dodecahedron::unit_dodecahedron)** (**[`Facet::transform`](crate::scene::facet::Facet::transform)** per face).
+//! Construction takes arbitrary **vertex positions** + **facet list** (**CCW**, outward **[`Facet::normal`](crate::scene::facet::Facet::normal)**); **[`Shape::transform`](Shape::transform)** poses like procedural **[`unit_cube`](crate::scene::cube::unit_cube)** or **[`unit_dodecahedron`](crate::scene::dodecahedron::unit_dodecahedron)** (**[`Facet::transform`](crate::scene::facet::Facet::transform)** per facet).
 
 use glam::{Mat4, Vec3};
 use std::array;
@@ -15,22 +15,22 @@ use crate::{TriMesh, Triangle, geometry::Normal3};
 #[derive(Clone, Debug, PartialEq)]
 pub struct Shape {
     vertices: Vec<Vec3>,
-    faces: Vec<Facet>,
+    facets: Vec<Facet>,
 }
 
 impl Shape {
-    pub fn new(vertices: Vec<Vec3>, faces: Vec<Facet>) -> Self {
-        Self { vertices, faces }
+    pub fn new(vertices: Vec<Vec3>, facets: Vec<Facet>) -> Self {
+        Self { vertices, facets }
     }
 
     #[inline]
     pub fn vertices(&self) -> &[Vec3] {
-        self.vertices.as_slice()
+        &self.vertices
     }
 
     #[inline]
-    pub fn faces(&self) -> &[Facet] {
-        self.faces.as_slice()
+    pub fn facets(&self) -> &[Facet] {
+        &self.facets
     }
 
     /// Applies **`Mat4::transform_point3`** per vertex and **[`Facet::transform`]** per facet (composition matches **`unit_dodecahedron`** / **`unit_cube`**).
@@ -42,14 +42,14 @@ impl Shape {
                 .copied()
                 .map(|v| m.transform_point3(v))
                 .collect(),
-            faces: self.faces.iter().map(|f| f.transform(m)).collect(),
+            facets: self.facets.iter().map(|f| f.transform(m)).collect(),
         }
     }
 }
 
 impl TriMesh for Shape {
     fn visible_facets(&self, view_direction: Normal3) -> impl Iterator<Item = Triangle> + '_ {
-        self.faces
+        self.facets
             .iter()
             .filter(move |f| f.is_front_facing(view_direction))
             .map(|facet| {
@@ -81,15 +81,15 @@ mod tests {
             Vec3::new(-0.5,  0.5, 0.0),
         ];
         // CCW winding viewed from **`−Z`** (outside along **`Normal3::NEG_Z`**).
-        let faces = vec![
+        let facets = vec![
             Facet::new(Normal3::NEG_Z, [0, 2, 1]),
             Facet::new(Normal3::NEG_Z, [0, 3, 2]),
         ];
-        Shape::new(vertices, faces)
+        Shape::new(vertices, facets)
     }
 
     #[test]
-    fn from_pos_z_both_faces_visible_with_neg_z_normals() {
+    fn from_pos_z_both_facets_visible_with_neg_z_normals() {
         let shape = flat_square_xy();
         let visible = shape.visible_facets(Normal3::Z).collect::<Vec<_>>();
         assert_eq!(visible.len(), 2);
@@ -97,7 +97,7 @@ mod tests {
     }
 
     #[test]
-    fn from_neg_z_no_faces_visible() {
+    fn from_neg_z_no_facets_visible() {
         assert_eq!(flat_square_xy().visible_facets(Normal3::NEG_Z).count(), 0);
     }
 
