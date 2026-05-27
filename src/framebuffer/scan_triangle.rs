@@ -14,27 +14,28 @@ impl ScanTriangle {
         Self { corners, color }
     }
 
+    pub fn draw(&self, fb: &mut FrameBuffer) {
+        for (x1, x2, y) in self.scan_lines() {
+            fb.draw_horz_line(x1, x2, y, self.color);
+        }
+    }
+
     fn scan_lines(&self) -> impl Iterator<Item = (u32, u32, u32)> {
         let y_range = self.corners[0].y..=self.corners[2].y;
         let [a, b, c] = self.corners.map(|v| v.as_vec2());
 
-        let ac_walker = EdgeWalker::new(a, c);
-        let ab_walker = EdgeWalker::new(a, b);
-        let bc_walker = EdgeWalker::new(b, c);
-
-        let product = (b - a).perp_dot(c - a);
-        let is_left = product < 0.0;
+        let ac_edge = EdgeWalker::new(a, c);
+        let ab_edge = EdgeWalker::new(a, b);
+        let bc_edge = EdgeWalker::new(b, c);
 
         y_range.map(move |y| {
             let y = y as f32;
-            let mut x_end = ac_walker.get(y);
-            let mut x_start = if y + 1.0 > b.y {
-                bc_walker.get(y)
-            } else {
-                ab_walker.get(y)
-            };
+            let current_edge = if y + 1.0 > b.y { &bc_edge } else { &ab_edge };
 
-            if !is_left {
+            let mut x_start = current_edge.get(y);
+            let mut x_end = ac_edge.get(y);
+
+            if x_end < x_start {
                 std::mem::swap(&mut x_start, &mut x_end);
             }
 
@@ -44,12 +45,6 @@ impl ScanTriangle {
                 y.round() as u32,
             )
         })
-    }
-
-    pub fn draw(&self, fb: &mut FrameBuffer) {
-        for (x_min, x_max, y) in self.scan_lines() {
-            fb.draw_horz_line(x_min, x_max, y, self.color);
-        }
     }
 }
 
