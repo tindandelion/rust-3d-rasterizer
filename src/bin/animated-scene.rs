@@ -74,7 +74,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
     let light = DiffuseLight::new(glam::Vec3::new(1.0, 0.5, -1.0).into(), 0.25);
 
-    let shape = unit_sphere(0);
+    let shape = unit_sphere(4);
     let half = half_lap_frames();
     assert_eq!(
         ANIMATED_SCENE_FRAME_COUNT,
@@ -82,6 +82,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "ANIMATED_SCENE_FRAME_COUNT must be even"
     );
 
+    let frame_production_start = std::time::Instant::now();
     for frame_index in 0..ANIMATED_SCENE_FRAME_COUNT {
         framebuffer.clear_black();
 
@@ -105,6 +106,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         encoder.add_frame(&framebuffer)?;
     }
+    let frame_production_elapsed = frame_production_start.elapsed();
+    let frame_production_secs = frame_production_elapsed.as_secs_f64().max(1e-12);
+    let frame_production_fps = ANIMATED_SCENE_FRAME_COUNT as f64 / frame_production_secs;
 
     encoder.write(Path::new(&out_path))?;
 
@@ -113,6 +117,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         out_path.to_string_lossy(),
         SCENE_WIDTH,
         SCENE_HEIGHT,
+    );
+    println!(
+        "Frame production: {:.2} fps ({ANIMATED_SCENE_FRAME_COUNT} frames in {:?})",
+        frame_production_fps, frame_production_elapsed,
     );
 
     Ok(())
