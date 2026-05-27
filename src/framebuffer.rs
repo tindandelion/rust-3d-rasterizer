@@ -65,23 +65,33 @@ impl FrameBuffer {
         Rgb(self.rgb[i], self.rgb[i + 1], self.rgb[i + 2])
     }
 
-    /// Row-major text: row 0, then row 1, … with no separators. `' '` matches `Rgb::BLACK`, `'+'` any other color.
+    /// Row-major text: row 0, then row 1, … with no separators. **`' '`** matches
+    /// [`Rgb::BLACK`]; other pixels use block-element shades by [`Rgb::brightness`]
+    /// (**`░` `▒` `▓` `█`**, light → dark).
     pub(crate) fn to_ascii_art(&self) -> String {
         let mut out = String::with_capacity((self.height * self.width) as usize);
 
         for y in 0..self.height {
             for x in 0..self.width {
-                let ch = if self.get_pixel(x, y) == Rgb::BLACK {
-                    ' '
-                } else {
-                    '+'
-                };
-                out.push(ch);
+                out.push(ascii_shade_for_rgb(self.get_pixel(x, y)));
             }
         }
 
         out
     }
+}
+
+#[cfg(test)]
+const ASCII_SHADES: [char; 4] = ['░', '▒', '▓', '█'];
+
+#[cfg(test)]
+fn ascii_shade_for_rgb(color: Rgb) -> char {
+    let brightness = color.brightness();
+    if brightness == 0.0 {
+        return ' ';
+    }
+    let level = (brightness * 4.0).ceil() as usize;
+    ASCII_SHADES[level.min(4) - 1]
 }
 
 #[cfg(test)]
@@ -118,5 +128,23 @@ mod tests {
         let mut fb = FrameBuffer::new(2, 2);
         fb.set_pixel(100, 0, Rgb::WHITE);
         assert!(fb.as_ref().iter().all(|&b| b == 0));
+    }
+
+    #[test]
+    fn to_ascii_art_maps_black_to_space_and_white_to_full_block() {
+        let mut fb = FrameBuffer::new(2, 1);
+        fb.set_pixel(0, 0, Rgb::BLACK);
+        fb.set_pixel(1, 0, Rgb::WHITE);
+        assert_eq!(fb.to_ascii_art(), " █");
+    }
+
+    #[test]
+    fn ascii_shade_for_rgb_buckets_brightness() {
+        assert_eq!(ascii_shade_for_rgb(Rgb::BLACK), ' ');
+        assert_eq!(ascii_shade_for_rgb(Rgb(32, 32, 32)), '░');
+        assert_eq!(ascii_shade_for_rgb(Rgb(64, 64, 64)), '▒');
+        assert_eq!(ascii_shade_for_rgb(Rgb(128, 128, 128)), '▓');
+        assert_eq!(ascii_shade_for_rgb(Rgb(200, 200, 200)), '█');
+        assert_eq!(ascii_shade_for_rgb(Rgb::WHITE), '█');
     }
 }

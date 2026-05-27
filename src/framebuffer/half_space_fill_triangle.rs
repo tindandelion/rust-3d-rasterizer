@@ -99,7 +99,7 @@ mod tests {
         let expected = concat!(
             "          ",
             "          ",
-            "    +     ",
+            "    █     ",
             "          ",
             "          ",
         );
@@ -115,9 +115,9 @@ mod tests {
         #[rustfmt::skip]
         let expected = concat!(
             "          ",
-            "    +     ",
-            "   +++    ",
-            "  +++++   ",
+            "    █     ",
+            "   ███    ",
+            "  █████   ",
             "          ",
         );
         assert_eq!(fb.to_ascii_art(), expected);
@@ -130,9 +130,9 @@ mod tests {
         #[rustfmt::skip]
         let expected = concat!(
             "          ",
-            "    +     ",
-            "   +++    ",
-            "  +++++   ",
+            "    █     ",
+            "   ███    ",
+            "  █████   ",
             "          ",
         );
 
@@ -160,9 +160,9 @@ mod tests {
         #[rustfmt::skip]
         let expected = concat!(
             "          ",
-            "  ++++++++",
-            "  +++++++ ",
-            "  +       ",
+            "  ████████",
+            "  ███████ ",
+            "  █       ",
             "          ",
         );
         assert_eq!(fb.to_ascii_art(), expected);
@@ -176,9 +176,9 @@ mod tests {
         #[rustfmt::skip]
         let expected = concat!(
             "          ",
-            "        + ",
-            "     +++  ",
-            "  ++++++  ",
+            "        █ ",
+            "     ███  ",
+            "  ██████  ",
             "          ",
         );
         assert_eq!(fb.to_ascii_art(), expected);
@@ -194,10 +194,10 @@ mod tests {
         #[rustfmt::skip]
         let expected = concat!(
             "          ",
-            "  +       ",
-            "  +++++   ",
-            "  +++     ",
-            "  +       ",
+            "  █       ",
+            "  █████   ",
+            "  ███     ",
+            "  █       ",
         );
         assert_eq!(fb.to_ascii_art(), expected);
     }
@@ -213,7 +213,7 @@ mod tests {
             "          ",
             "          ",
             "          ",
-            "  ++++++  ",
+            "  ██████  ",
             "          ",
         );
         assert_eq!(fb.to_ascii_art(), expected);
