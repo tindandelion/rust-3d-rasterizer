@@ -1,14 +1,16 @@
+//! Filled triangle in pixel space (y-sorted scanlines, edge interpolation, horizontal spans).
+
 use glam::{UVec2, Vec2};
 
 use super::{FrameBuffer, Rgb};
 
-pub struct ScanTriangle {
+pub struct ScanlineFillTriangle {
     corners: [UVec2; 3],
 
     color: Rgb,
 }
 
-impl ScanTriangle {
+impl ScanlineFillTriangle {
     pub fn new(mut corners: [UVec2; 3], color: Rgb) -> Self {
         corners.sort_by_key(|v| v.y);
         Self { corners, color }
@@ -96,7 +98,7 @@ mod tests {
     #[test]
     fn fill_degenerate_triangle_is_line_segment() {
         let mut fb = FrameBuffer::new(10, 5);
-        ScanTriangle::new(pts([(2, 3), (8, 3), (7, 3)]), Rgb::WHITE).draw(&mut fb);
+        ScanlineFillTriangle::new(pts([(2, 3), (8, 3), (7, 3)]), Rgb::WHITE).draw(&mut fb);
 
         #[rustfmt::skip]
             let expected = concat!(
@@ -113,7 +115,7 @@ mod tests {
     #[test]
     fn fill_degenerate_triangle_two_corners_coincide() {
         let mut fb = FrameBuffer::new(10, 5);
-        ScanTriangle::new(pts([(2, 3), (7, 3), (7, 3)]), Rgb::WHITE).draw(&mut fb);
+        ScanlineFillTriangle::new(pts([(2, 3), (7, 3), (7, 3)]), Rgb::WHITE).draw(&mut fb);
 
         #[rustfmt::skip]
             let expected = concat!(
@@ -130,7 +132,7 @@ mod tests {
     #[test]
     fn fill_degenerate_all_corners_same_point() {
         let mut fb = FrameBuffer::new(10, 5);
-        ScanTriangle::new(pts([(4, 2), (4, 2), (4, 2)]), Rgb::WHITE).draw(&mut fb);
+        ScanlineFillTriangle::new(pts([(4, 2), (4, 2), (4, 2)]), Rgb::WHITE).draw(&mut fb);
 
         #[rustfmt::skip]
             let expected = concat!(
@@ -147,7 +149,7 @@ mod tests {
     fn fill_axis_aligned_shapes_isosceles() {
         let mut fb = FrameBuffer::new(10, 5);
         // Apex at top; CCW cyclic order for consistent half-plane winding.
-        ScanTriangle::new(pts([(4, 1), (6, 3), (2, 3)]), Rgb::WHITE).draw(&mut fb);
+        ScanlineFillTriangle::new(pts([(4, 1), (6, 3), (2, 3)]), Rgb::WHITE).draw(&mut fb);
 
         #[rustfmt::skip]
         let expected = concat!(
@@ -175,7 +177,7 @@ mod tests {
 
         for start in 0..3 {
             let mut fb = FrameBuffer::new(10, 5);
-            ScanTriangle::new(
+            ScanlineFillTriangle::new(
                 pts([
                     corners_ccw[start],
                     corners_ccw[(start + 1) % 3],
@@ -192,7 +194,7 @@ mod tests {
     fn draw_right_triangle() {
         let mut fb = FrameBuffer::new(10, 5);
         // Right-angle corner at (2,1); hypotenuse runs toward (14,1) so only x ∈ [2,9] is drawable.
-        ScanTriangle::new(pts([(2, 1), (4, 1), (2, 3)]), Rgb::WHITE).draw(&mut fb);
+        ScanlineFillTriangle::new(pts([(2, 1), (4, 1), (2, 3)]), Rgb::WHITE).draw(&mut fb);
 
         #[rustfmt::skip]
         let expected = concat!(
@@ -209,7 +211,7 @@ mod tests {
     fn fill_clips_when_triangle_extends_past_buffer() {
         let mut fb = FrameBuffer::new(10, 5);
         // Right-angle corner at (2,1); hypotenuse runs toward (14,1) so only x ∈ [2,9] is drawable.
-        ScanTriangle::new(pts([(2, 1), (14, 1), (2, 3)]), Rgb::WHITE).draw(&mut fb);
+        ScanlineFillTriangle::new(pts([(2, 1), (14, 1), (2, 3)]), Rgb::WHITE).draw(&mut fb);
 
         #[rustfmt::skip]
         let expected = concat!(
@@ -219,13 +221,13 @@ mod tests {
             "  +       ",
             "          ",
         );
-        assert_eq!(expected, fb.to_ascii_art());
+        assert_eq!(fb.to_ascii_art(), expected);
     }
 
     #[test]
     fn fill_slanted_triangle() {
         let mut fb = FrameBuffer::new(10, 5);
-        ScanTriangle::new(pts([(2, 3), (7, 3), (8, 1)]), Rgb::WHITE).draw(&mut fb);
+        ScanlineFillTriangle::new(pts([(2, 3), (7, 3), (8, 1)]), Rgb::WHITE).draw(&mut fb);
 
         #[rustfmt::skip]
         let expected = concat!(
@@ -235,7 +237,7 @@ mod tests {
             "  ++++++  ",
             "          ",
         );
-        assert_eq!(expected, fb.to_ascii_art());
+        assert_eq!(fb.to_ascii_art(), expected);
     }
 
     /// One edge is axis-aligned **vertical** (`x` constant)—exercises bbox + half-planes on a non-horizontal base.
@@ -243,7 +245,7 @@ mod tests {
     fn fill_triangle_with_vertical_edge() {
         let mut fb = FrameBuffer::new(10, 5);
         // Vertical segment (2,1)–(2,4); apex (6, 2). Consistent CCW half-plane winding.
-        ScanTriangle::new(pts([(2, 1), (2, 4), (6, 2)]), Rgb::WHITE).draw(&mut fb);
+        ScanlineFillTriangle::new(pts([(2, 1), (2, 4), (6, 2)]), Rgb::WHITE).draw(&mut fb);
 
         #[rustfmt::skip]
             let expected = concat!(

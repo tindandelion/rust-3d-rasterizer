@@ -8,7 +8,8 @@
 
 use glam::{UVec2, Vec3};
 use thorus_forge::{
-    Camera, DiffuseLight, FillTriangle, FrameBuffer, SHAPE_BASE_COLOR, draw_facets, shapes::cube,
+    Camera, DiffuseLight, FrameBuffer, HalfSpaceFillTriangle, SHAPE_BASE_COLOR, draw_facets,
+    shapes::cube,
 };
 
 const FB_WIDTH: u32 = 101;
@@ -36,7 +37,9 @@ fn expected_framebuffer_unit_cube_camera_front() -> FrameBuffer {
         UVec2::new(75, 75),
         UVec2::new(75, 25),
     ];
-    FillTriangle::new([corners[0], corners[1], corners[2]], SHAPE_BASE_COLOR).draw(&mut fb);
-    FillTriangle::new([corners[0], corners[2], corners[3]], SHAPE_BASE_COLOR).draw(&mut fb);
+    HalfSpaceFillTriangle::new([corners[0], corners[1], corners[2]], SHAPE_BASE_COLOR)
+        .draw(&mut fb);
+    HalfSpaceFillTriangle::new([corners[0], corners[2], corners[3]], SHAPE_BASE_COLOR)
+        .draw(&mut fb);
     fb
 }

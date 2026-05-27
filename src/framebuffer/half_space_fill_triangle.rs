@@ -1,4 +1,4 @@
-//! Filled triangle in pixel space (half-plane / perp-dot inside test per pixel, bbox scan).
+//! Filled triangle in pixel space (half-space / perp-dot inside test per pixel, bbox scan).
 
 use glam::{UVec2, Vec2};
 
@@ -9,14 +9,14 @@ use super::{FrameBuffer, Rgb};
 /// Corners are supplied as integer pixel positions ([`UVec2`]) and stored internally as [`Vec2`] so edge
 /// vectors and the 2D cross test use ordinary signed subtraction ([`Vec2::perp_dot`]).
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct FillTriangle {
+pub struct HalfSpaceFillTriangle {
     corners: [Vec2; 3],
     /// Inclusive axis-aligned scan bounds in pixels: minimum corner, then maximum corner.
     bounding_rect: [UVec2; 2],
     pub color: Rgb,
 }
 
-impl FillTriangle {
+impl HalfSpaceFillTriangle {
     pub fn new(corners: [UVec2; 3], color: Rgb) -> Self {
         let bounding_rect = calculate_bounding_rect(&corners);
         let corners = std::array::from_fn(|i| corners[i].as_vec2());
@@ -83,7 +83,7 @@ mod tests {
     use glam::UVec2;
 
     use super::super::{FrameBuffer, Rgb};
-    use super::FillTriangle;
+    use super::HalfSpaceFillTriangle;
 
     fn pts(corners: [(u32, u32); 3]) -> [UVec2; 3] {
         std::array::from_fn(|i| UVec2::new(corners[i].0, corners[i].1))
@@ -93,7 +93,7 @@ mod tests {
     #[test]
     fn fill_degenerate_all_corners_same_point() {
         let mut fb = FrameBuffer::new(10, 5);
-        FillTriangle::new(pts([(4, 2), (4, 2), (4, 2)]), Rgb::WHITE).draw(&mut fb);
+        HalfSpaceFillTriangle::new(pts([(4, 2), (4, 2), (4, 2)]), Rgb::WHITE).draw(&mut fb);
 
         #[rustfmt::skip]
         let expected = concat!(
@@ -110,7 +110,7 @@ mod tests {
     fn fill_axis_aligned_shapes_isosceles() {
         let mut fb = FrameBuffer::new(10, 5);
         // Apex at top; CCW cyclic order for consistent half-plane winding.
-        FillTriangle::new(pts([(4, 1), (6, 3), (2, 3)]), Rgb::WHITE).draw(&mut fb);
+        HalfSpaceFillTriangle::new(pts([(4, 1), (6, 3), (2, 3)]), Rgb::WHITE).draw(&mut fb);
 
         #[rustfmt::skip]
         let expected = concat!(
@@ -138,7 +138,7 @@ mod tests {
 
         for start in 0..3 {
             let mut fb = FrameBuffer::new(10, 5);
-            FillTriangle::new(
+            HalfSpaceFillTriangle::new(
                 pts([
                     corners_ccw[start],
                     corners_ccw[(start + 1) % 3],
@@ -155,7 +155,7 @@ mod tests {
     fn fill_clips_when_triangle_extends_past_buffer() {
         let mut fb = FrameBuffer::new(10, 5);
         // Right-angle corner at (2,1); hypotenuse runs toward (14,1) so only x ∈ [2,9] is drawable.
-        FillTriangle::new(pts([(2, 1), (14, 1), (2, 3)]), Rgb::WHITE).draw(&mut fb);
+        HalfSpaceFillTriangle::new(pts([(2, 1), (14, 1), (2, 3)]), Rgb::WHITE).draw(&mut fb);
 
         #[rustfmt::skip]
         let expected = concat!(
@@ -171,7 +171,7 @@ mod tests {
     #[test]
     fn fill_slanted_triangle() {
         let mut fb = FrameBuffer::new(10, 5);
-        FillTriangle::new(pts([(2, 3), (7, 3), (8, 1)]), Rgb::WHITE).draw(&mut fb);
+        HalfSpaceFillTriangle::new(pts([(2, 3), (7, 3), (8, 1)]), Rgb::WHITE).draw(&mut fb);
 
         #[rustfmt::skip]
         let expected = concat!(
@@ -189,7 +189,7 @@ mod tests {
     fn fill_triangle_with_vertical_edge() {
         let mut fb = FrameBuffer::new(10, 5);
         // Vertical segment (2,1)–(2,4); apex (6, 2). Consistent CCW half-plane winding.
-        FillTriangle::new(pts([(2, 1), (2, 4), (6, 2)]), Rgb::WHITE).draw(&mut fb);
+        HalfSpaceFillTriangle::new(pts([(2, 1), (2, 4), (6, 2)]), Rgb::WHITE).draw(&mut fb);
 
         #[rustfmt::skip]
         let expected = concat!(
@@ -206,7 +206,7 @@ mod tests {
     #[test]
     fn fill_degenerate_triangle_is_line_segment() {
         let mut fb = FrameBuffer::new(10, 5);
-        FillTriangle::new(pts([(2, 3), (7, 3), (7, 3)]), Rgb::WHITE).draw(&mut fb);
+        HalfSpaceFillTriangle::new(pts([(2, 3), (7, 3), (7, 3)]), Rgb::WHITE).draw(&mut fb);
 
         #[rustfmt::skip]
         let expected = concat!(

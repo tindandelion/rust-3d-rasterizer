@@ -49,7 +49,7 @@ Optional stretch beyond the original two phases is allowed (e.g. deeper CPU topi
 - **Long-term visual target:** fixed viewpoint, single shape — a **torus**.
 - **Mesh progression:**
   1. **Cube (interim)** — **quad faces** only for the **first** filled-cube milestone (**six** convex quads; **4-vertex** faces). Wireframe can stay edge-based. This is a **deliberate shortcut**: **one** simple **bbox + inner test** raster path before general **triangle** fill.
-  2. **Dodecahedron + cube triangles** — **shipped:** **`shapes::cube()`** seeds **twelve **`Facet`** wedges** (two per hull quad); **`shapes::dodecahedron()`** adds a **regular dodecahedron** (**`three.js`** detail 0 tri list). Both return **`geometry::Shape`** for **`TriMesh::visible_facets`** → **`FillTriangle`**.
+  2. **Dodecahedron + cube triangles** — **shipped:** **`shapes::cube()`** seeds **twelve **`Facet`** wedges** (two per hull quad); **`shapes::dodecahedron()`** adds a **regular dodecahedron** (**`three.js`** detail 0 tri list). Both return **`geometry::Shape`** for **`TriMesh::visible_facets`** → **`draw_facets`** (**`ScanlineFillTriangle`**).
   3. **Sphere** — **shipped (faceted):** **`shapes::sphere(splits)`** (octahedron seed + edge midpoint subdivision); **`still-sphere`** export bin. Smooth shading remains a separate milestone.
   4. **Torus** — capstone CPU mesh complexity before/at GPU transition (**triangle** soup or indexed tris).
 - **Generation:** **procedural** meshes (no asset pipeline required early).
@@ -81,8 +81,8 @@ Phase 1 milestone ambition (from earlier discussion): interpolated vertex attrib
 1. **Wireframe** before filled surfaces.
 2. **Lines:** simplest practical approach — **DDA-style** stepping (float increments acceptable).
 3. **Out-of-bounds:** **skip-only** (`set_pixel` guarded); no full line clipping initially.
-4. **Filled hull facets (`cube`, interim geometry — shipped):** each front **`Facet`** is one **`FillTriangle`** pass. Legacy quad-stream fill was retired when **`Dodecahedron: triangular mesh`** landed.
-5. **Filled triangles (steady state — shipped):** **one** tri algorithm (**half-space / barycentric** via **`FillTriangle`**); **`shapes::cube()`**, **`shapes::dodecahedron()`**, and **`shapes::sphere(splits)`** all submit through **`draw_facets`**.
+4. **Filled hull facets (`cube`, interim geometry — shipped):** each front **`Facet`** is one filled-triangle pass via **`draw_facets`**. Legacy quad-stream fill was retired when **`Dodecahedron: triangular mesh`** landed.
+5. **Filled triangles (steady state — shipped):** **`draw_facets`** uses **`ScanlineFillTriangle`** (y-sorted scanlines + horizontal spans); **`HalfSpaceFillTriangle`** (bbox + half-space **`perp_dot`**) remains as an alternate implementation. **`shapes::cube()`**, **`shapes::dodecahedron()`**, and **`shapes::sphere(splits)`** all submit through **`draw_facets`**.
 
 6. **Sphere (next mesh):** **procedural** sphere facets on the **existing** triangle stack (**`shapes::sphere`** — octahedron subdivision with shared edge midpoints).
 
@@ -92,7 +92,7 @@ Phase 1 milestone ambition (from earlier discussion): interpolated vertex attrib
 
 ### Parallel raster approaches
 
-- **Half-space / scanline** filled rasterization: **both remain mentally allowed**, but treat as **sequential experiments** — avoid maintaining two full pipelines forever. Prefer **one path to export parity** (RGB framebuffer → WebP), optionally second raster implementation behind a trait later.
+- **Half-space / scanline** filled rasterization: **`draw_facets`** ships **`ScanlineFillTriangle`**; **`HalfSpaceFillTriangle`** stays as a second implementation for comparison. Avoid maintaining two full pipelines forever—prefer **one path to export parity** (RGB framebuffer → WebP), optionally second raster behind a trait later.
 
 ### Threading
 
@@ -126,7 +126,7 @@ Phase 1 milestone ambition (from earlier discussion): interpolated vertex attrib
 
 1. **wgpu convention alignment pass** — depth range, front-face winding, NDC handedness, relationship to framebuffer row order vs Unity/world intuition.
 2. **Golden image / pixel-diff tests** — adopt when eyeballing saturates (WebP decode path or pre-encode buffer compare).
-3. **Filled-triangle algorithm choice** — commit when **`Dodecahedron`** lands (half-space/barycentric vs scanlines); **shipped interim cube quads** keep **bbox + inner test** until that **same** **`Dodecahedron`** milestone **retires** them.
+3. **Filled-triangle algorithm choice** — **landed:** **`draw_facets`** uses **`ScanlineFillTriangle`**; **`HalfSpaceFillTriangle`** kept as alternate. Interim cube quads used **bbox + inner test** until **`Dodecahedron: triangular mesh`** retired them.
 4. **Cross-platform** — revisit when/if portability becomes a goal.
 
 ---

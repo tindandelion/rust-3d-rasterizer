@@ -13,11 +13,12 @@ pub mod ortho_camera;
 pub mod shapes;
 pub mod webp_encoder;
 
-pub use framebuffer::{FillTriangle, FrameBuffer, Rgb};
+pub use framebuffer::{FrameBuffer, HalfSpaceFillTriangle, Rgb};
 pub use lighting::DiffuseLight;
 pub use ortho_camera::Camera;
 pub use webp_encoder::WebpEncoder;
 
+use crate::framebuffer::ScanlineFillTriangle;
 use crate::geometry::UnitVec3;
 
 /// Raster width in pixels (golden stills / integration tests must agree).
@@ -59,7 +60,7 @@ pub trait TriMesh {
     fn visible_facets(&self, view_direction: UnitVec3) -> impl Iterator<Item = Triangle> + '_;
 }
 
-/// Filled mesh: **[`FillTriangle::draw`](framebuffer::FillTriangle::draw)** per [`Triangle`] from **[`TriMesh::visible_facets`]**, with **[`DiffuseLight::calc_intensity`]** on each facet normal.
+/// Filled mesh: **[`ScanlineFillTriangle::draw`](framebuffer::ScanlineFillTriangle::draw)** per [`Triangle`] from **[`TriMesh::visible_facets`]**, with **[`DiffuseLight::calc_intensity`]** on each facet normal.
 ///
 /// **[`DiffuseLight::calc_intensity`]** consumes **`triangle.normal`**; shaded color **`SHAPE_BASE_COLOR`** · intensity.
 pub fn draw_facets(
@@ -73,6 +74,6 @@ pub fn draw_facets(
         let intensity = light.calc_intensity(triangle.normal);
         let color = SHAPE_BASE_COLOR.scale(intensity);
         let corners: [glam::UVec2; 3] = array::from_fn(|i| camera.transform(triangle.corners[i]));
-        FillTriangle::new(corners, color).draw(fb);
+        ScanlineFillTriangle::new(corners, color).draw(fb);
     }
 }

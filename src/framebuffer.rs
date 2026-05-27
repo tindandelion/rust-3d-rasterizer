@@ -1,14 +1,14 @@
 //! RGB framebuffer: `width × height` pixels, three `u8` channels per pixel, row-major.
 
 mod colors;
-mod fill_triangle;
+mod half_space_fill_triangle;
 mod line;
-mod scan_triangle;
+mod scanline_fill_triangle;
 
 pub use colors::Rgb;
-pub use fill_triangle::FillTriangle;
+pub use half_space_fill_triangle::HalfSpaceFillTriangle;
 pub use line::Line;
-pub use scan_triangle::ScanTriangle;
+pub use scanline_fill_triangle::ScanlineFillTriangle;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FrameBuffer {
