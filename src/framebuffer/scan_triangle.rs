@@ -1,5 +1,3 @@
-use std::ops::RangeInclusive;
-
 use glam::{UVec2, Vec2};
 
 use super::{FrameBuffer, Rgb};

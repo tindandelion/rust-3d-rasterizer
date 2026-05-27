@@ -3,10 +3,12 @@
 mod colors;
 mod fill_triangle;
 mod line;
+mod scan_triangle;
 
 pub use colors::Rgb;
 pub use fill_triangle::FillTriangle;
 pub use line::Line;
+pub use scan_triangle::ScanTriangle;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FrameBuffer {
