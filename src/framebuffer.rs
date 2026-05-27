@@ -58,6 +58,8 @@ impl AsRef<[u8]> for FrameBuffer {
 
 #[cfg(test)]
 impl FrameBuffer {
+    const ASCII_SHADES: [char; 4] = ['░', '▒', '▓', '█'];
+
     pub(crate) fn get_pixel(&self, x: u32, y: u32) -> Rgb {
         let Some(i) = self.pixel_offset(x, y) else {
             return Rgb::BLACK;
@@ -73,25 +75,21 @@ impl FrameBuffer {
 
         for y in 0..self.height {
             for x in 0..self.width {
-                out.push(ascii_shade_for_rgb(self.get_pixel(x, y)));
+                out.push(Self::ascii_shade_for_rgb(self.get_pixel(x, y)));
             }
         }
 
         out
     }
-}
 
-#[cfg(test)]
-const ASCII_SHADES: [char; 4] = ['░', '▒', '▓', '█'];
-
-#[cfg(test)]
-fn ascii_shade_for_rgb(color: Rgb) -> char {
-    let brightness = color.brightness();
-    if brightness == 0.0 {
-        return ' ';
+    fn ascii_shade_for_rgb(color: Rgb) -> char {
+        let brightness = color.brightness();
+        if brightness == 0.0 {
+            return ' ';
+        }
+        let level = (brightness * 4.0).ceil() as usize;
+        Self::ASCII_SHADES[level.min(4) - 1]
     }
-    let level = (brightness * 4.0).ceil() as usize;
-    ASCII_SHADES[level.min(4) - 1]
 }
 
 #[cfg(test)]
@@ -140,11 +138,11 @@ mod tests {
 
     #[test]
     fn ascii_shade_for_rgb_buckets_brightness() {
-        assert_eq!(ascii_shade_for_rgb(Rgb::BLACK), ' ');
-        assert_eq!(ascii_shade_for_rgb(Rgb(32, 32, 32)), '░');
-        assert_eq!(ascii_shade_for_rgb(Rgb(64, 64, 64)), '▒');
-        assert_eq!(ascii_shade_for_rgb(Rgb(128, 128, 128)), '▓');
-        assert_eq!(ascii_shade_for_rgb(Rgb(200, 200, 200)), '█');
-        assert_eq!(ascii_shade_for_rgb(Rgb::WHITE), '█');
+        assert_eq!(FrameBuffer::ascii_shade_for_rgb(Rgb::BLACK), ' ');
+        assert_eq!(FrameBuffer::ascii_shade_for_rgb(Rgb(32, 32, 32)), '░');
+        assert_eq!(FrameBuffer::ascii_shade_for_rgb(Rgb(64, 64, 64)), '▒');
+        assert_eq!(FrameBuffer::ascii_shade_for_rgb(Rgb(128, 128, 128)), '▓');
+        assert_eq!(FrameBuffer::ascii_shade_for_rgb(Rgb(200, 200, 200)), '█');
+        assert_eq!(FrameBuffer::ascii_shade_for_rgb(Rgb::WHITE), '█');
     }
 }
