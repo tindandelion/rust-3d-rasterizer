@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use glam::Vec3;
 
-use crate::{geometry::Normal3, scene::facet::Facet};
+use crate::{geometry::UnitVec3, scene::facet::Facet};
 
 use super::shape::Shape;
 
@@ -51,7 +51,7 @@ impl OctaSplitter {
             .iter()
             .map(|f| {
                 let corners = [vertices[f[0]], vertices[f[1]], vertices[f[2]]];
-                let normal = Normal3::from_points_ccw(&corners);
+                let normal = UnitVec3::from_points_ccw(&corners);
                 Facet::new(normal, *f)
             })
             .collect();
@@ -82,19 +82,19 @@ impl OctaSplitter {
         let (i_m_bc, m_bc) = self.split_edge(i_b, i_c);
 
         let facet_1 = Facet::new(
-            Normal3::from_points_ccw(&[a, m_ab, m_ac]),
+            UnitVec3::from_points_ccw(&[a, m_ab, m_ac]),
             [i_a, i_m_ab, i_m_ac],
         );
         let facet_2 = Facet::new(
-            Normal3::from_points_ccw(&[b, m_bc, m_ab]),
+            UnitVec3::from_points_ccw(&[b, m_bc, m_ab]),
             [i_b, i_m_bc, i_m_ab],
         );
         let facet_3 = Facet::new(
-            Normal3::from_points_ccw(&[c, m_ac, m_bc]),
+            UnitVec3::from_points_ccw(&[c, m_ac, m_bc]),
             [i_c, i_m_ac, i_m_bc],
         );
         let facet_4 = Facet::new(
-            Normal3::from_points_ccw(&[m_ab, m_bc, m_ac]),
+            UnitVec3::from_points_ccw(&[m_ab, m_bc, m_ac]),
             [i_m_ab, i_m_bc, i_m_ac],
         );
         [facet_1, facet_2, facet_3, facet_4]
@@ -130,7 +130,7 @@ mod tests {
     use approx::assert_relative_eq;
     use glam::Vec3;
 
-    use crate::geometry::Normal3;
+    use crate::geometry::UnitVec3;
 
     use super::unit_sphere;
 
@@ -144,7 +144,7 @@ mod tests {
 
     #[test]
     fn initial_unit_sphere_normals() {
-        let expected_normals: [Normal3; 8] = [
+        let expected_normals: [UnitVec3; 8] = [
             Vec3::new(1.0, 1.0, -1.0).into(),
             Vec3::new(-1.0, 1.0, -1.0).into(),
             Vec3::new(-1.0, 1.0, 1.0).into(),

@@ -1,5 +1,5 @@
 //! **`scene::dodecahedron::unit_dodecahedron`** (same **`[-0.5, 0.5]³`** framing as **`scene::cube::unit_cube`**),
-//! diffuse **`CUBE_ALBEDO`**, back-face culled — **two-phase** **`ANIMATED_SCENE_FRAME_COUNT`**-frame clip (**double** the older single‑phase length).
+//! diffuse **`SHAPE_BASE_COLOR`**, back-face culled — **two-phase** **`ANIMATED_SCENE_FRAME_COUNT`**-frame clip (**double** the older single‑phase length).
 //!
 //! 1. **Camera orbit (`… / 2` frames):** **eye** **`(0, 0.2, −1)` → … → `(0, 0.2, −1)`** by **`360°`** around **`+Y`** on **`xz`** radius **`CAMERA_ORBIT_RADIUS`**, **`y = 0.2`** (**`(sin θ, 0.2, −cos θ)`**); **cubic ease‑in‑out** on angle per lap (slow ends, quicker middle); scaled dodecahedron **does not tumble** (**`0.75`** uniform scale only).
 //! 2. **Model tumble (`… / 2` frames):** **camera** pinned at **`(0, 0.2, −1)`**; **`0.75`** uniform world scale plus **three-axis Euler** tumble (**`R_z R_y R_x`** with a common eased angle — same pacing as orbit).

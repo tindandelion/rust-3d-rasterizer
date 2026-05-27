@@ -53,7 +53,7 @@
 
 use glam::{Mat3, Mat4, UVec2, Vec3};
 
-use crate::geometry::Normal3;
+use crate::geometry::UnitVec3;
 
 /// Orthographic **world `Vec3` → framebuffer pixel** mapping for one **`width × height`** raster target.
 ///
@@ -61,7 +61,7 @@ use crate::geometry::Normal3;
 /// **`transform`** uses the first two components after the **`Mat4`** multiply (before **`round`**).
 #[derive(Clone, Copy, Debug)]
 pub struct Camera {
-    direction: Normal3,
+    direction: UnitVec3,
     viewport_transform: Mat4,
     transform_matrix: Mat4,
 }
@@ -82,7 +82,7 @@ impl Camera {
     ///
     /// Consumed by [`TriMesh::visible_facets`](crate::TriMesh) /
     /// [`Facet::is_front_facing`](crate::scene::facet::Facet::is_front_facing).
-    pub fn direction(&self) -> Normal3 {
+    pub fn direction(&self) -> UnitVec3 {
         self.direction
     }
 
@@ -158,7 +158,7 @@ mod tests {
         #[test]
         fn direction_is_pos_z_forward() {
             let camera = Camera::for_viewport(800, 600);
-            assert_eq!(camera.direction(), Normal3::Z);
+            assert_eq!(camera.direction(), UnitVec3::Z);
         }
 
         #[test]

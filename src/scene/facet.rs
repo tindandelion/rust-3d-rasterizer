@@ -1,24 +1,24 @@
-//! Triangular hull facet (**CCW winding** vertex indices viewed from outside along the outward [`Normal3`]).
+//! Triangular hull facet (**CCW winding** vertex indices viewed from outside along the outward [`UnitVec3`]).
 //!
 //! Stored indices reference a parent mesh **`vertices`** (**[`Shape`](crate::scene::shape::Shape)**, e.g. [`unit_cube`](crate::scene::cube::unit_cube), [`unit_dodecahedron`](crate::scene::dodecahedron::unit_dodecahedron))—**Facet** stays mesh‑agnostic and **does not** embed positions.
 
 use glam::{Mat4, Vec3};
 
-use crate::geometry::Normal3;
+use crate::geometry::UnitVec3;
 
-/// One planar triangle: three **CCW** vertex indices (**`verts`**) into a mesh **`vertices`**, plus outward **unit** **[`Normal3`]** (**same spatial frame** as **`vertices`**).
+/// One planar triangle: three **CCW** vertex indices (**`verts`**) into a mesh **`vertices`**, plus outward **unit** **[`UnitVec3`]** (**same spatial frame** as **`vertices`**).
 ///
 /// **`verts[k]` ↔ `verts[(k + 1) % 3]`** (**k = 0, 1, 2**) traverses boundary **counter‑clockwise** when looking from outside along **`normal`** toward the facet interior.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Facet {
     /// Outward **unit** normal (**[`Facet::transform`]** keeps **`normal`** coherent with **`vertices`** after each matrix—same caveat as **`Shape::transform`** / **`unit_cube`** **for non‑uniform scales**).
-    normal: Normal3,
+    normal: UnitVec3,
     /// Indices into the parent mesh **`vertices`** (CCW winding as seen against **`normal`**).
     verts: [usize; 3],
 }
 
 impl Facet {
-    pub const fn new(normal: Normal3, verts: [usize; 3]) -> Self {
+    pub const fn new(normal: UnitVec3, verts: [usize; 3]) -> Self {
         Self { normal, verts }
     }
 
@@ -36,7 +36,7 @@ impl Facet {
     }
 
     /// Outward unit normal in **`vertices`** space.
-    pub fn normal(&self) -> Normal3 {
+    pub fn normal(&self) -> UnitVec3 {
         self.normal
     }
 
@@ -57,7 +57,7 @@ impl Facet {
     /// **`normal` · `view_direction` < 0** for **into‑scene** view (**[`crate::Camera::direction`]**)—mirrors **`unit_cube`** / hull wireframe classification.
     ///
     /// Grazing (**`dot == 0`**) is **not** front-facing.
-    pub fn is_front_facing(&self, view_direction: Normal3) -> bool {
+    pub fn is_front_facing(&self, view_direction: UnitVec3) -> bool {
         view_direction.dot(self.normal) < 0.0
     }
 }
@@ -68,7 +68,7 @@ mod tests {
     use glam::{Mat4, Vec3};
     use std::f32::consts::FRAC_PI_2;
 
-    use crate::geometry::Normal3;
+    use crate::geometry::UnitVec3;
 
     use super::Facet;
 
@@ -79,7 +79,7 @@ mod tests {
     #[test]
     fn transform_updates_normal() {
         let original_normal = Vec3::new(0.0, 0.0, 1.0).into();
-        let expected_normal: Normal3 = Vec3::new(0.0, -1.0, 0.0).into();
+        let expected_normal: UnitVec3 = Vec3::new(0.0, -1.0, 0.0).into();
         let facet = Facet::new(original_normal, VERTS);
 
         let m = Mat4::from_rotation_x(FRAC_PI_2);
@@ -89,7 +89,7 @@ mod tests {
 
     #[test]
     fn edges_walk_triangle_boundary_in_ccw_order() {
-        let facet = Facet::new(Normal3::Z, VERTS);
+        let facet = Facet::new(UnitVec3::Z, VERTS);
         assert_eq!(
             facet.edges().collect::<Vec<_>>(),
             vec![(1, 2), (2, 7), (7, 1)],
@@ -98,19 +98,19 @@ mod tests {
 
     #[test]
     fn is_front_facing_true_for_neg_z_normal_when_view_is_pos_z() {
-        let facet = Facet::new(Normal3::NEG_Z, VERTS);
-        assert!(facet.is_front_facing(Normal3::Z));
+        let facet = Facet::new(UnitVec3::NEG_Z, VERTS);
+        assert!(facet.is_front_facing(UnitVec3::Z));
     }
 
     #[test]
     fn is_front_facing_false_for_pos_z_normal_when_view_is_pos_z() {
-        let facet = Facet::new(Normal3::Z, VERTS);
-        assert!(!facet.is_front_facing(Normal3::Z));
+        let facet = Facet::new(UnitVec3::Z, VERTS);
+        assert!(!facet.is_front_facing(UnitVec3::Z));
     }
 
     #[test]
     fn is_front_facing_false_when_grazing() {
-        let facet = Facet::new(Normal3::X, VERTS);
-        assert!(!facet.is_front_facing(Normal3::Z));
+        let facet = Facet::new(UnitVec3::X, VERTS);
+        assert!(!facet.is_front_facing(UnitVec3::Z));
     }
 }

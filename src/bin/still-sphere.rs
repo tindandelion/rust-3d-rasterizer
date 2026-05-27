@@ -1,4 +1,4 @@
-//! Lossless WebP still: **filled** **octasphere** (`unit_sphere` seed) — uniform **`CUBE_ALBEDO`** blue, **`DiffuseLight`**, back-face culled; **0.5** uniform scale in world space.
+//! Lossless WebP still: **filled** **octasphere** (`unit_sphere` seed) — uniform **`SHAPE_BASE_COLOR`** blue, **`DiffuseLight`**, back-face culled; **0.5** uniform scale in world space.
 
 use std::path::Path;
 

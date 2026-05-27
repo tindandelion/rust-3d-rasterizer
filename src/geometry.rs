@@ -4,9 +4,9 @@ use approx::{AbsDiffEq, RelativeEq};
 use glam::Vec3;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Normal3(Vec3);
+pub struct UnitVec3(Vec3);
 
-impl Normal3 {
+impl UnitVec3 {
     pub const X: Self = Self(Vec3::X);
     pub const NEG_X: Self = Self(Vec3::NEG_X);
     pub const Y: Self = Self(Vec3::Y);
@@ -28,23 +28,23 @@ impl Normal3 {
     }
 }
 
-impl From<Vec3> for Normal3 {
+impl From<Vec3> for UnitVec3 {
     fn from(value: Vec3) -> Self {
         assert!(
             value.length_squared() > 0.0,
-            "Normal3 requires a non-zero Vec3"
+            "UnitVec3 requires a non-zero Vec3"
         );
         Self(value.normalize())
     }
 }
 
-impl From<Normal3> for Vec3 {
-    fn from(value: Normal3) -> Self {
+impl From<UnitVec3> for Vec3 {
+    fn from(value: UnitVec3) -> Self {
         value.0
     }
 }
 
-impl Deref for Normal3 {
+impl Deref for UnitVec3 {
     type Target = Vec3;
 
     fn deref(&self) -> &Self::Target {
@@ -52,7 +52,7 @@ impl Deref for Normal3 {
     }
 }
 
-impl Neg for Normal3 {
+impl Neg for UnitVec3 {
     type Output = Self;
 
     fn neg(self) -> Self::Output {
@@ -60,7 +60,7 @@ impl Neg for Normal3 {
     }
 }
 
-impl AbsDiffEq for Normal3 {
+impl AbsDiffEq for UnitVec3 {
     type Epsilon = <Vec3 as AbsDiffEq>::Epsilon;
 
     fn default_epsilon() -> Self::Epsilon {
@@ -72,7 +72,7 @@ impl AbsDiffEq for Normal3 {
     }
 }
 
-impl RelativeEq for Normal3 {
+impl RelativeEq for UnitVec3 {
     fn default_max_relative() -> Self::Epsilon {
         <Vec3 as RelativeEq>::default_max_relative()
     }
@@ -89,27 +89,27 @@ impl RelativeEq for Normal3 {
 
 #[cfg(test)]
 mod tests {
-    use super::Normal3;
+    use super::UnitVec3;
     use approx::assert_relative_eq;
     use glam::Vec3;
 
     #[test]
     fn neg_flips_underlying_vec3() {
-        let n = Normal3::from(Vec3::new(1.0, 2.0, 8.0));
+        let n = UnitVec3::from(Vec3::new(1.0, 2.0, 8.0));
         assert_relative_eq!(Vec3::from(-n), -Vec3::from(n));
     }
 
     #[test]
     fn neg_preserves_unit_length() {
-        let n = Normal3::from(Vec3::new(1.0, 2.0, 8.0));
+        let n = UnitVec3::from(Vec3::new(1.0, 2.0, 8.0));
         assert_relative_eq!((-n).length(), 1.0);
     }
 
     #[test]
     fn relative_eq_delegates_to_inner_vec3() {
         let v = Vec3::new(1.0, 2.0, 8.0);
-        let a = Normal3::from(v);
-        let b = Normal3::from(v + Vec3::new(1e-8, 0.0, 0.0));
+        let a = UnitVec3::from(v);
+        let b = UnitVec3::from(v + Vec3::new(1e-8, 0.0, 0.0));
         assert_relative_eq!(a, b);
     }
 
@@ -121,8 +121,8 @@ mod tests {
             Vec3::new(0.0, 1.0, 0.0),
             Vec3::new(1.0, 0.0, 0.0),
         ];
-        let n = Normal3::from_points_ccw(&corners);
-        assert_relative_eq!(n, Normal3::from(Vec3::ONE));
+        let n = UnitVec3::from_points_ccw(&corners);
+        assert_relative_eq!(n, UnitVec3::from(Vec3::ONE));
         assert_relative_eq!(n.length_squared(), 1.0);
     }
 
@@ -138,15 +138,15 @@ mod tests {
             Vec3::new(1.0, 0.0, 0.0),
             Vec3::new(0.0, 1.0, 0.0),
         ];
-        let a = Normal3::from_points_ccw(&corners);
-        let b = Normal3::from_points_ccw(&swapped);
+        let a = UnitVec3::from_points_ccw(&corners);
+        let b = UnitVec3::from_points_ccw(&swapped);
         assert_relative_eq!(a, -b);
     }
 
     #[test]
-    #[should_panic(expected = "Normal3 requires a non-zero Vec3")]
+    #[should_panic(expected = "UnitVec3 requires a non-zero Vec3")]
     fn from_vertices_ccw_collinear_corners_panics() {
         let corners = [Vec3::ZERO, Vec3::X, Vec3::new(2.0, 0.0, 0.0)];
-        let _ = Normal3::from_points_ccw(&corners);
+        let _ = UnitVec3::from_points_ccw(&corners);
     }
 }

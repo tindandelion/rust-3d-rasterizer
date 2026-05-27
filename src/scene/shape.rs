@@ -7,7 +7,7 @@ use std::array;
 
 use super::facet::Facet;
 
-use crate::{TriMesh, Triangle, geometry::Normal3};
+use crate::{TriMesh, Triangle, geometry::UnitVec3};
 
 /// Generic mesh: **`Facet::verts`** index into vertex positions from **[`vertices`](Shape::vertices)**.
 ///
@@ -48,7 +48,7 @@ impl Shape {
 }
 
 impl TriMesh for Shape {
-    fn visible_facets(&self, view_direction: Normal3) -> impl Iterator<Item = Triangle> + '_ {
+    fn visible_facets(&self, view_direction: UnitVec3) -> impl Iterator<Item = Triangle> + '_ {
         self.facets
             .iter()
             .filter(move |f| f.is_front_facing(view_direction))
@@ -69,7 +69,7 @@ mod tests {
     use super::*;
     use glam::Mat4;
 
-    /// **`z = 0`**, **`[-½, ½]²`** in **XY**. Two triangles, outward **[`Normal3::NEG_Z`]** —
+    /// **`z = 0`**, **`[-½, ½]²`** in **XY**. Two triangles, outward **[`UnitVec3::NEG_Z`]** —
     /// visible when **into‑scene** view is **`+Z`** (same rule as **`unit_cube`** fronts vs
     /// [`Camera::direction`](crate::Camera::direction)).
     fn flat_square_xy() -> Shape {
@@ -80,10 +80,10 @@ mod tests {
             Vec3::new( 0.5,  0.5, 0.0),
             Vec3::new(-0.5,  0.5, 0.0),
         ];
-        // CCW winding viewed from **`−Z`** (outside along **`Normal3::NEG_Z`**).
+        // CCW winding viewed from **`−Z`** (outside along **`UnitVec3::NEG_Z`**).
         let facets = vec![
-            Facet::new(Normal3::NEG_Z, [0, 2, 1]),
-            Facet::new(Normal3::NEG_Z, [0, 3, 2]),
+            Facet::new(UnitVec3::NEG_Z, [0, 2, 1]),
+            Facet::new(UnitVec3::NEG_Z, [0, 3, 2]),
         ];
         Shape::new(vertices, facets)
     }
@@ -91,21 +91,21 @@ mod tests {
     #[test]
     fn from_pos_z_both_facets_visible_with_neg_z_normals() {
         let shape = flat_square_xy();
-        let visible = shape.visible_facets(Normal3::Z).collect::<Vec<_>>();
+        let visible = shape.visible_facets(UnitVec3::Z).collect::<Vec<_>>();
         assert_eq!(visible.len(), 2);
-        assert!(visible.iter().all(|tri| tri.normal == Normal3::NEG_Z));
+        assert!(visible.iter().all(|tri| tri.normal == UnitVec3::NEG_Z));
     }
 
     #[test]
     fn from_neg_z_no_facets_visible() {
-        assert_eq!(flat_square_xy().visible_facets(Normal3::NEG_Z).count(), 0);
+        assert_eq!(flat_square_xy().visible_facets(UnitVec3::NEG_Z).count(), 0);
     }
 
     #[test]
     fn perpendicular_view_is_grazing_neither_triangle_front() {
         let shape = flat_square_xy();
-        assert_eq!(shape.visible_facets(Normal3::X).count(), 0);
-        assert_eq!(shape.visible_facets(Normal3::Y).count(), 0);
+        assert_eq!(shape.visible_facets(UnitVec3::X).count(), 0);
+        assert_eq!(shape.visible_facets(UnitVec3::Y).count(), 0);
     }
 
     #[test]
@@ -113,12 +113,12 @@ mod tests {
         let shape = flat_square_xy();
         let flipped = shape.transform(Mat4::from_rotation_y(PI));
 
-        assert_eq!(flipped.visible_facets(Normal3::Z).count(), 0);
-        assert_eq!(flipped.visible_facets(Normal3::NEG_Z).count(), 2);
+        assert_eq!(flipped.visible_facets(UnitVec3::Z).count(), 0);
+        assert_eq!(flipped.visible_facets(UnitVec3::NEG_Z).count(), 2);
 
         assert_eq!(
-            shape.visible_facets(Normal3::Z).count(),
-            flipped.visible_facets(Normal3::NEG_Z).count(),
+            shape.visible_facets(UnitVec3::Z).count(),
+            flipped.visible_facets(UnitVec3::NEG_Z).count(),
         );
     }
 }

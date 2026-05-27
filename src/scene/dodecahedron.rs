@@ -11,7 +11,7 @@ use glam::Vec3;
 use super::facet::Facet;
 use super::shape::Shape;
 
-use crate::geometry::Normal3;
+use crate::geometry::UnitVec3;
 
 /// Indices for **every** planar triangle (**12** pentagons × 3 wedges) lifted from **`three.js`** **`DodecahedronGeometry`** (detail **0**).
 const THREE_JS_DETAIL0_TRIANGLES: [[usize; 3]; 36] = [
@@ -98,7 +98,7 @@ pub fn unit_dodecahedron() -> Shape {
     Shape::new(vertices_arr.into_iter().collect(), facets)
 }
 
-/// Outward **CCW** facet (left‑handed view along **`Normal3`**) matching [`Facet::is_front_facing`].
+/// Outward **CCW** facet (left‑handed view along **`UnitVec3`**) matching [`Facet::is_front_facing`].
 fn facet_from_corners(vertices: &[Vec3; 20], [i, j, k]: [usize; 3]) -> Facet {
     let a = vertices[i];
     let b = vertices[j];
@@ -109,9 +109,9 @@ fn facet_from_corners(vertices: &[Vec3; 20], [i, j, k]: [usize; 3]) -> Facet {
     let centroid_tri = (a + b + c) * (1.0 / 3.0);
     if n.dot(centroid_tri) < 0.0 {
         n = -n;
-        Facet::new(Normal3::from(n), [i, k, j])
+        Facet::new(UnitVec3::from(n), [i, k, j])
     } else {
-        Facet::new(Normal3::from(n), [i, j, k])
+        Facet::new(UnitVec3::from(n), [i, j, k])
     }
 }
 
@@ -121,7 +121,7 @@ mod tests {
 
     use approx::assert_relative_eq;
 
-    use crate::{TriMesh, geometry::Normal3};
+    use crate::{TriMesh, geometry::UnitVec3};
 
     use super::*;
 
@@ -161,6 +161,6 @@ mod tests {
     #[test]
     fn visible_facets_count_from_pos_z() {
         let d = unit_dodecahedron();
-        assert_eq!(d.visible_facets(Normal3::Z).count(), 13);
+        assert_eq!(d.visible_facets(UnitVec3::Z).count(), 13);
     }
 }
