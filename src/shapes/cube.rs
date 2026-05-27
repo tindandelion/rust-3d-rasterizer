@@ -1,16 +1,13 @@
-//! Axis-aligned **unit cube** (edge length **1**, **`[-½, ½]³`**) built as **`[Shape](crate::scene::shape::Shape)`**.
+//! Axis-aligned **unit cube** (edge length **1**, **`[-½, ½]³`**) built as **[`Shape`](crate::geometry::Shape)**.
 //!
-//! Use **[`unit_cube`]** plus **[`Shape::transform`](crate::scene::shape::Shape::transform)** for posing
-//! (**`Facet::transform`** / **`TriMesh::visible_facets`** — same **`Camera`** +**Z**‑forward semantics as rest of **`scene`**).
+//! Use **[`cube`]** plus **[`Shape::transform`](crate::geometry::Shape::transform)** for posing
+//! (**`Facet::transform`** / **`TriMesh::visible_facets`** — same **`Camera`** +**Z**‑forward semantics as the rest of the crate).
 //!
 //! Planning: `doc/planning/project-spec.md`, `doc/planning/project-breakdown.md`.
 
 use glam::Vec3;
 
-use super::facet::Facet;
-use super::shape::Shape;
-
-use crate::geometry::UnitVec3;
+use crate::geometry::{Facet, Shape, UnitVec3};
 
 /// Two **`Facet`**s per planar hull quad (same **`normal`**, **`(w,x,y)` + `(w,y,z)`** given CCW verts **`w…z`** seen from outside along **`normal`**).
 const fn facets_from_quad_ccw_corner(normal: UnitVec3, verts: [usize; 4]) -> [Facet; 2] {
@@ -41,7 +38,7 @@ const UNIT_CUBE_QUADS: [(UnitVec3, [usize; 4]); 6] = [
 
 /// Canonical axis-aligned **`[-½, ½]³`** mesh (**eight verts**, twelve wedge **`Facet`**s (**`(w,x,y)` **`(w,y,z)`** per planar quad)).
 #[must_use]
-pub fn unit_cube() -> Shape {
+pub fn cube() -> Shape {
     let mut facets = Vec::with_capacity(12);
     for &(normal, corners) in &UNIT_CUBE_QUADS {
         let [a, b] = facets_from_quad_ccw_corner(normal, corners);
@@ -55,13 +52,13 @@ pub fn unit_cube() -> Shape {
 mod tests {
     use glam::{Mat4, Vec3};
 
-    use super::unit_cube;
+    use super::cube;
     use crate::{TriMesh, geometry::UnitVec3};
     use std::f32::consts::FRAC_PI_4;
 
     #[test]
-    fn unit_cube_corner_and_facet_counts() {
-        let mesh = unit_cube();
+    fn cube_corner_and_facet_counts() {
+        let mesh = cube();
         assert_eq!(mesh.vertices().len(), 8);
         assert_eq!(mesh.facets().len(), 12);
         assert!(
@@ -73,14 +70,14 @@ mod tests {
 
     #[test]
     fn visible_facets_count_from_front() {
-        let mesh = unit_cube();
+        let mesh = cube();
         let forward = UnitVec3::Z;
         assert_eq!(mesh.visible_facets(forward).count(), 2);
     }
 
     #[test]
     fn visible_facets_count_from_arbitrary_direction() {
-        let mesh = unit_cube();
+        let mesh = cube();
         let forward = Vec3::new(-1.0, -1.0, -1.0).into();
         assert_eq!(mesh.visible_facets(forward).count(), 6);
     }
@@ -91,17 +88,14 @@ mod tests {
         let transform = Mat4::from_rotation_x(FRAC_PI_4) * Mat4::from_rotation_y(FRAC_PI_4);
 
         assert_eq!(
-            unit_cube()
-                .transform(transform)
-                .visible_facets(forward)
-                .count(),
+            cube().transform(transform).visible_facets(forward).count(),
             6,
         );
     }
 
     #[test]
     fn looking_at_cube_from_front() {
-        let mesh = unit_cube();
+        let mesh = cube();
         let visible = mesh.visible_facets(UnitVec3::Z).collect::<Vec<_>>();
         assert_eq!(visible.len(), 2);
         assert!(visible.iter().all(|tri| tri.normal == UnitVec3::NEG_Z));

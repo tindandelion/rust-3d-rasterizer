@@ -2,6 +2,8 @@
 
 This document describes how I plan to approach the project iteratively.
 
+**Current code layout** (module paths, export bins, re-export policy) lives in **Notes / deferred** at the bottom. Completed **`[x]`** milestones below retain their original wording where it describes what was shipped at the time (**`Cube`**, **`scene/cube`**, …); use **Notes / deferred** and **`AGENTS.md`** when navigating the codebase today.
+
 ## Iterations
 
 ### [x] Base WebP (still)
@@ -59,6 +61,7 @@ This document describes how I plan to approach the project iteratively.
 ### [ ] Sphere: triangular mesh — procedural tessellation
 
 - **Goal:** On the **unified triangle stack** from **`Dodecahedron`**, generate a **procedural sphere** as **triangular facets**; tighten **indexed mesh** structure where it pays off (**shared vertices** vs triangle soup). **Focus** stays on **sphere math / tessellation**—**cube** **and** **raster baseline** **already** **`[Vertex; 3]`**.
+- **Partially shipped:** **`shapes::sphere(splits)`** (**`src/shapes/sphere.rs`**) — octahedron seed, iterative edge-midpoint subdivision with a midpoint cache; **`still-sphere`** bin; **`animated-scene`** uses **`sphere(4)`**. Remaining work for this milestone (if any): confirm tessellation/indexing meets the original goal, export parity, and mark **[x]** when satisfied.
 - **Outcome:** **Faceted** shaded sphere (low tessellation should still read “polyhedral”).
 
 ### [ ] Sphere: smooth shading
@@ -100,8 +103,9 @@ This document describes how I plan to approach the project iteratively.
 
 ## Notes / deferred
 
-- **Animated export:** **`animated-scene`** (**`src/bin/animated-scene.rs`**) is the Euler‑tumble **lossless animated WebP** binary (formerly **`animated-cube`**); **`scene::dodecahedron::Dodecahedron::default`** uses **`[-0.5, 0.5]³`** (same axis box as **`Cube::default`**) then **½** world scale in the bin, shared **`ANIMATED_SCENE_FRAME_COUNT`** (**`720`**: **`360`** camera orbit **`+`** **`360`** model tumble). **`still-cube`** is the **`Cube`** orthographic still (**π/4 X/Y tilt**, **½** scale).
-- **Iteration order:** **`Camera: arbitrary eye`** **[x]** is **orthogonal** to **orthographic vs perspective**: **orbit-style **`look-at`** (eye anywhere sensible, target **scene center** defaulting to **world origin**, **world +Y up**) is **landed** in **`ortho_camera`**. **`Sphere`** can proceed on the unified stack; **`Perspective projection`** still follows **filled torus** and **inherits** that **`look-at`** policy (**projection** swaps to **`w`** divide afterward). **Overall rhythm:** **cube + dodecahedron (triangle **`TriMesh`** + **`FillTriangle`**) → sphere → depth → torus** stays **orthographic** first (simpler **\(w\)**-free correctness). **`Dodecahedron: triangular mesh`** **[x]** collapses **`scene/cube`** to **indexed wedges** **plus** the **dodecahedron** demo. **`Sphere`** **only adds** tessellated sphere geometry onto that stack. **`Depth buffer`** sits **before torus** for **tube/hole overlap** under **orthographic** **`z`**; revisit **\(z_{\text{NDC}}\)** / depth behavior once **perspective** lands (**see `Perspective projection`**). **Depth** stays **deferred** for **single-shell** cube/dodeca stills—**overlap** ramps up with torus (**see **`Depth buffer`** milestone**).
+- **Current module layout:** **`geometry`** — **`Shape`**, **`Facet`**, **`UnitVec3`** (re-exported; private **`geometry/{shape,facet,unit_vec3}.rs`**). **`shapes`** — **`cube()`**, **`dodecahedron()`**, **`sphere(splits)`** (re-exported; private **`shapes/{cube,dodecahedron,sphere}.rs`**). **`TriMesh`**, **`Triangle`**, **`draw_facets`**, scene constants — **`src/lib.rs`**. Export bins — **`src/bin/`**.
+- **Animated export:** **`animated-scene`** (**`src/bin/animated-scene.rs`**) is the **two-phase** **lossless animated WebP** binary (formerly **`animated-cube`**): **`sphere(4)`** mesh, **`0.75`** uniform world scale, **`720`** frames (**`360`** camera orbit **`+`** **`360`** model tumble) at **`ANIMATED_SCENE_FRAME_SPACING_MS`**. **`still-cube`** is the **`shapes::cube()`** orthographic still (**π/4 X/Y tilt**, **½** scale). **`still-sphere`** exports a faceted **`shapes::sphere(0)`** still (**½** scale).
+- **Iteration order:** **`Camera: arbitrary eye`** **[x]** is **orthogonal** to **orthographic vs perspective**: **orbit-style **`look-at`** (eye anywhere sensible, target **scene center** defaulting to **world origin**, **world +Y up**) is **landed** in **`ortho_camera`**. **`Sphere: triangular mesh`** is **partially shipped** (**`shapes::sphere`**); **`Sphere: smooth shading`** and **`Depth buffer`** remain open. **`Perspective projection`** still follows **filled torus** and **inherits** that **`look-at`** policy (**projection** swaps to **`w`** divide afterward). **Overall rhythm:** **cube + dodecahedron (triangle **`TriMesh`** + **`FillTriangle`**) → sphere → depth → torus** stays **orthographic** first (simpler **\(w\)**-free correctness). **`Depth buffer`** sits **before torus** for **tube/hole overlap** under **orthographic** **`z`**; revisit **\(z_{\text{NDC}}\)** / depth behavior once **perspective** lands (**see `Perspective projection`**).
 - **Golden image regression tests:** add when eyeballing saturates — decode `.webp` to RGB and compare, or compare raw framebuffer bytes **before** encode (still vs animated).
 - **Live window** (`winit` + framebuffer blit): optional after disk-export workflow is boring—pairs naturally with animation (**real-time** rotation instead of writing WebPs).
 - **PNG / ffmpeg:** optional escape hatches for tooling compatibility or pixel-diff tooling that prefers PNG—**not** the default deliverable.

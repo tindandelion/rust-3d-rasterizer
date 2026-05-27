@@ -10,7 +10,7 @@ pub mod framebuffer;
 pub mod geometry;
 pub mod lighting;
 pub mod ortho_camera;
-pub mod scene;
+pub mod shapes;
 pub mod webp_encoder;
 
 pub use framebuffer::{FillTriangle, FrameBuffer, Rgb};

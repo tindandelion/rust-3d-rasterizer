@@ -1,10 +1,10 @@
-//! Lossless WebP still: **filled** **octasphere** (`unit_sphere` seed) — uniform **`SHAPE_BASE_COLOR`** blue, **`DiffuseLight`**, back-face culled; **0.5** uniform scale in world space.
+//! Lossless WebP still: **filled** **octasphere** (`sphere` seed) — uniform **`SHAPE_BASE_COLOR`** blue, **`DiffuseLight`**, back-face culled; **0.5** uniform scale in world space.
 
 use std::path::Path;
 
 use glam::{Mat3, Mat4, Vec3};
 
-use thorus_forge::scene::sphere::unit_sphere;
+use thorus_forge::shapes::sphere;
 use thorus_forge::{
     Camera, FrameBuffer, SCENE_HEIGHT, SCENE_WIDTH, WebpEncoder, output_webp_path_from_args,
 };
@@ -24,7 +24,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let camera = Camera::for_viewport(SCENE_WIDTH, SCENE_HEIGHT).move_to(CAMERA_POS);
     let light = DiffuseLight::new(glam::Vec3::new(1.0, 1.0, -1.0).into(), 0.1);
 
-    let mesh = unit_sphere(0).transform(model_matrix_still());
+    let mesh = sphere(0).transform(model_matrix_still());
     draw_facets(&mut framebuffer, &camera, &mesh, &light);
 
     let mut encoder = WebpEncoder::new(SCENE_WIDTH, SCENE_HEIGHT)?;

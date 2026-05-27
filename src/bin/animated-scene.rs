@@ -1,14 +1,14 @@
-//! **`scene::dodecahedron::unit_dodecahedron`** (same **`[-0.5, 0.5]³`** framing as **`scene::cube::unit_cube`**),
+//! **`shapes::sphere(4)`** (unit-radius octasphere seed, four subdivision passes),
 //! diffuse **`SHAPE_BASE_COLOR`**, back-face culled — **two-phase** **`ANIMATED_SCENE_FRAME_COUNT`**-frame clip (**double** the older single‑phase length).
 //!
-//! 1. **Camera orbit (`… / 2` frames):** **eye** **`(0, 0.2, −1)` → … → `(0, 0.2, −1)`** by **`360°`** around **`+Y`** on **`xz`** radius **`CAMERA_ORBIT_RADIUS`**, **`y = 0.2`** (**`(sin θ, 0.2, −cos θ)`**); **cubic ease‑in‑out** on angle per lap (slow ends, quicker middle); scaled dodecahedron **does not tumble** (**`0.75`** uniform scale only).
+//! 1. **Camera orbit (`… / 2` frames):** **eye** **`(0, 0.2, −1)` → … → `(0, 0.2, −1)`** by **`360°`** around **`+Y`** on **`xz`** radius **`CAMERA_ORBIT_RADIUS`**, **`y = 0.2`** (**`(sin θ, 0.2, −cos θ)`**); **cubic ease‑in‑out** on angle per lap (slow ends, quicker middle); mesh **does not tumble** (**`0.75`** uniform scale only).
 //! 2. **Model tumble (`… / 2` frames):** **camera** pinned at **`(0, 0.2, −1)`**; **`0.75`** uniform world scale plus **three-axis Euler** tumble (**`R_z R_y R_x`** with a common eased angle — same pacing as orbit).
 
 use std::path::Path;
 
 use glam::{Mat3, Mat4, Vec3};
 
-use thorus_forge::scene::sphere::unit_sphere;
+use thorus_forge::shapes::sphere;
 use thorus_forge::{
     ANIMATED_SCENE_FRAME_COUNT, ANIMATED_SCENE_FRAME_SPACING_MS, Camera, FrameBuffer, SCENE_HEIGHT,
     SCENE_WIDTH, WebpEncoder, output_webp_path_from_args,
@@ -53,7 +53,7 @@ fn model_matrix_scaled_only() -> Mat4 {
 }
 
 /// **World-fixed** Euler tumble (**`R_z R_y R_x`**) with **`0.75`** uniform world scale;
-/// **`frame_index`** in **`0‥lap_frames`**; base **`unit_dodecahedron()`** verts span **`[-0.5, 0.5]³`** axis box.
+/// **`frame_index`** in **`0‥lap_frames`**; base **`sphere()`** verts lie on the unit sphere before world scale.
 fn model_matrix_euler_sweep(frame_index: u32, lap_frames: u32) -> Mat4 {
     let n = lap_frames.max(1) as f32;
     let u = frame_index as f32 / n;
@@ -74,7 +74,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
     let light = DiffuseLight::new(glam::Vec3::new(1.0, 0.5, -1.0).into(), 0.25);
 
-    let shape = unit_sphere(4);
+    let shape = sphere(4);
     let half = half_lap_frames();
     assert_eq!(
         ANIMATED_SCENE_FRAME_COUNT,

@@ -1,17 +1,14 @@
-//! Platonic **dodecahedron** (**20** verts × **three.js** **`DodecahedronGeometry`** detail **0**) as **[`crate::scene::shape::Shape`]**.
+//! Platonic **dodecahedron** (**20** verts × **three.js** **`DodecahedronGeometry`** detail **0**) as **[`crate::geometry::Shape`]**.
 //!
-//! Golden‑ratio coordinates scaled **`× (0.5 /  φ)`** — **`max |x|, |y|, |z| = 0.5`**, same bounding box axis as **`[unit_cube](crate::scene::cube::unit_cube)`**.
+//! Golden‑ratio coordinates scaled **`× (0.5 /  φ)`** — **`max |x|, |y|, |z| = 0.5`**, same bounding box axis as **[`cube`](crate::shapes::cube)**.
 //!
 //! We start from Wikipedia **`three.js`** golden‑ratio Cartesian coordinates (max coordinate **φ**), then **`0.5 /  φ`** so **`max |x|, |y|, |z| = 0.5`**. Hull edge length **`1 /  φ² ≈ 0.382`**, triangulation chords **`1 /  φ ≈ 0.618`**.
 //!
-//! [`Facet::transform`](crate::scene::facet::Facet::transform) follows **`unit_cube`**’s **non‑uniform scale** caveat on stored normals.
+//! [`Facet::transform`](crate::geometry::Facet::transform) follows **`cube`**’s **non‑uniform scale** caveat on stored normals.
 
 use glam::Vec3;
 
-use super::facet::Facet;
-use super::shape::Shape;
-
-use crate::geometry::UnitVec3;
+use crate::geometry::{Facet, Shape, UnitVec3};
 
 /// Indices for **every** planar triangle (**12** pentagons × 3 wedges) lifted from **`three.js`** **`DodecahedronGeometry`** (detail **0**).
 const THREE_JS_DETAIL0_TRIANGLES: [[usize; 3]; 36] = [
@@ -53,7 +50,7 @@ const THREE_JS_DETAIL0_TRIANGLES: [[usize; 3]; 36] = [
     [1, 5, 9],
 ];
 
-/// Canonical **scaled Platonic vertex table**: every coordinate **`∈ [− 0.5 ,  0.5 ]`** (**same framing as **`unit_cube`**).
+/// Canonical **scaled Platonic vertex table**: every coordinate **`∈ [− 0.5 ,  0.5 ]`** (**same framing as **`cube`**).
 fn platonic_scaled_vertices_array() -> [Vec3; 20] {
     let phi = (1.0 + 5.0_f32.sqrt()) * 0.5;
     let r = phi - 1.0;
@@ -88,7 +85,7 @@ fn platonic_scaled_vertices_array() -> [Vec3; 20] {
 /// Default **scaled Platonic dodecahedron** as **`Shape`**: **20** verts, **36** wedge **`Facet`**s (**`three.js`** detail **0** tri list).
 ///
 /// Pose with **`Shape::transform`** ( **`Mat4`** per-corner + **`Facet::transform`** per facet).
-pub fn unit_dodecahedron() -> Shape {
+pub fn dodecahedron() -> Shape {
     let vertices_arr = platonic_scaled_vertices_array();
     let facets: Vec<Facet> = THREE_JS_DETAIL0_TRIANGLES
         .into_iter()
@@ -127,12 +124,12 @@ mod tests {
 
     #[test]
     fn vertices_match_cube_axis_half_extent() {
-        let mesh = unit_dodecahedron();
+        let mesh = dodecahedron();
         let half = 0.5_f32;
         for p in mesh.vertices() {
             assert!(
                 p.x.abs() <= half + 1e-4 && p.y.abs() <= half + 1e-4 && p.z.abs() <= half + 1e-4,
-                "vertices must stay inside [-0.5, 0.5]^3 like unit_cube ({p:?})",
+                "vertices must stay inside [-0.5, 0.5]^3 like cube ({p:?})",
             );
         }
         let max_coord = mesh.vertices().iter().fold(0_f32, |acc, p| {
@@ -145,7 +142,7 @@ mod tests {
     fn convex_hull_shortest_edge_is_one_over_phi_squared() {
         let phi = (1.0 + 5.0_f32.sqrt()) * 0.5;
         let expected_shortest = 1.0 / (phi * phi);
-        let d = unit_dodecahedron();
+        let d = dodecahedron();
         let mut seen: BTreeMap<(usize, usize), f32> = BTreeMap::new();
         for [i, j, k] in THREE_JS_DETAIL0_TRIANGLES {
             for (u, v) in [(i, j), (j, k), (k, i)] {
@@ -160,7 +157,7 @@ mod tests {
 
     #[test]
     fn visible_facets_count_from_pos_z() {
-        let d = unit_dodecahedron();
+        let d = dodecahedron();
         assert_eq!(d.visible_facets(UnitVec3::Z).count(), 13);
     }
 }

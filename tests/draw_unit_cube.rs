@@ -8,8 +8,7 @@
 
 use glam::{UVec2, Vec3};
 use thorus_forge::{
-    Camera, DiffuseLight, FillTriangle, FrameBuffer, SHAPE_BASE_COLOR, draw_facets,
-    scene::cube::unit_cube,
+    Camera, DiffuseLight, FillTriangle, FrameBuffer, SHAPE_BASE_COLOR, draw_facets, shapes::cube,
 };
 
 const FB_WIDTH: u32 = 101;
@@ -21,7 +20,7 @@ fn draw_unit_cube() {
     let mut fb = FrameBuffer::new(FB_WIDTH, FB_HEIGHT);
     let camera = Camera::for_viewport(FB_WIDTH, FB_HEIGHT).move_to(CAMERA_POS);
     let light = DiffuseLight::new(-camera.direction(), 0.1);
-    let mesh = unit_cube();
+    let mesh = cube();
 
     draw_facets(&mut fb, &camera, &mesh, &light);
 

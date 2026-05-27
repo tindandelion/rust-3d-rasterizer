@@ -2,11 +2,9 @@ use std::collections::HashMap;
 
 use glam::Vec3;
 
-use crate::{geometry::UnitVec3, scene::facet::Facet};
+use crate::geometry::{Facet, Shape, UnitVec3};
 
-use super::shape::Shape;
-
-pub fn unit_sphere(splits: usize) -> Shape {
+pub fn sphere(splits: usize) -> Shape {
     let mut splitter = OctaSplitter::new();
     for _ in 0..splits {
         splitter.split_facets();
@@ -132,18 +130,18 @@ mod tests {
 
     use crate::geometry::UnitVec3;
 
-    use super::unit_sphere;
+    use super::sphere;
 
     #[test]
-    fn initial_unit_sphere_vertices_and_facets() {
-        let sphere = unit_sphere(0);
+    fn initial_sphere_vertices_and_facets() {
+        let mesh = sphere(0);
 
-        assert_eq!(6, sphere.vertices().len());
-        assert_eq!(8, sphere.facets().len());
+        assert_eq!(6, mesh.vertices().len());
+        assert_eq!(8, mesh.facets().len());
     }
 
     #[test]
-    fn initial_unit_sphere_normals() {
+    fn initial_sphere_normals() {
         let expected_normals: [UnitVec3; 8] = [
             Vec3::new(1.0, 1.0, -1.0).into(),
             Vec3::new(-1.0, 1.0, -1.0).into(),
@@ -155,8 +153,8 @@ mod tests {
             Vec3::new(1.0, -1.0, 1.0).into(),
         ];
 
-        let sphere = unit_sphere(0);
-        let facets = sphere.facets();
+        let mesh = sphere(0);
+        let facets = mesh.facets();
 
         for (i, facet) in facets.iter().enumerate() {
             assert_eq!(expected_normals[i], facet.normal());
@@ -164,23 +162,23 @@ mod tests {
     }
 
     #[test]
-    fn unit_sphere_with_one_split() {
-        let sphere = unit_sphere(1);
-        assert_eq!(32, sphere.facets().len());
-        assert_eq!(18, sphere.vertices().len());
+    fn sphere_with_one_split() {
+        let mesh = sphere(1);
+        assert_eq!(32, mesh.facets().len());
+        assert_eq!(18, mesh.vertices().len());
     }
 
     #[test]
-    fn unit_sphere_with_two_splits() {
-        let sphere = unit_sphere(2);
-        assert_eq!(128, sphere.facets().len());
-        assert_eq!(66, sphere.vertices().len());
+    fn sphere_with_two_splits() {
+        let mesh = sphere(2);
+        assert_eq!(128, mesh.facets().len());
+        assert_eq!(66, mesh.vertices().len());
     }
 
     #[test]
-    fn unit_sphere_vertices_lie_on_unit_sphere() {
+    fn sphere_vertices_lie_on_unit_sphere() {
         for splits in 0..=3 {
-            let mesh = unit_sphere(splits);
+            let mesh = sphere(splits);
             for p in mesh.vertices() {
                 assert_relative_eq!(1.0, p.length());
             }

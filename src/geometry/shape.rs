@@ -1,17 +1,18 @@
 //! Indexed triangle mesh backed by **`Vec<glam::Vec3>`** + **`Vec<Facet>`**.
 //!
-//! Construction takes arbitrary **vertex positions** + **facet list** (**CCW**, outward **[`Facet::normal`](crate::scene::facet::Facet::normal)**); **[`Shape::transform`](Shape::transform)** poses like procedural **[`unit_cube`](crate::scene::cube::unit_cube)** or **[`unit_dodecahedron`](crate::scene::dodecahedron::unit_dodecahedron)** (**[`Facet::transform`](crate::scene::facet::Facet::transform)** per facet).
+//! Construction takes arbitrary **vertex positions** + **facet list** (**CCW**, outward **[`Facet::normal`](crate::geometry::Facet::normal)**); **[`Shape::transform`](Shape::transform)** poses like procedural **[`cube`](crate::shapes::cube)** or **[`dodecahedron`](crate::shapes::dodecahedron)** (**[`Facet::transform`](crate::geometry::Facet::transform)** per facet).
 
 use glam::{Mat4, Vec3};
 use std::array;
 
 use super::facet::Facet;
+use super::unit_vec3::UnitVec3;
 
-use crate::{TriMesh, Triangle, geometry::UnitVec3};
+use crate::{TriMesh, Triangle};
 
 /// Generic mesh: **`Facet::verts`** index into vertex positions from **[`vertices`](Shape::vertices)**.
 ///
-/// Canonical **`TriMesh`** examples: **`[unit_cube](crate::scene::cube::unit_cube)`**, **`[unit_dodecahedron](crate::scene::dodecahedron::unit_dodecahedron)`**.
+/// Canonical **`TriMesh`** examples: **[`cube`](crate::shapes::cube)**, **[`dodecahedron`](crate::shapes::dodecahedron)**.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Shape {
     vertices: Vec<Vec3>,
@@ -33,7 +34,7 @@ impl Shape {
         &self.facets
     }
 
-    /// Applies **`Mat4::transform_point3`** per vertex and **[`Facet::transform`]** per facet (composition matches **`unit_dodecahedron`** / **`unit_cube`**).
+    /// Applies **`Mat4::transform_point3`** per vertex and **[`Facet::transform`]** per facet (composition matches **`dodecahedron`** / **`cube`**).
     pub fn transform(&self, m: Mat4) -> Shape {
         Shape {
             vertices: self
@@ -70,7 +71,7 @@ mod tests {
     use glam::Mat4;
 
     /// **`z = 0`**, **`[-½, ½]²`** in **XY**. Two triangles, outward **[`UnitVec3::NEG_Z`]** —
-    /// visible when **into‑scene** view is **`+Z`** (same rule as **`unit_cube`** fronts vs
+    /// visible when **into‑scene** view is **`+Z`** (same rule as **`cube`** fronts vs
     /// [`Camera::direction`](crate::Camera::direction)).
     fn flat_square_xy() -> Shape {
         #[rustfmt::skip]
