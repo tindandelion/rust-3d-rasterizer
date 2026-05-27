@@ -84,7 +84,7 @@ Phase 1 milestone ambition (from earlier discussion): interpolated vertex attrib
 4. **Filled hull facets (`cube`, interim geometry — shipped):** each front **`Facet`** is one filled-triangle pass via **`draw_facets`**. Legacy quad-stream fill was retired when **`Dodecahedron: triangular mesh`** landed.
 5. **Filled triangles (steady state — shipped):** **`draw_facets`** uses **`ScanlineFillTriangle`** (y-sorted scanlines + horizontal spans); **`HalfSpaceFillTriangle`** (bbox + half-space **`perp_dot`**) remains as an alternate implementation. **`shapes::cube()`**, **`shapes::dodecahedron()`**, and **`shapes::sphere(splits)`** all submit through **`draw_facets`**.
 
-6. **Sphere (next mesh):** **procedural** sphere facets on the **existing** triangle stack (**`shapes::sphere`** — octahedron subdivision with shared edge midpoints).
+6. **Sphere (shipped):** **`shapes::sphere(splits)`** — octahedron subdivision with shared edge midpoints on the existing triangle stack.
 
 7. Early fills may use **flat colors per face**; fancier per-primitive/debug coloring was explicitly **not** required early.
 
