@@ -156,9 +156,10 @@ Our [`animated-scene`][source-animated-scene] binary uses `Camera::move_to` to m
 
 This exercise was a bit of a detour into the world of linear algebra and space transformations. 
 
-Now we can return to the [sphere milestone][project-breakdown-sphere]. Perspective projection later will reuse the same eye / target / world-up convention and only swap the projection half of the matrix stack. Depth buffer work still waits until self-overlap matters (torus and beyond).
+Now we can return to the [sphere milestone][project-breakdown-sphere]. We took that step in [The Sphere Looks Better and Renders Faster][post-sphere-faster], where the demo switched to a tessellated sphere and the production triangle fill path moved to scanline rasterization. Perspective projection later will reuse the same eye / target / world-up convention and only swap the projection half of the matrix stack. Depth buffer work still waits until self-overlap matters (torus and beyond).
 
 [post-dodecahedron]: {{site.baseurl}}{% post_url 2026-05-23-meet-new-shape-dodecahedron %}
+[post-sphere-faster]: {{site.baseurl}}/{% post_url 2026-05-27-yet-another-shape-the-sphere %}
 [version-0-0-10]: https://github.com/tindandelion/rust-3d-rasterizer/tree/0.0.10
 [project-breakdown-sphere]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.10/doc/planning/project-breakdown.md#--sphere-triangular-mesh--procedural-tessellation
 [orthographic-projection]: {{site.baseurl}}{% post_url 2026-05-15-a-cube-takes-shape %}
