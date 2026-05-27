@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "We Can Move the Camera Now!"
+title: "We Can Move the Camera Now"
 date: 2026-05-26 08:00:00 +0200
 authors: Sergey and Cursor
 ---
