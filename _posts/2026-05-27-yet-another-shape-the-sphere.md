@@ -5,7 +5,7 @@ date: 2026-05-27 17:00:00 +0200
 authors: Sergey and Cursor
 ---
 
-Until now, the shapes we chose to render had a common property: they are _faceted objects_ in real life too. Now we are moving towards the next level: how do we render shapes that in reality have _smooth surfaces_? The simplest example to start with is a solid sphere. In this part of our project, we learn how to build a spherical shape procedurally. Along that journey, we've also hit a performance issue that forced us to revisit the algorithm for drawing filled triangles in 2D.
+Until now, the shapes we chose to render had a common property: they are _faceted objects_ in real life too. Now we are moving to the next level: how do we render shapes that have _smooth surfaces_ in reality? The simplest example to start with is a solid sphere. In this part of our project, we learn how to build a spherical shape procedurally. Along the way, we've also hit a performance issue that forced us to revisit the algorithm for drawing filled triangles in 2D.
 
 [Version 0.0.11 on GitHub][version-0-0-11]{: .no-github-icon}
 
@@ -48,13 +48,13 @@ The implementation of this algorithm lives in [`shapes::sphere`][source-sphere].
 
 A realistic-looking sphere contains many more triangular facets compared to a cube or dodecahedron. For example, in the [picture above](#what-you-will-see), the sphere was created by subdividing the octahedron four times, which resulted in a shape with 2048 triangular facets.
 
-With that level of detail, we started to notice a significant performance hit: it would take full **28 seconds** to build the clip in debug mode. The release build was significantly faster, obviously, at only 4 seconds, but it still felt like a regression.
+With that level of detail, we started to notice a significant performance hit: it would take a full **28 seconds** to build the clip in debug mode. The release build was significantly faster, at only 4 seconds, but it still felt like a regression.
 
 So Sergey decided to explore the bottleneck.
 
 ### Flamegraphing the executable
 
-To investigate the problem, we used our familiar tool - [_flamegraph_][flamegraph]:
+To investigate the problem, we used our familiar tool: [_flamegraph_][flamegraph].
 
 [![Flamegraph before scanline fill]({{ "/assets/images/2026-05-27-yet-another-shape-the-sphere/animated-scene-before.svg" | relative_url }})]({{ "/assets/images/2026-05-27-yet-another-shape-the-sphere/animated-scene-before.svg" | relative_url }}){: target="_blank" rel="noopener noreferrer" }
 <p style="font-size: 0.9em; color: #6b7280; margin-top: -0.8rem; text-align: center;"><a href="{{ "/assets/images/2026-05-27-yet-another-shape-the-sphere/animated-scene-before.svg" | relative_url }}" target="_blank" rel="noopener noreferrer" style="color: inherit;">Click to see the interactive flamegraph</a></p>
@@ -68,11 +68,11 @@ Leaving WebP generation aside for now, we decided to focus on improving our tria
 
 #### The legacy: half-space triangle fill 
 
-Actually, we've inherited this algorithm from the time when we were [only rendering the cube][cube-paints-faces]: back then we worked with quad shapes and used the [half-space polygon fill][the-algorithm-for-polygon-fills]. It scans polygon's bounding box and runs inside tests per each pixel inside that box. That method is robust and easy to reason about, but it comes with the extra cost of testing each pixel inside the bounding box.
+Actually, we've inherited this algorithm from the time when we were [only rendering the cube][cube-paints-faces]: back then we worked with quad shapes and used the [half-space polygon fill][the-algorithm-for-polygon-fills]. It scans a polygon's bounding box and runs inside tests for each pixel in that box. That method is robust and easy to reason about, but it comes with the extra cost of testing too many pixels.
 
 #### Scanline fill: cheaper for triangles
 
-Half-space polygon fill is a nice algorithm for generic convex polygons, but in fact for triangles we can use a more cost-efficient algorithm of [_scanline rasterization_][scanline-rasterization]:
+Half-space polygon fill is a nice algorithm for generic convex polygons, but for triangles we can use a more efficient algorithm: [_scanline rasterization_][scanline-rasterization].
 
 - Sort triangle vertices by `y`;
 - Walk edges to get left/right `x` bounds for each `y` from top to bottom;
