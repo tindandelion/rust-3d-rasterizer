@@ -68,7 +68,7 @@ Leaving WebP generation aside for now, we decided to focus on improving our tria
 
 #### The legacy: half-space triangle fill 
 
-Actually, we've inherited this algorithm from the times when we were [only rendering the cube][cube-paints-faces?]: back then we worked with quad shapes and used the [_half-space_][half-space] polygon fill implementation that scans a bounding box and runs inside tests per pixel. That method is robust and easy to reason about, but it comes with an extra cost of testing each pixel inside the bounding box.
+Actually, we've inherited this algorithm from the times when we were [only rendering the cube][cube-paints-faces?]: back then we worked with quad shapes and used the [half-space polygon fill][the-algorithm-for-polygon-fills]  implementation that scans a bounding box and runs inside tests per pixel. That method is robust and easy to reason about, but it comes with an extra cost of testing each pixel inside the bounding box.
 
 #### Rectangle fill is simpler
 
@@ -92,6 +92,8 @@ To generate the animated scene, it now takes **12 seconds** for the debug build 
 So, now we can render a sphere. It's still far from a realistic-looking one, though. That's going to be our primary goal for the next few milestones: we're going to explore advanced shading techniques that make a sphere look like, well, a sphere.
 
 [version-0-0-11]: https://github.com/tindandelion/rust-3d-rasterizer/tree/0.0.11
+[cube-paints-faces?]: {{site.baseurl}}/{% post_url 2026-05-18-the-cube-paints-its-six-faces %}
+[the-algorithm-for-polygon-fills]: {{site.baseurl}}/{% post_url 2026-05-18-the-cube-paints-its-six-faces %}#the-algorithm-for-polygon-fills
 [post-camera]: {{site.baseurl}}/{% post_url 2026-05-26-we-can-move-the-camera-now %}
 [tessellation]: https://en.wikipedia.org/wiki/Tessellation
 [uv-sphere]: https://www.songho.ca/opengl/gl_sphere.html#sphere
