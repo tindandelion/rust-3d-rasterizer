@@ -89,7 +89,7 @@ To generate the animated scene, it now takes **12 seconds** for the debug build 
 
 ## Next step towards a realistic sphere
 
-So, now we can render a sphere. It's still far from a realistic-looking one, though. That's going to be our primary goal for the next few milestones: we're going to explore advanced shading techniques that make a sphere look like, well, a sphere.
+So, now we can render a sphere. It's still far from a realistic-looking one, though. That's going to be our primary goal for the next few milestones: we're going to explore advanced shading techniques that make a sphere look like, well, a sphere. The first of those is [_Gouraud shading_][post-the-sphere-gets-smooth] in version 0.0.12 — per-vertex lighting interpolated across each triangle so the faceted mesh reads as a smooth matte ball.
 
 [version-0-0-11]: https://github.com/tindandelion/rust-3d-rasterizer/tree/0.0.11
 [cube-paints-faces]: {{site.baseurl}}/{% post_url 2026-05-18-the-cube-paints-its-six-faces %}
@@ -104,3 +104,4 @@ So, now we can render a sphere. It's still far from a realistic-looking one, tho
 [source-sphere]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.11/src/shapes/sphere.rs
 [source-scanline-fill]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.11/src/framebuffer/scanline_fill_triangle.rs
 [source-half-space-fill]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.11/src/framebuffer/half_space_fill_triangle.rs
+[post-the-sphere-gets-smooth]: {{site.baseurl}}/{% post_url 2026-05-29-the-sphere-gets-smooth %}
