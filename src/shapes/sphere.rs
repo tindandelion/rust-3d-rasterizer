@@ -49,8 +49,8 @@ impl OctaSplitter {
             .iter()
             .map(|f| {
                 let corners = [vertices[f[0]], vertices[f[1]], vertices[f[2]]];
-                let normal = UnitVec3::from_points_ccw(&corners);
-                Facet::with_single_normal(*f, normal)
+                let vertex_normals: [UnitVec3; 3] = corners.map(|v| v.into());
+                Facet::with_vertex_normals(*f, vertex_normals)
             })
             .collect();
 
@@ -79,23 +79,17 @@ impl OctaSplitter {
         let (i_m_ac, m_ac) = self.split_edge(i_a, i_c);
         let (i_m_bc, m_bc) = self.split_edge(i_b, i_c);
 
-        let facet_1 = Facet::with_single_normal(
-            [i_a, i_m_ab, i_m_ac],
-            UnitVec3::from_points_ccw(&[a, m_ab, m_ac]),
-        );
-        let facet_2 = Facet::with_single_normal(
-            [i_b, i_m_bc, i_m_ab],
-            UnitVec3::from_points_ccw(&[b, m_bc, m_ab]),
-        );
-        let facet_3 = Facet::with_single_normal(
-            [i_c, i_m_ac, i_m_bc],
-            UnitVec3::from_points_ccw(&[c, m_ac, m_bc]),
-        );
-        let facet_4 = Facet::with_single_normal(
-            [i_m_ab, i_m_bc, i_m_ac],
-            UnitVec3::from_points_ccw(&[m_ab, m_bc, m_ac]),
-        );
-        [facet_1, facet_2, facet_3, facet_4]
+        let new_facets = [
+            ((i_a, a), (i_m_ab, m_ab), (i_m_ac, m_ac)),
+            ((i_b, b), (i_m_bc, m_bc), (i_m_ab, m_ab)),
+            ((i_c, c), (i_m_ac, m_ac), (i_m_bc, m_bc)),
+            ((i_m_ab, m_ab), (i_m_bc, m_bc), (i_m_ac, m_ac)),
+        ];
+
+        new_facets.map(|((i1, v1), (i2, v2), (i3, v3))| {
+            let vertex_normals = [v1.into(), v2.into(), v3.into()];
+            Facet::with_vertex_normals([i1, i2, i3], vertex_normals)
+        })
     }
 
     pub fn build(self) -> Shape {
@@ -141,7 +135,7 @@ mod tests {
     }
 
     #[test]
-    fn initial_sphere_normals() {
+    fn initial_sphere_facet_normals() {
         let expected_normals: [UnitVec3; 8] = [
             Vec3::new(1.0, 1.0, -1.0).into(),
             Vec3::new(-1.0, 1.0, -1.0).into(),
@@ -158,6 +152,18 @@ mod tests {
 
         for (i, facet) in facets.iter().enumerate() {
             assert_eq!(expected_normals[i], facet.facet_normal());
+        }
+    }
+
+    #[test]
+    fn initial_sphere_vertex_normals() {
+        let mesh = sphere(0);
+        let facets = mesh.facets();
+
+        for facet in facets.iter() {
+            let vertices: [UnitVec3; 3] = facet.resolve_vertices(mesh.vertices()).map(|v| v.into());
+            let vertex_normals = facet.vertex_normals();
+            assert_eq!(&vertices, vertex_normals);
         }
     }
 

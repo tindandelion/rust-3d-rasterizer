@@ -82,8 +82,8 @@ mod tests {
         ];
         // CCW winding viewed from **`−Z`** (outside along **`UnitVec3::NEG_Z`**).
         let facets = vec![
-            Facet::with_single_normal([0, 2, 1], UnitVec3::NEG_Z),
-            Facet::with_single_normal([0, 3, 2], UnitVec3::NEG_Z),
+            Facet::with_facet_normal([0, 2, 1], UnitVec3::NEG_Z),
+            Facet::with_facet_normal([0, 3, 2], UnitVec3::NEG_Z),
         ];
         Shape::new(vertices, facets)
     }

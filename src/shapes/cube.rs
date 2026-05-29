@@ -13,8 +13,8 @@ use crate::geometry::{Facet, Shape, UnitVec3};
 const fn facets_from_quad_ccw_corner(normal: UnitVec3, verts: [usize; 4]) -> [Facet; 2] {
     let [w, x, y, z] = verts;
     [
-        Facet::with_single_normal([w, x, y], normal),
-        Facet::with_single_normal([w, y, z], normal),
+        Facet::with_facet_normal([w, x, y], normal),
+        Facet::with_facet_normal([w, y, z], normal),
     ]
 }
 

@@ -26,6 +26,10 @@ impl UnitVec3 {
     pub fn dot(&self, other: Self) -> f32 {
         self.0.dot(other.0)
     }
+
+    pub fn as_vec3(&self) -> &Vec3 {
+        &self.0
+    }
 }
 
 impl From<Vec3> for UnitVec3 {

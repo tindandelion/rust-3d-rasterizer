@@ -20,11 +20,16 @@ pub struct Facet {
 }
 
 impl Facet {
-    pub const fn with_single_normal(verts: [usize; 3], normal: UnitVec3) -> Self {
+    pub const fn with_facet_normal(verts: [usize; 3], normal: UnitVec3) -> Self {
         Self::with_normals(verts, normal, [normal, normal, normal])
     }
 
-    pub const fn with_normals(
+    pub fn with_vertex_normals(verts: [usize; 3], vertex_normals: [UnitVec3; 3]) -> Self {
+        let facet_normal = vertex_normals.iter().map(|n| n.as_vec3()).sum::<Vec3>();
+        Self::with_normals(verts, facet_normal.into(), vertex_normals)
+    }
+
+    const fn with_normals(
         verts: [usize; 3],
         facet_normal: UnitVec3,
         vertex_normals: [UnitVec3; 3],
@@ -97,7 +102,7 @@ mod tests {
     fn transform_updates_facet_normal() {
         let original_normal = Vec3::new(0.0, 0.0, 1.0).into();
         let expected_normal: UnitVec3 = Vec3::new(0.0, -1.0, 0.0).into();
-        let facet = Facet::with_single_normal(VERTS, original_normal);
+        let facet = Facet::with_facet_normal(VERTS, original_normal);
 
         let m = Mat4::from_rotation_x(FRAC_PI_2);
         let posed = facet.transform(m);
@@ -119,7 +124,7 @@ mod tests {
 
     #[test]
     fn edges_walk_triangle_boundary_in_ccw_order() {
-        let facet = Facet::with_single_normal(VERTS, UnitVec3::Z);
+        let facet = Facet::with_facet_normal(VERTS, UnitVec3::Z);
         assert_eq!(
             facet.edges().collect::<Vec<_>>(),
             vec![(1, 2), (2, 7), (7, 1)],
@@ -128,19 +133,19 @@ mod tests {
 
     #[test]
     fn is_front_facing_true_for_neg_z_normal_when_view_is_pos_z() {
-        let facet = Facet::with_single_normal(VERTS, UnitVec3::NEG_Z);
+        let facet = Facet::with_facet_normal(VERTS, UnitVec3::NEG_Z);
         assert!(facet.is_front_facing(UnitVec3::Z));
     }
 
     #[test]
     fn is_front_facing_false_for_pos_z_normal_when_view_is_pos_z() {
-        let facet = Facet::with_single_normal(VERTS, UnitVec3::Z);
+        let facet = Facet::with_facet_normal(VERTS, UnitVec3::Z);
         assert!(!facet.is_front_facing(UnitVec3::Z));
     }
 
     #[test]
     fn is_front_facing_false_when_grazing() {
-        let facet = Facet::with_single_normal(VERTS, UnitVec3::X);
+        let facet = Facet::with_facet_normal(VERTS, UnitVec3::X);
         assert!(!facet.is_front_facing(UnitVec3::Z));
     }
 }
