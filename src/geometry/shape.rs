@@ -3,7 +3,6 @@
 //! Construction takes arbitrary **vertex positions** + **facet list** (**CCW**, outward **[`Facet::normal`](crate::geometry::Facet::normal)**); **[`Shape::transform`](Shape::transform)** poses like procedural **[`cube`](crate::shapes::cube)** or **[`dodecahedron`](crate::shapes::dodecahedron)** (**[`Facet::transform`](crate::geometry::Facet::transform)** per facet).
 
 use glam::{Mat4, Vec3};
-use std::array;
 
 use super::facet::Facet;
 use super::unit_vec3::UnitVec3;
@@ -54,10 +53,10 @@ impl TriMesh for Shape {
             .iter()
             .filter(move |f| f.is_front_facing(view_direction))
             .map(|facet| {
-                let v = facet.verts();
+                let corners = facet.resolve_vertices(&self.vertices);
                 Triangle {
-                    corners: array::from_fn(|i| self.vertices[v[i]]),
-                    normal: facet.normal(),
+                    corners,
+                    normal: facet.facet_normal(),
                 }
             })
     }

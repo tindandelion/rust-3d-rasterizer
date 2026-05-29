@@ -11,7 +11,7 @@ pub use colors::Rgb;
 pub use half_space_fill_triangle::HalfSpaceFillTriangle;
 pub use line::Line;
 pub use scanline_fill_triangle::ScanlineFillTriangle;
-pub use shaded_fill_triangle::ShadedFillTriangle;
+pub use shaded_fill_triangle::{ShadedCorner, ShadedFillTriangle};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FrameBuffer {

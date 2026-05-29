@@ -23,7 +23,7 @@ impl Facet {
     }
 
     /// Indices into the parent **`vertices`** (winding follows [`Self::edges`] CCW traversal).
-    pub fn verts(&self) -> &[usize; 3] {
+    pub fn vert_indices(&self) -> &[usize; 3] {
         &self.verts
     }
 
@@ -36,7 +36,7 @@ impl Facet {
     }
 
     /// Outward unit normal in **`vertices`** space.
-    pub fn normal(&self) -> UnitVec3 {
+    pub fn facet_normal(&self) -> UnitVec3 {
         self.normal
     }
 
@@ -80,7 +80,7 @@ mod tests {
 
         let m = Mat4::from_rotation_x(FRAC_PI_2);
         let posed = facet.transform(m);
-        assert_relative_eq!(expected_normal, posed.normal());
+        assert_relative_eq!(expected_normal, posed.facet_normal());
     }
 
     #[test]

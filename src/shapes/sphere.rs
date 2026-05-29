@@ -72,7 +72,7 @@ impl OctaSplitter {
     }
 
     pub fn split_facet(&mut self, facet: &Facet) -> [Facet; 4] {
-        let &[i_a, i_b, i_c] = facet.verts();
+        let &[i_a, i_b, i_c] = facet.vert_indices();
         let [a, b, c] = facet.resolve_vertices(&self.vertices);
 
         let (i_m_ab, m_ab) = self.split_edge(i_a, i_b);
@@ -157,7 +157,7 @@ mod tests {
         let facets = mesh.facets();
 
         for (i, facet) in facets.iter().enumerate() {
-            assert_eq!(expected_normals[i], facet.normal());
+            assert_eq!(expected_normals[i], facet.facet_normal());
         }
     }
 

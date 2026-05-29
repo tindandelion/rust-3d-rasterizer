@@ -18,7 +18,8 @@ pub use lighting::DiffuseLight;
 pub use ortho_camera::Camera;
 pub use webp_encoder::WebpEncoder;
 
-use crate::framebuffer::ScanlineFillTriangle;
+use crate::framebuffer::ShadedCorner;
+use crate::framebuffer::ShadedFillTriangle;
 use crate::geometry::UnitVec3;
 
 /// Raster width in pixels (golden stills / integration tests must agree).
@@ -72,8 +73,10 @@ pub fn draw_facets(
     let forward = camera.direction();
     for triangle in mesh.visible_facets(forward) {
         let intensity = light.calc_intensity(triangle.normal);
-        let color = SHAPE_BASE_COLOR.scale(intensity);
-        let corners: [glam::UVec2; 3] = array::from_fn(|i| camera.transform(triangle.corners[i]));
-        ScanlineFillTriangle::new(corners, color).draw(fb);
+        let shaded_corners: [ShadedCorner; 3] = array::from_fn(|i| ShadedCorner {
+            pos: camera.transform(triangle.corners[i]),
+            intensity: intensity,
+        });
+        ShadedFillTriangle::new(shaded_corners, SHAPE_BASE_COLOR).draw(fb);
     }
 }
