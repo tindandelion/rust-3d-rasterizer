@@ -30,7 +30,7 @@ pub const SCENE_HEIGHT: u32 = 600;
 pub const DEFAULT_OUT_PATH: &str = "scene.webp";
 
 /// Frame count for the **`animated-scene`** lossless WebP (integration tests must agree).
-pub const ANIMATED_SCENE_FRAME_COUNT: u32 = 720;
+pub const ANIMATED_SCENE_FRAME_COUNT: u32 = 360;
 
 /// Milliseconds between successive **`animated-scene`** frame timestamps (**`1000 / 20` ⇒ 50 fps**).
 ///

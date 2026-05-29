@@ -1,5 +1,5 @@
 //! **`shapes::sphere(4)`** (unit-radius octasphere seed, four subdivision passes),
-//! **Gouraud** **`DiffuseLight`** on radial vertex normals, **`SHAPE_BASE_COLOR`**, back-face culled — **two-phase** **`ANIMATED_SCENE_FRAME_COUNT`**-frame clip (**double** the older single‑phase length).
+//! **Gouraud** **`DiffuseLight`** on radial vertex normals, **`SHAPE_BASE_COLOR`**, back-face culled — **two-phase** **`ANIMATED_SCENE_FRAME_COUNT`**-frame clip.
 //!
 //! 1. **Camera orbit (`… / 2` frames):** **eye** **`(0, 0.2, −1)` → … → `(0, 0.2, −1)`** by **`360°`** around **`+Y`** on **`xz`** radius **`CAMERA_ORBIT_RADIUS`**, **`y = 0.2`** (**`(sin θ, 0.2, −cos θ)`**); **cubic ease‑in‑out** on angle per lap (slow ends, quicker middle); mesh **does not squash** (**`0.75`** uniform scale only).
 //! 2. **Y squash (`… / 2` frames):** **camera** pinned at **`(0, 0.2, −1)`**; **`0.75`** on **`x`/`z`**, **`y`** eased **`0.75 → 0.4 → 0.75`** (same cubic pacing as orbit).
