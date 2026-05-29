@@ -4,20 +4,21 @@ use glam::{UVec2, Vec2};
 
 use super::{FrameBuffer, Rgb, linear_fn::LinearFn};
 
+#[derive(Clone, Copy, Debug)]
+pub struct ShadedCorner {
+    pub pos: UVec2,
+    pub intensity: f32,
+}
+
 pub struct ShadedFillTriangle {
-    corners: [UVec2; 3],
-    intensities: [f32; 3],
+    corners: [ShadedCorner; 3],
     color: Rgb,
 }
 
 impl ShadedFillTriangle {
-    pub fn new(mut corners: [(UVec2, f32); 3], color: Rgb) -> Self {
-        corners.sort_by_key(|v| v.0.y);
-        Self {
-            corners: corners.map(|v| v.0),
-            intensities: corners.map(|v| v.1),
-            color,
-        }
+    pub fn new(mut corners: [ShadedCorner; 3], color: Rgb) -> Self {
+        corners.sort_by_key(|v| v.pos.y);
+        Self { corners, color }
     }
 
     pub fn draw(&self, fb: &mut FrameBuffer) {
@@ -32,17 +33,21 @@ impl ShadedFillTriangle {
     }
 
     fn scan_lines(&self) -> impl Iterator<Item = ((u32, f32), (u32, f32), u32)> {
-        let y_range = self.corners[0].y..=self.corners[2].y;
-        let [a, b, c] = self.corners.map(|v| v.as_vec2());
+        let y_range = self.corners[0].pos.y..=self.corners[2].pos.y;
+        let midpoint = self.corners[1].pos;
 
-        let ac_edge = EdgeWalker::new((a, self.intensities[0]), (c, self.intensities[2]));
-        let ab_edge = EdgeWalker::new((a, self.intensities[0]), (b, self.intensities[1]));
-        let bc_edge = EdgeWalker::new((b, self.intensities[1]), (c, self.intensities[2]));
+        let ac_edge = EdgeWalker::from_corners(self.corners[0], self.corners[2]);
+        let ab_edge = EdgeWalker::from_corners(self.corners[0], self.corners[1]);
+        let bc_edge = EdgeWalker::from_corners(self.corners[1], self.corners[2]);
 
         y_range.map(move |y| {
-            let y = y as f32;
-            let current_edge = if y + 1.0 > b.y { &bc_edge } else { &ab_edge };
+            let current_edge = if y + 1 > midpoint.y {
+                &bc_edge
+            } else {
+                &ab_edge
+            };
 
+            let y = y as f32;
             let mut x_start = current_edge.get(y);
             let mut x_end = ac_edge.get(y);
 
@@ -66,17 +71,19 @@ struct EdgeWalker {
 }
 
 impl EdgeWalker {
-    pub fn new(a: (Vec2, f32), b: (Vec2, f32)) -> Self {
-        let (a, a_intensity) = a;
-        let (b, b_intensity) = b;
+    pub fn from_corners(a: ShadedCorner, b: ShadedCorner) -> Self {
+        {
+            let pos_a = a.pos.as_vec2();
+            let pos_b = b.pos.as_vec2();
 
-        Self {
-            start_pt: (a, a_intensity),
-            x_interp: LinearFn::from_endpoints((a.y, a.x), (b.y, b.x)),
-            intensity_interp: LinearFn::from_endpoints(
-                (0.0, a_intensity),
-                ((b - a).length(), b_intensity),
-            ),
+            Self {
+                start_pt: (pos_a, a.intensity),
+                x_interp: LinearFn::from_endpoints((pos_a.y, pos_a.x), (pos_b.y, pos_b.x)),
+                intensity_interp: LinearFn::from_endpoints(
+                    (0.0, a.intensity),
+                    ((pos_b - pos_a).length(), b.intensity),
+                ),
+            }
         }
     }
 
@@ -256,8 +263,11 @@ mod tests {
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected, "");
         }
 
-        fn pts(corners: [(u32, u32); 3]) -> [(UVec2, f32); 3] {
-            std::array::from_fn(|i| (UVec2::new(corners[i].0, corners[i].1), 1.0))
+        fn pts(corners: [(u32, u32); 3]) -> [ShadedCorner; 3] {
+            std::array::from_fn(|i| ShadedCorner {
+                pos: UVec2::new(corners[i].0, corners[i].1),
+                intensity: 1.0,
+            })
         }
     }
 
@@ -269,11 +279,7 @@ mod tests {
         fn uniform_intensity_scales_color_on_horizontal_segment() {
             let mut fb = FrameBuffer::new(10, 5);
             ShadedFillTriangle::new(
-                [
-                    (UVec2::new(2, 3), 0.5),
-                    (UVec2::new(8, 3), 0.5),
-                    (UVec2::new(7, 3), 0.5),
-                ],
+                pts([((2, 3), 0.5), ((8, 3), 0.5), ((7, 3), 0.5)]),
                 Rgb::WHITE,
             )
             .draw(&mut fb);
@@ -293,11 +299,7 @@ mod tests {
         fn horizontal_span_interpolates_intensity_from_corners() {
             let mut fb = FrameBuffer::new(10, 5);
             ShadedFillTriangle::new(
-                [
-                    (UVec2::new(2, 3), 1.0),
-                    (UVec2::new(8, 3), 0.1),
-                    (UVec2::new(7, 3), 1.0 / 6.0),
-                ],
+                pts([((2, 3), 1.0), ((8, 3), 0.1), ((7, 3), 1.0 / 6.0)]),
                 Rgb::WHITE,
             )
             .draw(&mut fb);
@@ -317,11 +319,7 @@ mod tests {
         fn isosceles_interpolates_intensity_along_edges_per_scanline() {
             let mut fb = FrameBuffer::new(10, 5);
             ShadedFillTriangle::new(
-                [
-                    (UVec2::new(4, 1), 1.0),
-                    (UVec2::new(6, 3), 0.1),
-                    (UVec2::new(2, 3), 0.1),
-                ],
+                pts([((4, 1), 1.0), ((6, 3), 0.1), ((2, 3), 0.1)]),
                 Rgb::WHITE,
             )
             .draw(&mut fb);
@@ -342,11 +340,7 @@ mod tests {
             let mut fb = FrameBuffer::new(10, 5);
             // Right-angle corner at (2,1); hypotenuse runs toward (14,1) so only x ∈ [2,9] is drawable.
             ShadedFillTriangle::new(
-                [
-                    (UVec2::new(2, 1), 1.0),
-                    (UVec2::new(14, 1), 0.1),
-                    (UVec2::new(2, 3), 0.1),
-                ],
+                pts([((2, 1), 1.0), ((14, 1), 0.1), ((2, 3), 0.1)]),
                 Rgb::WHITE,
             )
             .draw(&mut fb);
@@ -366,11 +360,7 @@ mod tests {
         fn slanted_triangle_interpolates_intensity_in_x_and_y() {
             let mut fb = FrameBuffer::new(10, 5);
             ShadedFillTriangle::new(
-                [
-                    (UVec2::new(2, 3), 0.1),
-                    (UVec2::new(7, 3), 1.0),
-                    (UVec2::new(8, 1), 0.5),
-                ],
+                pts([((2, 3), 0.1), ((7, 3), 1.0), ((8, 1), 0.5)]),
                 Rgb::WHITE,
             )
             .draw(&mut fb);
@@ -383,6 +373,13 @@ mod tests {
                 "          ",
             ]);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected, "");
+        }
+
+        fn pts(corners: [((u32, u32), f32); 3]) -> [ShadedCorner; 3] {
+            std::array::from_fn(|i| ShadedCorner {
+                pos: UVec2::new(corners[i].0.0, corners[i].0.1),
+                intensity: corners[i].1,
+            })
         }
     }
 }
