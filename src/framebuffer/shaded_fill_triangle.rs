@@ -295,7 +295,7 @@ mod tests {
             ShadedFillTriangle::new(
                 [
                     (UVec2::new(2, 3), 1.0),
-                    (UVec2::new(8, 3), 0.0),
+                    (UVec2::new(8, 3), 0.1),
                     (UVec2::new(7, 3), 1.0 / 6.0),
                 ],
                 Rgb::WHITE,
@@ -306,7 +306,7 @@ mod tests {
                 "          ",
                 "          ",
                 "          ",
-                "  ██▓▓▒░  ",
+                "  ██▓▓▒▒░ ",
                 "          ",
             ]);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected, "");
@@ -319,8 +319,8 @@ mod tests {
             ShadedFillTriangle::new(
                 [
                     (UVec2::new(4, 1), 1.0),
-                    (UVec2::new(6, 3), 0.0),
-                    (UVec2::new(2, 3), 0.0),
+                    (UVec2::new(6, 3), 0.1),
+                    (UVec2::new(2, 3), 0.1),
                 ],
                 Rgb::WHITE,
             )
@@ -330,7 +330,32 @@ mod tests {
                 "          ",
                 "    █     ",
                 "   ▓▓▓    ",
+                "  ░░░░░   ",
                 "          ",
+            ]);
+            assert_ascii_art_eq(&fb.to_ascii_art(), &expected, "");
+        }
+
+        /// Right triangle clipped at buffer width; intensity still interpolates on drawable spans.
+        #[test]
+        fn fill_clips_when_triangle_extends_past_buffer() {
+            let mut fb = FrameBuffer::new(10, 5);
+            // Right-angle corner at (2,1); hypotenuse runs toward (14,1) so only x ∈ [2,9] is drawable.
+            ShadedFillTriangle::new(
+                [
+                    (UVec2::new(2, 1), 1.0),
+                    (UVec2::new(14, 1), 0.1),
+                    (UVec2::new(2, 3), 0.1),
+                ],
+                Rgb::WHITE,
+            )
+            .draw(&mut fb);
+
+            let expected = to_ascii_art(&[
+                "          ",
+                "  ████▓▓▓▒",
+                "  ▓▒▒▒▒░░ ",
+                "  ░       ",
                 "          ",
             ]);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected, "");
@@ -342,7 +367,7 @@ mod tests {
             let mut fb = FrameBuffer::new(10, 5);
             ShadedFillTriangle::new(
                 [
-                    (UVec2::new(2, 3), 0.0),
+                    (UVec2::new(2, 3), 0.1),
                     (UVec2::new(7, 3), 1.0),
                     (UVec2::new(8, 1), 0.5),
                 ],
@@ -354,7 +379,7 @@ mod tests {
                 "          ",
                 "        ▓ ",
                 "     ▒▒▓▓ ",
-                "   ░▒▓██  ",
+                "  ░▒▒▓██  ",
                 "          ",
             ]);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected, "");
