@@ -54,7 +54,7 @@ type Vertex = glam::Vec3;
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Triangle {
     pub corners: [Vertex; 3],
-    pub normal: UnitVec3,
+    pub normals: [UnitVec3; 3],
 }
 
 pub trait TriMesh {
@@ -72,10 +72,9 @@ pub fn draw_facets(
 ) {
     let forward = camera.direction();
     for triangle in mesh.visible_facets(forward) {
-        let intensity = light.calc_intensity(triangle.normal);
         let shaded_corners: [ShadedCorner; 3] = array::from_fn(|i| ShadedCorner {
             pos: camera.transform(triangle.corners[i]),
-            intensity: intensity,
+            intensity: light.calc_intensity(triangle.normals[i]),
         });
         ShadedFillTriangle::new(shaded_corners, SHAPE_BASE_COLOR).draw(fb);
     }

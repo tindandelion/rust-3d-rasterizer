@@ -56,7 +56,7 @@ impl TriMesh for Shape {
                 let corners = facet.resolve_vertices(&self.vertices);
                 Triangle {
                     corners,
-                    normal: facet.facet_normal(),
+                    normals: facet.vertex_normals(),
                 }
             })
     }
@@ -93,7 +93,11 @@ mod tests {
         let shape = flat_square_xy();
         let visible = shape.visible_facets(UnitVec3::Z).collect::<Vec<_>>();
         assert_eq!(visible.len(), 2);
-        assert!(visible.iter().all(|tri| tri.normal == UnitVec3::NEG_Z));
+        assert!(
+            visible
+                .iter()
+                .all(|tri| tri.normals == [UnitVec3::NEG_Z, UnitVec3::NEG_Z, UnitVec3::NEG_Z])
+        );
     }
 
     #[test]

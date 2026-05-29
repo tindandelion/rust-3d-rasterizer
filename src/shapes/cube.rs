@@ -98,6 +98,10 @@ mod tests {
         let mesh = cube();
         let visible = mesh.visible_facets(UnitVec3::Z).collect::<Vec<_>>();
         assert_eq!(visible.len(), 2);
-        assert!(visible.iter().all(|tri| tri.normal == UnitVec3::NEG_Z));
+        assert!(
+            visible
+                .iter()
+                .all(|tri| tri.normals == [UnitVec3::NEG_Z, UnitVec3::NEG_Z, UnitVec3::NEG_Z])
+        );
     }
 }

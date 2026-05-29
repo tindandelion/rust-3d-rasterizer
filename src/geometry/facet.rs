@@ -40,6 +40,10 @@ impl Facet {
         self.normal
     }
 
+    pub fn vertex_normals(&self) -> [UnitVec3; 3] {
+        [self.normal, self.normal, self.normal]
+    }
+
     /// Re-transforms **`normal`** with **`m.transform_vector3`**, normalized; copies **`verts` unchanged**.
     pub fn transform(&self, m: Mat4) -> Facet {
         Facet {
