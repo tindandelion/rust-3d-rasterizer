@@ -1,8 +1,8 @@
 //! **`shapes::sphere(4)`** (unit-radius octasphere seed, four subdivision passes),
 //! **Gouraud** **`DiffuseLight`** on radial vertex normals, **`SHAPE_BASE_COLOR`**, back-face culled — **two-phase** **`ANIMATED_SCENE_FRAME_COUNT`**-frame clip (**double** the older single‑phase length).
 //!
-//! 1. **Camera orbit (`… / 2` frames):** **eye** **`(0, 0.2, −1)` → … → `(0, 0.2, −1)`** by **`360°`** around **`+Y`** on **`xz`** radius **`CAMERA_ORBIT_RADIUS`**, **`y = 0.2`** (**`(sin θ, 0.2, −cos θ)`**); **cubic ease‑in‑out** on angle per lap (slow ends, quicker middle); mesh **does not tumble** (**`0.75`** uniform scale only).
-//! 2. **Model tumble (`… / 2` frames):** **camera** pinned at **`(0, 0.2, −1)`**; **`0.75`** uniform world scale plus **three-axis Euler** tumble (**`R_z R_y R_x`** with a common eased angle — same pacing as orbit).
+//! 1. **Camera orbit (`… / 2` frames):** **eye** **`(0, 0.2, −1)` → … → `(0, 0.2, −1)`** by **`360°`** around **`+Y`** on **`xz`** radius **`CAMERA_ORBIT_RADIUS`**, **`y = 0.2`** (**`(sin θ, 0.2, −cos θ)`**); **cubic ease‑in‑out** on angle per lap (slow ends, quicker middle); mesh **does not squash** (**`0.75`** uniform scale only).
+//! 2. **Y squash (`… / 2` frames):** **camera** pinned at **`(0, 0.2, −1)`**; **`0.75`** on **`x`/`z`**, **`y`** eased **`0.75 → 0.4 → 0.75`** (same cubic pacing as orbit).
 
 use std::path::Path;
 
@@ -16,15 +16,18 @@ use thorus_forge::{
 use thorus_forge::{DiffuseLight, draw_facets};
 
 const CAMERA_ORBIT_RADIUS: f32 = 1.0;
-/// **`y`** elevation shared by default **orbit** start/end and **tumble** pin (horizontal circle **`y =`** this).
+/// **`y`** elevation shared by default **orbit** start/end and **squash** pin (horizontal circle **`y =`** this).
 const CAMERA_EYE_Y: f32 = 0.2;
 const CAMERA_DEFAULT_EYE: Vec3 = Vec3::new(0.0, CAMERA_EYE_Y, -CAMERA_ORBIT_RADIUS);
+/// Uniform **x**/**z** world scale and the **y** scale at loop endpoints (**squash** phase animates **`y`** down to [`Y_SCALE_MIN`]).
+const MESH_SCALE_XZ: f32 = 0.75;
+const Y_SCALE_MIN: f32 = 0.4;
 
 fn half_lap_frames() -> u32 {
     ANIMATED_SCENE_FRAME_COUNT / 2
 }
 
-/// **Ease‑in‑out (cubic):** slow at the ends, faster in the middle — applied separately to **each** animation half (**orbit**, **tumble**).
+/// **Ease‑in‑out (cubic):** slow at the ends, faster in the middle — applied separately to **each** animation half (**orbit**, **squash**).
 ///
 /// **`u`** is linear progress in **`[0, 1]`** (**`frame_index / lap_frames`** in this bin); **`0 → 1`** and **`d/du`** zero at **`u ∈ {0, 1}`** so motion eases without overshoot.
 fn ease_in_out_cubic(u: f32) -> f32 {
@@ -47,20 +50,24 @@ fn camera_eye_orbit(angle: f32) -> Vec3 {
     )
 }
 
-/// Fixed **Euler‑free** scaled mesh for the orbit segment (same **`0.75`** diagonal as tumble phase).
+/// Fixed uniform scaled mesh for the orbit segment (same **`x`/`z`** scale as squash phase).
 fn model_matrix_scaled_only() -> Mat4 {
-    Mat4::from_mat3(Mat3::from_diagonal(Vec3::splat(0.75)))
+    Mat4::from_mat3(Mat3::from_diagonal(Vec3::splat(MESH_SCALE_XZ)))
 }
 
-/// **World-fixed** Euler tumble (**`R_z R_y R_x`**) with **`0.75`** uniform world scale;
-/// **`frame_index`** in **`0‥lap_frames`**; base **`sphere()`** verts lie on the unit sphere before world scale.
-fn model_matrix_euler_sweep(frame_index: u32, lap_frames: u32) -> Mat4 {
+/// **Non-uniform Y squash:** **`x`/`z`** stay at [`MESH_SCALE_XZ`]; **`y`** eases **`MESH_SCALE_XZ → Y_SCALE_MIN → MESH_SCALE_XZ`**
+/// over **`frame_index`** in **`0‥lap_frames`**.
+fn model_matrix_y_scale_sweep(frame_index: u32, lap_frames: u32) -> Mat4 {
     let n = lap_frames.max(1) as f32;
     let u = frame_index as f32 / n;
-    let t = ease_in_out_cubic(u) * std::f32::consts::TAU;
-    let spin = Mat4::from_rotation_z(t) * Mat4::from_rotation_y(t) * Mat4::from_rotation_x(t);
-    let scale = Mat3::from_diagonal(Vec3::splat(0.75));
-    spin * Mat4::from_mat3(scale)
+    let t = ease_in_out_cubic(u);
+    let blend = (t * std::f32::consts::PI).sin();
+    let y_scale = MESH_SCALE_XZ + (Y_SCALE_MIN - MESH_SCALE_XZ) * blend;
+    Mat4::from_mat3(Mat3::from_diagonal(Vec3::new(
+        MESH_SCALE_XZ,
+        y_scale,
+        MESH_SCALE_XZ,
+    )))
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -97,7 +104,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let local_frame = frame_index - half;
             (
                 CAMERA_DEFAULT_EYE,
-                shape.transform(model_matrix_euler_sweep(local_frame, half)),
+                shape.transform(model_matrix_y_scale_sweep(local_frame, half)),
             )
         };
 
