@@ -106,9 +106,9 @@ fn facet_from_corners(vertices: &[Vec3; 20], [i, j, k]: [usize; 3]) -> Facet {
     let centroid_tri = (a + b + c) * (1.0 / 3.0);
     if n.dot(centroid_tri) < 0.0 {
         n = -n;
-        Facet::new(UnitVec3::from(n), [i, k, j])
+        Facet::with_single_normal([i, k, j], UnitVec3::from(n))
     } else {
-        Facet::new(UnitVec3::from(n), [i, j, k])
+        Facet::with_single_normal([i, j, k], UnitVec3::from(n))
     }
 }
 

@@ -56,7 +56,7 @@ impl TriMesh for Shape {
                 let corners = facet.resolve_vertices(&self.vertices);
                 Triangle {
                     corners,
-                    normals: facet.vertex_normals(),
+                    normals: *facet.vertex_normals(),
                 }
             })
     }
@@ -82,8 +82,8 @@ mod tests {
         ];
         // CCW winding viewed from **`−Z`** (outside along **`UnitVec3::NEG_Z`**).
         let facets = vec![
-            Facet::new(UnitVec3::NEG_Z, [0, 2, 1]),
-            Facet::new(UnitVec3::NEG_Z, [0, 3, 2]),
+            Facet::with_single_normal([0, 2, 1], UnitVec3::NEG_Z),
+            Facet::with_single_normal([0, 3, 2], UnitVec3::NEG_Z),
         ];
         Shape::new(vertices, facets)
     }

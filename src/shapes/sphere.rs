@@ -50,7 +50,7 @@ impl OctaSplitter {
             .map(|f| {
                 let corners = [vertices[f[0]], vertices[f[1]], vertices[f[2]]];
                 let normal = UnitVec3::from_points_ccw(&corners);
-                Facet::new(normal, *f)
+                Facet::with_single_normal(*f, normal)
             })
             .collect();
 
@@ -79,21 +79,21 @@ impl OctaSplitter {
         let (i_m_ac, m_ac) = self.split_edge(i_a, i_c);
         let (i_m_bc, m_bc) = self.split_edge(i_b, i_c);
 
-        let facet_1 = Facet::new(
-            UnitVec3::from_points_ccw(&[a, m_ab, m_ac]),
+        let facet_1 = Facet::with_single_normal(
             [i_a, i_m_ab, i_m_ac],
+            UnitVec3::from_points_ccw(&[a, m_ab, m_ac]),
         );
-        let facet_2 = Facet::new(
-            UnitVec3::from_points_ccw(&[b, m_bc, m_ab]),
+        let facet_2 = Facet::with_single_normal(
             [i_b, i_m_bc, i_m_ab],
+            UnitVec3::from_points_ccw(&[b, m_bc, m_ab]),
         );
-        let facet_3 = Facet::new(
-            UnitVec3::from_points_ccw(&[c, m_ac, m_bc]),
+        let facet_3 = Facet::with_single_normal(
             [i_c, i_m_ac, i_m_bc],
+            UnitVec3::from_points_ccw(&[c, m_ac, m_bc]),
         );
-        let facet_4 = Facet::new(
-            UnitVec3::from_points_ccw(&[m_ab, m_bc, m_ac]),
+        let facet_4 = Facet::with_single_normal(
             [i_m_ab, i_m_bc, i_m_ac],
+            UnitVec3::from_points_ccw(&[m_ab, m_bc, m_ac]),
         );
         [facet_1, facet_2, facet_3, facet_4]
     }

@@ -15,11 +15,25 @@ pub struct Facet {
     normal: UnitVec3,
     /// Indices into the parent mesh **`vertices`** (CCW winding as seen against **`normal`**).
     verts: [usize; 3],
+    /// Outward unit normals at each vertex.
+    vertex_normals: [UnitVec3; 3],
 }
 
 impl Facet {
-    pub const fn new(normal: UnitVec3, verts: [usize; 3]) -> Self {
-        Self { normal, verts }
+    pub const fn with_single_normal(verts: [usize; 3], normal: UnitVec3) -> Self {
+        Self::with_normals(verts, normal, [normal, normal, normal])
+    }
+
+    pub const fn with_normals(
+        verts: [usize; 3],
+        facet_normal: UnitVec3,
+        vertex_normals: [UnitVec3; 3],
+    ) -> Self {
+        Self {
+            normal: facet_normal,
+            verts,
+            vertex_normals,
+        }
     }
 
     /// Indices into the parent **`vertices`** (winding follows [`Self::edges`] CCW traversal).
@@ -40,15 +54,18 @@ impl Facet {
         self.normal
     }
 
-    pub fn vertex_normals(&self) -> [UnitVec3; 3] {
-        [self.normal, self.normal, self.normal]
+    pub fn vertex_normals(&self) -> &[UnitVec3; 3] {
+        &self.vertex_normals
     }
 
     /// Re-transforms **`normal`** with **`m.transform_vector3`**, normalized; copies **`verts` unchanged**.
     pub fn transform(&self, m: Mat4) -> Facet {
         Facet {
-            normal: m.transform_vector3(self.normal.into()).into(),
             verts: self.verts,
+            normal: m.transform_vector3(self.normal.into()).into(),
+            vertex_normals: self
+                .vertex_normals
+                .map(|n| m.transform_vector3(n.into()).into()),
         }
     }
 
@@ -77,10 +94,10 @@ mod tests {
     const VERTS: [usize; 3] = [1, 2, 7];
 
     #[test]
-    fn transform_updates_normal() {
+    fn transform_updates_facet_normal() {
         let original_normal = Vec3::new(0.0, 0.0, 1.0).into();
         let expected_normal: UnitVec3 = Vec3::new(0.0, -1.0, 0.0).into();
-        let facet = Facet::new(original_normal, VERTS);
+        let facet = Facet::with_single_normal(VERTS, original_normal);
 
         let m = Mat4::from_rotation_x(FRAC_PI_2);
         let posed = facet.transform(m);
@@ -88,8 +105,21 @@ mod tests {
     }
 
     #[test]
+    fn transform_updates_vertex_normals() {
+        let facet =
+            Facet::with_normals(VERTS, UnitVec3::Z, [UnitVec3::X, UnitVec3::Y, UnitVec3::Z]);
+
+        let m = Mat4::from_rotation_x(FRAC_PI_2);
+        let posed = facet.transform(m);
+        let expected = [UnitVec3::X, UnitVec3::Z, UnitVec3::NEG_Y];
+        for (actual, expected) in posed.vertex_normals().iter().zip(expected) {
+            assert_relative_eq!(*actual, expected);
+        }
+    }
+
+    #[test]
     fn edges_walk_triangle_boundary_in_ccw_order() {
-        let facet = Facet::new(UnitVec3::Z, VERTS);
+        let facet = Facet::with_single_normal(VERTS, UnitVec3::Z);
         assert_eq!(
             facet.edges().collect::<Vec<_>>(),
             vec![(1, 2), (2, 7), (7, 1)],
@@ -98,19 +128,19 @@ mod tests {
 
     #[test]
     fn is_front_facing_true_for_neg_z_normal_when_view_is_pos_z() {
-        let facet = Facet::new(UnitVec3::NEG_Z, VERTS);
+        let facet = Facet::with_single_normal(VERTS, UnitVec3::NEG_Z);
         assert!(facet.is_front_facing(UnitVec3::Z));
     }
 
     #[test]
     fn is_front_facing_false_for_pos_z_normal_when_view_is_pos_z() {
-        let facet = Facet::new(UnitVec3::Z, VERTS);
+        let facet = Facet::with_single_normal(VERTS, UnitVec3::Z);
         assert!(!facet.is_front_facing(UnitVec3::Z));
     }
 
     #[test]
     fn is_front_facing_false_when_grazing() {
-        let facet = Facet::new(UnitVec3::X, VERTS);
+        let facet = Facet::with_single_normal(VERTS, UnitVec3::X);
         assert!(!facet.is_front_facing(UnitVec3::Z));
     }
 }

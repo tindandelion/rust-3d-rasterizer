@@ -12,7 +12,10 @@ use crate::geometry::{Facet, Shape, UnitVec3};
 /// Two **`Facet`**s per planar hull quad (same **`normal`**, **`(w,x,y)` + `(w,y,z)`** given CCW verts **`w…z`** seen from outside along **`normal`**).
 const fn facets_from_quad_ccw_corner(normal: UnitVec3, verts: [usize; 4]) -> [Facet; 2] {
     let [w, x, y, z] = verts;
-    [Facet::new(normal, [w, x, y]), Facet::new(normal, [w, y, z])]
+    [
+        Facet::with_single_normal([w, x, y], normal),
+        Facet::with_single_normal([w, y, z], normal),
+    ]
 }
 
 const UNIT_CUBE_VERTICES: [Vec3; 8] = [
