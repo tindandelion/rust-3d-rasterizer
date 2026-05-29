@@ -1,4 +1,4 @@
-//! Lossless WebP still: **filled** **cube** — uniform **`SHAPE_BASE_COLOR`** blue, **`DiffuseLight`**, back-face culled; edge length **0.5** in world space.
+//! Lossless WebP still: **filled** **cube** — **faceted** **`DiffuseLight`** (**per-face normals** duplicated at corners), **`SHAPE_BASE_COLOR`**, back-face culled; edge length **0.5** in world space.
 
 use std::path::Path;
 

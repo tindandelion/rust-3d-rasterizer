@@ -1,4 +1,4 @@
-//! Lossless WebP still: **filled** **octasphere** (`sphere` seed) — uniform **`SHAPE_BASE_COLOR`** blue, **`DiffuseLight`**, back-face culled; **0.5** uniform scale in world space.
+//! Lossless WebP still: **filled** **octasphere** (`sphere(0)` seed) — **Gouraud** **`DiffuseLight`** on radial vertex normals, **`SHAPE_BASE_COLOR`**, back-face culled; **0.5** uniform scale in world space.
 
 use std::path::Path;
 
@@ -22,9 +22,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut framebuffer = FrameBuffer::new(SCENE_WIDTH, SCENE_HEIGHT);
     let camera = Camera::for_viewport(SCENE_WIDTH, SCENE_HEIGHT).move_to(CAMERA_POS);
-    let light = DiffuseLight::new(glam::Vec3::new(1.0, 1.0, -1.0).into(), 0.1);
+    let light = DiffuseLight::new(glam::Vec3::new(1.0, 1.0, -1.0).into(), 0.25);
 
-    let mesh = sphere(0).transform(model_matrix_still());
+    let mesh = sphere(3).transform(model_matrix_still());
     draw_facets(&mut framebuffer, &camera, &mesh, &light);
 
     let mut encoder = WebpEncoder::new(SCENE_WIDTH, SCENE_HEIGHT)?;

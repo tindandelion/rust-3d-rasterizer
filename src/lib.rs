@@ -50,7 +50,7 @@ pub fn output_webp_path_from_args() -> OsString {
 
 type Vertex = glam::Vec3;
 
-/// One strictly front-filled **triangle** in world space: **`corners`** + outward **facet** **[`UnitVec3`]**.
+/// One strictly front-filled **triangle** in world space: **`corners`** plus per-vertex **[`UnitVec3`]** normals for shading.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Triangle {
     pub corners: [Vertex; 3],
@@ -61,9 +61,9 @@ pub trait TriMesh {
     fn visible_facets(&self, view_direction: UnitVec3) -> impl Iterator<Item = Triangle> + '_;
 }
 
-/// Filled mesh: **[`ScanlineFillTriangle::draw`](framebuffer::ScanlineFillTriangle::draw)** per [`Triangle`] from **[`TriMesh::visible_facets`]**, with **[`DiffuseLight::calc_intensity`]** on each facet normal.
+/// Filled mesh: **[`ShadedFillTriangle::draw`](framebuffer::ShadedFillTriangle::draw)** per [`Triangle`] from **[`TriMesh::visible_facets`]**.
 ///
-/// **[`DiffuseLight::calc_intensity`]** consumes **`triangle.normal`**; shaded color **`SHAPE_BASE_COLOR`** · intensity.
+/// **[`DiffuseLight::calc_intensity`]** runs at each corner on **`triangle.normals[i]`**; **`ShadedFillTriangle`** interpolates intensity across the triangle and scales **`SHAPE_BASE_COLOR`** per pixel (**Gouraud**). **Cube** / **dodecahedron** duplicate the facet normal at all three corners, so shading stays **faceted**.
 pub fn draw_facets(
     fb: &mut FrameBuffer,
     camera: &Camera,
