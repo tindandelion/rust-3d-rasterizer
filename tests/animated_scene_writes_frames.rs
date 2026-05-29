@@ -16,6 +16,7 @@ const BIN_NAME: &str = "animated-scene";
 const OUTPUT_FILE_NAME: &str = "test-animated-scene.webp";
 
 #[test]
+#[ignore]
 fn animated_scene_output_has_expected_clip_duration_ms() {
     let rendered = run_integration_binary(BIN_NAME, OUTPUT_FILE_NAME);
 

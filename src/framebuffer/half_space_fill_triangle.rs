@@ -82,7 +82,7 @@ fn calculate_bounding_rect(corners: &[UVec2; 3]) -> [UVec2; 2] {
 mod tests {
     use glam::UVec2;
 
-    use super::super::{FrameBuffer, Rgb};
+    use super::super::{FrameBuffer, Rgb, assert_ascii_art_eq, to_ascii_art};
     use super::HalfSpaceFillTriangle;
 
     fn pts(corners: [(u32, u32); 3]) -> [UVec2; 3] {
@@ -95,15 +95,14 @@ mod tests {
         let mut fb = FrameBuffer::new(10, 5);
         HalfSpaceFillTriangle::new(pts([(4, 2), (4, 2), (4, 2)]), Rgb::WHITE).draw(&mut fb);
 
-        #[rustfmt::skip]
-        let expected = concat!(
+        let expected = to_ascii_art(&[
             "          ",
             "          ",
             "    █     ",
             "          ",
             "          ",
-        );
-        assert_eq!(fb.to_ascii_art(), expected);
+        ]);
+        assert_ascii_art_eq(&fb.to_ascii_art(), &expected, "");
     }
 
     #[test]
@@ -112,29 +111,27 @@ mod tests {
         // Apex at top; CCW cyclic order for consistent half-plane winding.
         HalfSpaceFillTriangle::new(pts([(4, 1), (6, 3), (2, 3)]), Rgb::WHITE).draw(&mut fb);
 
-        #[rustfmt::skip]
-        let expected = concat!(
+        let expected = to_ascii_art(&[
             "          ",
             "    █     ",
             "   ███    ",
             "  █████   ",
             "          ",
-        );
-        assert_eq!(fb.to_ascii_art(), expected);
+        ]);
+        assert_ascii_art_eq(&fb.to_ascii_art(), &expected, "");
     }
 
     #[test]
     fn fill_same_triangle_under_rotated_vertex_order() {
         let corners_ccw = [(4, 1), (6, 3), (2, 3)];
 
-        #[rustfmt::skip]
-        let expected = concat!(
+        let expected = to_ascii_art(&[
             "          ",
             "    █     ",
             "   ███    ",
             "  █████   ",
             "          ",
-        );
+        ]);
 
         for start in 0..3 {
             let mut fb = FrameBuffer::new(10, 5);
@@ -147,7 +144,11 @@ mod tests {
                 Rgb::WHITE,
             )
             .draw(&mut fb);
-            assert_eq!(expected, fb.to_ascii_art(), "order start {}", start);
+            assert_ascii_art_eq(
+                &fb.to_ascii_art(),
+                &expected,
+                &format!("order start {start}"),
+            );
         }
     }
 
@@ -157,15 +158,14 @@ mod tests {
         // Right-angle corner at (2,1); hypotenuse runs toward (14,1) so only x ∈ [2,9] is drawable.
         HalfSpaceFillTriangle::new(pts([(2, 1), (14, 1), (2, 3)]), Rgb::WHITE).draw(&mut fb);
 
-        #[rustfmt::skip]
-        let expected = concat!(
+        let expected = to_ascii_art(&[
             "          ",
             "  ████████",
             "  ███████ ",
             "  █       ",
             "          ",
-        );
-        assert_eq!(fb.to_ascii_art(), expected);
+        ]);
+        assert_ascii_art_eq(&fb.to_ascii_art(), &expected, "");
     }
 
     #[test]
@@ -173,15 +173,14 @@ mod tests {
         let mut fb = FrameBuffer::new(10, 5);
         HalfSpaceFillTriangle::new(pts([(2, 3), (7, 3), (8, 1)]), Rgb::WHITE).draw(&mut fb);
 
-        #[rustfmt::skip]
-        let expected = concat!(
+        let expected = to_ascii_art(&[
             "          ",
             "        █ ",
             "     ███  ",
             "  ██████  ",
             "          ",
-        );
-        assert_eq!(fb.to_ascii_art(), expected);
+        ]);
+        assert_ascii_art_eq(&fb.to_ascii_art(), &expected, "");
     }
 
     /// One edge is axis-aligned **vertical** (`x` constant)—exercises bbox + half-planes on a non-horizontal base.
@@ -191,15 +190,14 @@ mod tests {
         // Vertical segment (2,1)–(2,4); apex (6, 2). Consistent CCW half-plane winding.
         HalfSpaceFillTriangle::new(pts([(2, 1), (2, 4), (6, 2)]), Rgb::WHITE).draw(&mut fb);
 
-        #[rustfmt::skip]
-        let expected = concat!(
+        let expected = to_ascii_art(&[
             "          ",
             "  █       ",
             "  █████   ",
             "  ███     ",
             "  █       ",
-        );
-        assert_eq!(fb.to_ascii_art(), expected);
+        ]);
+        assert_ascii_art_eq(&fb.to_ascii_art(), &expected, "");
     }
 
     /// Degenerate input: two corners coincide—horizontal segment. All cross terms vanish for bbox samples, so pixels along that span are treated as inside.
@@ -208,14 +206,13 @@ mod tests {
         let mut fb = FrameBuffer::new(10, 5);
         HalfSpaceFillTriangle::new(pts([(2, 3), (7, 3), (7, 3)]), Rgb::WHITE).draw(&mut fb);
 
-        #[rustfmt::skip]
-        let expected = concat!(
+        let expected = to_ascii_art(&[
             "          ",
             "          ",
             "          ",
             "  ██████  ",
             "          ",
-        );
-        assert_eq!(fb.to_ascii_art(), expected);
+        ]);
+        assert_ascii_art_eq(&fb.to_ascii_art(), &expected, "");
     }
 }

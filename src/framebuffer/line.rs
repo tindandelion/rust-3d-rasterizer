@@ -52,7 +52,7 @@ impl Line {
 mod tests {
     use glam::UVec2;
 
-    use super::super::{FrameBuffer, Rgb};
+    use super::super::{FrameBuffer, Rgb, assert_ascii_art_eq, to_ascii_art};
     use super::Line;
 
     #[test]
@@ -60,15 +60,14 @@ mod tests {
         let mut fb = FrameBuffer::new(10, 5);
         Line::new(UVec2::new(1, 3), UVec2::new(8, 3), Rgb::WHITE).draw(&mut fb);
 
-        #[rustfmt::skip]
-        let expected = concat!(
+        let expected = to_ascii_art(&[
             "          ",
             "          ",
             "          ",
             " ████████ ",
             "          ",
-        );
-        assert_eq!(fb.to_ascii_art(), expected);
+        ]);
+        assert_ascii_art_eq(&fb.to_ascii_art(), &expected, "");
     }
 
     #[test]
@@ -76,15 +75,14 @@ mod tests {
         let mut fb = FrameBuffer::new(10, 5);
         Line::new(UVec2::new(3, 1), UVec2::new(3, 3), Rgb::WHITE).draw(&mut fb);
 
-        #[rustfmt::skip]
-        let expected = concat!(
+        let expected = to_ascii_art(&[
             "          ",
             "   █      ",
             "   █      ",
             "   █      ",
             "          ",
-        );
-        assert_eq!(fb.to_ascii_art(), expected);
+        ]);
+        assert_ascii_art_eq(&fb.to_ascii_art(), &expected, "");
     }
 
     #[test]
@@ -92,15 +90,14 @@ mod tests {
         let mut fb = FrameBuffer::new(10, 5);
         Line::new(UVec2::new(1, 0), UVec2::new(4, 3), Rgb::WHITE).draw(&mut fb);
 
-        #[rustfmt::skip]
-        let expected = concat!(
+        let expected = to_ascii_art(&[
             " █        ",
             "  █       ",
             "   █      ",
             "    █     ",
             "          ",
-        );
-        assert_eq!(fb.to_ascii_art(), expected);
+        ]);
+        assert_ascii_art_eq(&fb.to_ascii_art(), &expected, "");
     }
 
     #[test]
@@ -108,15 +105,14 @@ mod tests {
         let mut fb = FrameBuffer::new(10, 5);
         Line::new(UVec2::new(4, 3), UVec2::new(1, 0), Rgb::WHITE).draw(&mut fb);
 
-        #[rustfmt::skip]
-        let expected = concat!(
+        let expected = to_ascii_art(&[
             " █        ",
             "  █       ",
             "   █      ",
             "    █     ",
             "          ",
-        );
-        assert_eq!(fb.to_ascii_art(), expected);
+        ]);
+        assert_ascii_art_eq(&fb.to_ascii_art(), &expected, "");
     }
 
     #[test]
@@ -125,14 +121,13 @@ mod tests {
         // Start inside the buffer; end is beyond both width and height.
         Line::new(UVec2::new(3, 1), UVec2::new(12, 10), Rgb::WHITE).draw(&mut fb);
 
-        #[rustfmt::skip]
-        let expected = concat!(
+        let expected = to_ascii_art(&[
             "          ",
             "   █      ",
             "    █     ",
             "     █    ",
             "      █   ",
-        );
-        assert_eq!(fb.to_ascii_art(), expected);
+        ]);
+        assert_ascii_art_eq(&fb.to_ascii_art(), &expected, "");
     }
 }

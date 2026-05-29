@@ -3,12 +3,15 @@
 mod colors;
 mod half_space_fill_triangle;
 mod line;
+mod linear_fn;
 mod scanline_fill_triangle;
+mod shaded_fill_triangle;
 
 pub use colors::Rgb;
 pub use half_space_fill_triangle::HalfSpaceFillTriangle;
 pub use line::Line;
 pub use scanline_fill_triangle::ScanlineFillTriangle;
+pub use shaded_fill_triangle::ShadedFillTriangle;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FrameBuffer {
@@ -67,13 +70,17 @@ impl FrameBuffer {
         Rgb(self.rgb[i], self.rgb[i + 1], self.rgb[i + 2])
     }
 
-    /// Row-major text: row 0, then row 1, … with no separators. **`' '`** matches
-    /// [`Rgb::BLACK`]; other pixels use block-element shades by [`Rgb::brightness`]
-    /// (**`░` `▒` `▓` `█`**, light → dark).
+    /// Multi-line text: one row per line. **`' '`** matches [`Rgb::BLACK`]; other pixels
+    /// use block-element shades by [`Rgb::brightness`] (**`░` `▒` `▓` `█`**, light → dark).
     pub(crate) fn to_ascii_art(&self) -> String {
-        let mut out = String::with_capacity((self.height * self.width) as usize);
+        let mut out = String::with_capacity(
+            (self.height * self.width + self.height.saturating_sub(1)) as usize,
+        );
 
         for y in 0..self.height {
+            if y > 0 {
+                out.push('\n');
+            }
             for x in 0..self.width {
                 out.push(Self::ascii_shade_for_rgb(self.get_pixel(x, y)));
             }
@@ -90,6 +97,57 @@ impl FrameBuffer {
         let level = (brightness * 4.0).ceil() as usize;
         Self::ASCII_SHADES[level.min(4) - 1]
     }
+}
+
+/// Builds expected ASCII art for tests from one string per framebuffer row.
+#[cfg(test)]
+pub(crate) fn to_ascii_art(rows: &[&'static str]) -> String {
+    rows.join("\n")
+}
+
+/// Wraps multi-line ASCII art in a box for readable test failure output.
+#[cfg(test)]
+fn border_ascii_art(art: &str) -> String {
+    let lines: Vec<&str> = art.lines().collect();
+    let width = lines
+        .iter()
+        .map(|line| line.chars().count())
+        .max()
+        .unwrap_or(0);
+    let horizontal = "─".repeat(width);
+
+    let mut out = String::with_capacity((width + 2) * (lines.len() + 2) + 8);
+    out.push('┌');
+    out.push_str(&horizontal);
+    out.push_str("┐\n");
+
+    for line in lines {
+        out.push('│');
+        out.push_str(line);
+        out.push_str(&" ".repeat(width - line.chars().count()));
+        out.push_str("│\n");
+    }
+
+    out.push('└');
+    out.push_str(&horizontal);
+    out.push('┘');
+    out
+}
+
+/// Asserts framebuffer ASCII art matches, with readable multi-line output on failure.
+#[cfg(test)]
+pub(crate) fn assert_ascii_art_eq(actual: &str, expected: &str, context: &str) {
+    assert!(
+        actual == expected,
+        "{prefix}FrameBuffer content does not match the expected\n\nExpected:\n{expected_boxed}\n\nActual:\n{actual_boxed}",
+        prefix = if context.is_empty() {
+            String::new()
+        } else {
+            format!("{context}\n\n")
+        },
+        expected_boxed = border_ascii_art(expected),
+        actual_boxed = border_ascii_art(actual),
+    );
 }
 
 #[cfg(test)]
@@ -129,11 +187,23 @@ mod tests {
     }
 
     #[test]
+    fn border_ascii_art_draws_box_around_rows() {
+        let boxed = border_ascii_art(" █\n██");
+        assert_eq!(
+            boxed,
+            "┌──┐\n\
+             │ █│\n\
+             │██│\n\
+             └──┘"
+        );
+    }
+
+    #[test]
     fn to_ascii_art_maps_black_to_space_and_white_to_full_block() {
         let mut fb = FrameBuffer::new(2, 1);
         fb.set_pixel(0, 0, Rgb::BLACK);
         fb.set_pixel(1, 0, Rgb::WHITE);
-        assert_eq!(fb.to_ascii_art(), " █");
+        assert_ascii_art_eq(&fb.to_ascii_art(), &to_ascii_art(&[" █"]), "");
     }
 
     #[test]
