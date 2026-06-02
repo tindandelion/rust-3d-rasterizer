@@ -79,7 +79,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         SCENE_HEIGHT,
         ANIMATED_SCENE_FRAME_SPACING_MS,
     )?;
-    let light = DiffuseLight::new(glam::Vec3::new(1.0, 0.5, -1.0).into(), 0.25);
+    let light = DiffuseLight::new(glam::Vec3::new(1.0, 0.5, -1.0).into(), 0.25, 0.75);
 
     let shape = sphere(4);
     let half = half_lap_frames();

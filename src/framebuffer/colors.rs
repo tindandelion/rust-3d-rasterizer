@@ -13,21 +13,19 @@ impl Rgb {
         (self.0 as f32 + self.1 as f32 + self.2 as f32) / (3.0 * 255.0)
     }
 
-    /// Per-channel **multiply** by **`factor`**, rounded to nearest **`u8`**.
-    ///
-    /// **`factor`** is **clamped** to **`[0.0, 1.0]`** before scaling.
+    /// Per-channel **multiply** by **`factor`**, rounded to nearest **`u8`**, then
+    /// **clamped** to **`[0, 255]`** per channel.
     pub fn scale(self, factor: f32) -> Self {
-        let f = factor.clamp(0.0, 1.0);
         Self(
-            scale_channel(self.0, f),
-            scale_channel(self.1, f),
-            scale_channel(self.2, f),
+            scale_channel(self.0, factor),
+            scale_channel(self.1, factor),
+            scale_channel(self.2, factor),
         )
     }
 }
 
 fn scale_channel(value: u8, factor: f32) -> u8 {
-    (value as f32 * factor).round() as u8
+    (value as f32 * factor).round().clamp(0.0, 255.0) as u8
 }
 
 #[cfg(test)]
@@ -69,12 +67,13 @@ mod tests {
     }
 
     #[test]
-    fn scale_clamps_factor_below_range() {
+    fn scale_negative_factor_clamps_channels_to_zero() {
         assert_eq!(Rgb(200, 0, 0).scale(-1.0), Rgb::BLACK);
     }
 
     #[test]
-    fn scale_clamps_factor_above_range() {
-        assert_eq!(Rgb(200, 0, 0).scale(2.0), Rgb(200, 0, 0));
+    fn scale_above_one_saturates_channels() {
+        assert_eq!(Rgb(128, 128, 255).scale(2.0), Rgb::WHITE);
+        assert_eq!(Rgb(200, 0, 0).scale(2.0), Rgb(255, 0, 0));
     }
 }

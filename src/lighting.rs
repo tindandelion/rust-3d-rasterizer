@@ -13,18 +13,10 @@ pub struct DiffuseLight {
 }
 
 impl DiffuseLight {
-    /// **`toward_light`:** direction **from surface toward the light** (any non-zero vector; stored normalized).
-    ///
-    /// **`ambient_factor`:** weight of uniform **ambient** vs **directional** Lambert term (`max(0, n̂ · L)`),
-    /// **clamped** to **`[0.0, 1.0]`**. At **`0`**, only directional; at **`1`**, [`calc_intensity`](Self::calc_intensity)
-    /// returns **`1.0`** for every normal.
-    ///
-    /// # Panics
-    ///
-    /// If **`toward_light`** is zero (length² ≤ 0).
-    pub fn new(toward_light: UnitVec3, ambient_factor: f32) -> Self {
-        let ambient_factor = ambient_factor.clamp(0.0, 1.0);
-        let diffuse_factor = 1.0 - ambient_factor;
+    /// **`toward_light`:** direction **from surface toward the light**.
+    pub fn new(toward_light: UnitVec3, ambient_factor: f32, diffuse_factor: f32) -> Self {
+        let ambient_factor = ambient_factor.max(0.0);
+        let diffuse_factor = diffuse_factor.max(0.0);
         Self {
             toward_light,
             ambient_factor,
@@ -34,7 +26,7 @@ impl DiffuseLight {
 
     pub fn calc_intensity(&self, normal: UnitVec3) -> f32 {
         let diffuse = self.toward_light.dot(normal).max(0.0);
-        (self.ambient_factor + self.diffuse_factor * diffuse).clamp(0.0, 1.0)
+        self.ambient_factor + self.diffuse_factor * diffuse
     }
 }
 
@@ -48,25 +40,25 @@ mod tests {
 
     #[test]
     fn pure_directional_fully_lit_when_normal_aligns_with_light() {
-        let light = DiffuseLight::new(UnitVec3::Z, 0.0);
+        let light = DiffuseLight::new(UnitVec3::Z, 0.0, 1.0);
         assert_relative_eq!(light.calc_intensity(UnitVec3::Z), 1.0);
     }
 
     #[test]
     fn pure_directional_zero_when_normal_perpendicular_to_light() {
-        let light = DiffuseLight::new(UnitVec3::Z, 0.0);
+        let light = DiffuseLight::new(UnitVec3::Z, 0.0, 1.0);
         assert_relative_eq!(light.calc_intensity(UnitVec3::X), 0.0);
     }
 
     #[test]
     fn pure_directional_zero_when_normal_faces_away_from_light() {
-        let light = DiffuseLight::new(UnitVec3::Z, 0.0);
+        let light = DiffuseLight::new(UnitVec3::Z, 0.0, 1.0);
         assert_relative_eq!(light.calc_intensity(UnitVec3::NEG_Z), 0.0);
     }
 
     #[test]
     fn full_ambient_is_one_for_arbitrary_normals() {
-        let light = DiffuseLight::new(UnitVec3::Z, 1.0);
+        let light = DiffuseLight::new(UnitVec3::Z, 1.0, 0.0);
         assert_relative_eq!(light.calc_intensity(UnitVec3::Z), 1.0);
         assert_relative_eq!(light.calc_intensity(UnitVec3::NEG_Z), 1.0);
         assert_relative_eq!(light.calc_intensity(UnitVec3::X), 1.0);
@@ -74,7 +66,7 @@ mod tests {
 
     #[test]
     fn half_ambient_blends_directional_term() {
-        let light = DiffuseLight::new(UnitVec3::Z, 0.5);
+        let light = DiffuseLight::new(UnitVec3::Z, 0.5, 0.5);
         assert_relative_eq!(light.calc_intensity(UnitVec3::Z), 1.0);
         assert_relative_eq!(light.calc_intensity(UnitVec3::X), 0.5);
         assert_relative_eq!(light.calc_intensity(UnitVec3::NEG_Z), 0.5);
@@ -82,23 +74,15 @@ mod tests {
 
     #[test]
     fn non_unit_toward_light_is_normalized() {
-        let light = DiffuseLight::new(Vec3::new(0.0, 0.0, 3.0).into(), 0.0);
+        let light = DiffuseLight::new(Vec3::new(0.0, 0.0, 3.0).into(), 0.0, 1.0);
         assert_relative_eq!(light.calc_intensity(UnitVec3::Z), 1.0);
     }
 
     #[test]
     fn ambient_factor_clamps_below_range_to_zero() {
         assert_eq!(
-            DiffuseLight::new(UnitVec3::Z, -0.1),
-            DiffuseLight::new(UnitVec3::Z, 0.0),
-        );
-    }
-
-    #[test]
-    fn ambient_factor_clamps_above_range_to_one() {
-        assert_eq!(
-            DiffuseLight::new(UnitVec3::Z, 1.1),
-            DiffuseLight::new(UnitVec3::Z, 1.0),
+            DiffuseLight::new(UnitVec3::Z, -0.1, 1.0),
+            DiffuseLight::new(UnitVec3::Z, 0.0, 1.0),
         );
     }
 }
