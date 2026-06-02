@@ -14,7 +14,7 @@ pub mod shapes;
 pub mod webp_encoder;
 
 pub use framebuffer::{FrameBuffer, HalfSpaceFillTriangle, Rgb};
-pub use lighting::DiffuseLight;
+pub use lighting::{DiffuseLight, Material};
 pub use ortho_camera::Camera;
 pub use webp_encoder::WebpEncoder;
 

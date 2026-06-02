@@ -13,7 +13,7 @@ use thorus_forge::{
     ANIMATED_SCENE_FRAME_COUNT, ANIMATED_SCENE_FRAME_SPACING_MS, Camera, FrameBuffer, SCENE_HEIGHT,
     SCENE_WIDTH, WebpEncoder, output_webp_path_from_args,
 };
-use thorus_forge::{DiffuseLight, draw_facets};
+use thorus_forge::{DiffuseLight, Material, draw_facets};
 
 const CAMERA_ORBIT_RADIUS: f32 = 1.0;
 /// **`y`** elevation shared by default **orbit** start/end and **squash** pin (horizontal circle **`y =`** this).
@@ -79,7 +79,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         SCENE_HEIGHT,
         ANIMATED_SCENE_FRAME_SPACING_MS,
     )?;
-    let light = DiffuseLight::new(glam::Vec3::new(1.0, 0.5, -1.0).into(), 0.25, 0.75);
+    let light = DiffuseLight::new(
+        glam::Vec3::new(1.0, 0.5, -1.0).into(),
+        Material::matte(0.75),
+    );
 
     let shape = sphere(4);
     let half = half_lap_frames();

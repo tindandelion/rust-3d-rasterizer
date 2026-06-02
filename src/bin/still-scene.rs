@@ -4,7 +4,7 @@ use glam::{Mat3, Mat4, Vec3};
 
 use thorus_forge::shapes::sphere;
 use thorus_forge::{Camera, FrameBuffer, SCENE_HEIGHT, SCENE_WIDTH, WebpEncoder};
-use thorus_forge::{DiffuseLight, draw_facets};
+use thorus_forge::{DiffuseLight, Material, draw_facets};
 
 const CAMERA_POS: Vec3 = Vec3::new(0.1, 0.4, -1.0);
 const OUT_PATH: &str = "still-scene.webp";
@@ -17,7 +17,7 @@ fn model_matrix_still() -> Mat4 {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut framebuffer = FrameBuffer::new(SCENE_WIDTH, SCENE_HEIGHT);
     let camera = Camera::for_viewport(SCENE_WIDTH, SCENE_HEIGHT).move_to(CAMERA_POS);
-    let light = DiffuseLight::new(glam::Vec3::new(1.0, 1.0, -1.0).into(), 0.2, 0.8);
+    let light = DiffuseLight::new(glam::Vec3::new(1.0, 1.0, -1.0).into(), Material::matte(0.8));
 
     let mesh = sphere(3).transform(model_matrix_still());
     draw_facets(&mut framebuffer, &camera, &mesh, &light);
