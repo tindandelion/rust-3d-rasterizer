@@ -71,12 +71,12 @@ pub fn draw_facets(
     light_model: &PhongLightModel,
 ) {
     let forward = camera.direction();
+    let toward_eye: UnitVec3 = -camera.direction();
     for triangle in mesh.visible_facets(forward) {
         let shaded_corners: [ShadedCorner; 3] = array::from_fn(|i| {
             let vertex = triangle.corners[i];
             let vertex_normal = triangle.normals[i];
 
-            let toward_eye: UnitVec3 = (camera.position() - vertex).into();
             let intensity = light_model.calc_intensity(vertex_normal, toward_eye);
             ShadedCorner {
                 pos: camera.transform(vertex),
