@@ -14,7 +14,7 @@ pub mod shapes;
 pub mod webp_encoder;
 
 pub use framebuffer::{FrameBuffer, Rgb};
-pub use lighting::{DiffuseLight, Material};
+pub use lighting::{Material, PhongLightModel};
 pub use ortho_camera::Camera;
 pub use webp_encoder::WebpEncoder;
 
@@ -63,18 +63,25 @@ pub trait TriMesh {
 
 /// Filled mesh: **[`ShadedFillTriangle::draw`](framebuffer::ShadedFillTriangle::draw)** per [`Triangle`] from **[`TriMesh::visible_facets`]**.
 ///
-/// **[`DiffuseLight::calc_intensity`]** runs at each corner on **`triangle.normals[i]`**; **`ShadedFillTriangle`** interpolates intensity across the triangle and scales **`SHAPE_BASE_COLOR`** per pixel (**Gouraud**). **Cube** / **dodecahedron** duplicate the facet normal at all three corners, so shading stays **faceted**.
+/// **[`PhongLightModel::calc_intensity`]** runs at each corner on **`triangle.normals[i]`** with per-vertex **toward-eye**; **`ShadedFillTriangle`** interpolates intensity across the triangle and scales **`SHAPE_BASE_COLOR`** per pixel (**Gouraud**). **Cube** / **dodecahedron** duplicate the facet normal at all three corners, so shading stays **faceted**.
 pub fn draw_facets(
     fb: &mut FrameBuffer,
     camera: &Camera,
     mesh: &impl TriMesh,
-    light: &DiffuseLight,
+    light_model: &PhongLightModel,
 ) {
     let forward = camera.direction();
     for triangle in mesh.visible_facets(forward) {
-        let shaded_corners: [ShadedCorner; 3] = array::from_fn(|i| ShadedCorner {
-            pos: camera.transform(triangle.corners[i]),
-            intensity: light.calc_intensity(triangle.normals[i]),
+        let shaded_corners: [ShadedCorner; 3] = array::from_fn(|i| {
+            let vertex = triangle.corners[i];
+            let vertex_normal = triangle.normals[i];
+
+            let toward_eye: UnitVec3 = (camera.position() - vertex).into();
+            let intensity = light_model.calc_intensity(vertex_normal, toward_eye);
+            ShadedCorner {
+                pos: camera.transform(vertex),
+                intensity,
+            }
         });
         ShadedFillTriangle::new(shaded_corners, SHAPE_BASE_COLOR).draw(fb);
     }

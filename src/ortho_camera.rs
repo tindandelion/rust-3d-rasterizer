@@ -61,6 +61,7 @@ use crate::geometry::UnitVec3;
 /// **`transform`** uses the first two components after the **`Mat4`** multiply (before **`round`**).
 #[derive(Clone, Copy, Debug)]
 pub struct Camera {
+    position: Vec3,
     direction: UnitVec3,
     viewport_transform: Mat4,
     transform_matrix: Mat4,
@@ -86,6 +87,10 @@ impl Camera {
         self.direction
     }
 
+    pub fn position(&self) -> Vec3 {
+        self.position
+    }
+
     /// **World** point through **`viewport × view`**; **rounded `xy`** → pixel. For the **default**
     /// **`for_viewport`** pose, **in-bounds demo `xy`** are **NDC-like `[-1, 1]`**; changing **only**
     /// **`world_point.z`** does **not** change **`xy`** (see **`world_z_shift_does_not_change_screen_xy`**).
@@ -99,6 +104,7 @@ impl Camera {
         let (direction, world_camera_transform) = world_to_camera(position);
 
         Self {
+            position,
             direction: direction.into(),
             viewport_transform,
             transform_matrix: viewport_transform * world_camera_transform,
