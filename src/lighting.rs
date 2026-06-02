@@ -55,8 +55,8 @@ mod tests {
     use approx::assert_relative_eq;
     use glam::Vec3;
 
-    const PURE_DIFFUSE: Material = Material::matte(1.0);
-    const FULL_AMBIENT: Material = Material::matte(0.0);
+    const PURE_DIFFUSE: Material = Material::matte(0.0);
+    const FULL_AMBIENT: Material = Material::matte(1.0);
     const HALF_BLEND: Material = Material::matte(0.5);
 
     #[test]
