@@ -1,16 +1,14 @@
 //! RGB framebuffer: `width × height` pixels, three `u8` channels per pixel, row-major.
 
 mod colors;
-mod half_space_fill_triangle;
+mod fill_triangle;
 mod line;
 mod linear_fn;
-mod scanline_fill_triangle;
 mod shaded_fill_triangle;
 
 pub use colors::Rgb;
-pub use half_space_fill_triangle::HalfSpaceFillTriangle;
+pub use fill_triangle::FillTriangle;
 pub use line::Line;
-pub use scanline_fill_triangle::ScanlineFillTriangle;
 pub use shaded_fill_triangle::{ShadedCorner, ShadedFillTriangle};
 
 #[derive(Clone, Debug, PartialEq, Eq)]

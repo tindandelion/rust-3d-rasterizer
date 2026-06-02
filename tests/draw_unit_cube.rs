@@ -1,4 +1,4 @@
-//! Integration: orthographic fill of the default unit cube against a hand-built golden framebuffer.
+//! Integration: **`draw_facets`** on the default unit cube vs a hand-built golden framebuffer (**[`ShadedFillTriangle`]**).
 //!
 //! With **`Camera::direction` = +Z**, the strictly front-facing hull facet is the **−Z** cap (outward normal
 //! **`NEG_Z`**). **`DiffuseLight`** toward **`NEG_Z`** yields full **`calc_intensity`**, so
@@ -8,8 +8,9 @@
 
 use glam::{UVec2, Vec3};
 use thorus_forge::{
-    Camera, DiffuseLight, FrameBuffer, HalfSpaceFillTriangle, Material, SHAPE_BASE_COLOR,
-    draw_facets, shapes::cube,
+    Camera, DiffuseLight, FrameBuffer, Material, SHAPE_BASE_COLOR, draw_facets,
+    framebuffer::{ShadedCorner, ShadedFillTriangle},
+    shapes::cube,
 };
 
 const FB_WIDTH: u32 = 101;
@@ -37,9 +38,14 @@ fn expected_framebuffer_unit_cube_camera_front() -> FrameBuffer {
         UVec2::new(75, 75),
         UVec2::new(75, 25),
     ];
-    HalfSpaceFillTriangle::new([corners[0], corners[1], corners[2]], SHAPE_BASE_COLOR)
-        .draw(&mut fb);
-    HalfSpaceFillTriangle::new([corners[0], corners[2], corners[3]], SHAPE_BASE_COLOR)
-        .draw(&mut fb);
+    // Front **−Z** facet: duplicated normals → uniform **`calc_intensity` = 1.0**.
+    let shaded = |indices: [usize; 3]| {
+        indices.map(|i| ShadedCorner {
+            pos: corners[i],
+            intensity: 1.0,
+        })
+    };
+    ShadedFillTriangle::new(shaded([0, 1, 2]), SHAPE_BASE_COLOR).draw(&mut fb);
+    ShadedFillTriangle::new(shaded([0, 2, 3]), SHAPE_BASE_COLOR).draw(&mut fb);
     fb
 }
