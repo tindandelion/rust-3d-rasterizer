@@ -8,13 +8,12 @@ use thorus_forge::shapes::sphere;
 use thorus_forge::{Camera, FrameBuffer, SCENE_HEIGHT, SCENE_WIDTH, WebpEncoder, draw_facets};
 
 const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.0, -1.0);
-const LIGHT_DIRECTION: Vec3 = Vec3::new(1.0, 1.5, -1.0);
+const LIGHT_DIRECTION: Vec3 = Vec3::new(-10.0, 10.0, -10.0);
 const OUT_PATH: &str = "still-scene.webp";
 
 fn model_matrix_still() -> Mat4 {
     let scale = Mat3::from_diagonal(Vec3::splat(0.7));
-    let squash = Mat3::from_diagonal(Vec3::new(1.0, 0.5, 1.0));
-    Mat4::from_mat3(scale * squash)
+    Mat4::from_mat3(scale)
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
