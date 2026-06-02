@@ -81,7 +81,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
     let light = DiffuseLight::new(
         glam::Vec3::new(1.0, 0.5, -1.0).into(),
-        Material::matte(0.75),
+        Material::matte(0.25),
     );
 
     let shape = sphere(4);

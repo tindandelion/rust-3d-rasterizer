@@ -12,8 +12,9 @@ pub struct Material {
 }
 
 impl Material {
-    pub const fn matte(diffuse_factor: f32) -> Self {
-        Self::new(1.0 - diffuse_factor, diffuse_factor)
+    /// **`ambient_factor`** plus **`1.0 − ambient_factor`** diffuse (both clamped in [`new`]).
+    pub const fn matte(ambient_factor: f32) -> Self {
+        Self::new(ambient_factor, 1.0 - ambient_factor)
     }
 
     pub const fn new(ambient_factor: f32, diffuse_factor: f32) -> Self {
@@ -96,6 +97,18 @@ mod tests {
     fn non_unit_toward_light_is_normalized() {
         let light = DiffuseLight::new(Vec3::new(0.0, 0.0, 3.0).into(), PURE_DIFFUSE);
         assert_relative_eq!(light.calc_intensity(UnitVec3::Z), 1.0);
+    }
+
+    #[test]
+    fn matte_matches_complementary_new() {
+        let matte = DiffuseLight::new(UnitVec3::Z, Material::matte(0.2));
+        let split = DiffuseLight::new(UnitVec3::Z, Material::new(0.2, 0.8));
+        for normal in [UnitVec3::Z, UnitVec3::X, UnitVec3::NEG_Z] {
+            assert_relative_eq!(
+                matte.calc_intensity(normal),
+                split.calc_intensity(normal),
+            );
+        }
     }
 
     #[test]
