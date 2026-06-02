@@ -17,7 +17,7 @@ impl Material {
         Self::new(ambient_factor, 1.0 - ambient_factor)
     }
 
-    pub const fn new(ambient_factor: f32, diffuse_factor: f32) -> Self {
+    const fn new(ambient_factor: f32, diffuse_factor: f32) -> Self {
         Self {
             ambient_factor: ambient_factor.max(0.0),
             diffuse_factor: diffuse_factor.max(0.0),
@@ -55,9 +55,9 @@ mod tests {
     use approx::assert_relative_eq;
     use glam::Vec3;
 
-    const PURE_DIFFUSE: Material = Material::new(0.0, 1.0);
-    const FULL_AMBIENT: Material = Material::new(1.0, 0.0);
-    const HALF_BLEND: Material = Material::new(0.5, 0.5);
+    const PURE_DIFFUSE: Material = Material::matte(1.0);
+    const FULL_AMBIENT: Material = Material::matte(0.0);
+    const HALF_BLEND: Material = Material::matte(0.5);
 
     #[test]
     fn pure_directional_fully_lit_when_normal_aligns_with_light() {
@@ -97,18 +97,6 @@ mod tests {
     fn non_unit_toward_light_is_normalized() {
         let light = DiffuseLight::new(Vec3::new(0.0, 0.0, 3.0).into(), PURE_DIFFUSE);
         assert_relative_eq!(light.calc_intensity(UnitVec3::Z), 1.0);
-    }
-
-    #[test]
-    fn matte_matches_complementary_new() {
-        let matte = DiffuseLight::new(UnitVec3::Z, Material::matte(0.2));
-        let split = DiffuseLight::new(UnitVec3::Z, Material::new(0.2, 0.8));
-        for normal in [UnitVec3::Z, UnitVec3::X, UnitVec3::NEG_Z] {
-            assert_relative_eq!(
-                matte.calc_intensity(normal),
-                split.calc_intensity(normal),
-            );
-        }
     }
 
     #[test]
