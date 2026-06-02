@@ -82,7 +82,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
     let light = PhongLightModel::new(
         glam::Vec3::new(1.0, 0.5, -1.0).into(),
-        Material::shiny(0.15, 20.0),
+        Material::shiny(0.15, 100.0),
     );
 
     let shape = sphere(4);

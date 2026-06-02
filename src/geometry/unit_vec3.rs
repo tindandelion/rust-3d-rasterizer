@@ -33,6 +33,7 @@ impl UnitVec3 {
 }
 
 impl From<Vec3> for UnitVec3 {
+    // TODO: Probably, we should move to using TryFrom<Vec3> for UnitVec3.
     fn from(value: Vec3) -> Self {
         assert!(
             value.length_squared() > 0.0,
