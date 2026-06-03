@@ -2,7 +2,7 @@
 //! **Gouraud** **`BlinnLightModel`** on radial vertex normals, **`SHAPE_BASE_COLOR`**, back-face culled — **two-phase** **`ANIMATED_SCENE_FRAME_COUNT`**-frame clip.
 //!
 //! 1. **Camera orbit (`… / 2` frames):** **eye** **`(0, 0.2, −1)` → … → `(0, 0.2, −1)`** by **`360°`** around **`+Y`** on **`xz`** radius **`CAMERA_ORBIT_RADIUS`**, **`y = 0.2`** (**`(sin θ, 0.2, −cos θ)`**); **cubic ease‑in‑out** on angle per lap (slow ends, quicker middle); mesh **does not squash** (**`0.75`** uniform scale only).
-//! 2. **Y squash (`… / 2` frames):** **camera** pinned at **`(0, 0.2, −1)`**; **`0.75`** on **`x`/`z`**, **`y`** eased **`0.75 → 0.4 → 0.75`** (same cubic pacing as orbit).
+//! 2. **Y squash (`… / 2` frames):** **camera** pinned at **`(0, 0.2, −1)`**; **`y`** eased **`0.75 → 0.2 → 0.75`**, **`x`/`z`** **`0.75 → 0.95 → 0.75`** in lockstep (same cubic pacing as orbit).
 
 use std::path::Path;
 
@@ -19,9 +19,10 @@ const CAMERA_ORBIT_RADIUS: f32 = 1.0;
 /// **`y`** elevation shared by default **orbit** start/end and **squash** pin (horizontal circle **`y =`** this).
 const CAMERA_EYE_Y: f32 = 0.2;
 const CAMERA_DEFAULT_EYE: Vec3 = Vec3::new(0.0, CAMERA_EYE_Y, -CAMERA_ORBIT_RADIUS);
-/// Uniform **x**/**z** world scale and the **y** scale at loop endpoints (**squash** phase animates **`y`** down to [`Y_SCALE_MIN`]).
+/// Uniform scale at loop endpoints; **squash** phase drives **`y`** to [`Y_SCALE_MIN`] and **`x`/`z`** to [`MESH_SCALE_XZ_MAX`].
 const MESH_SCALE_XZ: f32 = 0.75;
-const Y_SCALE_MIN: f32 = 0.4;
+const MESH_SCALE_XZ_MAX: f32 = 0.95;
+const Y_SCALE_MIN: f32 = 0.2;
 
 fn half_lap_frames() -> u32 {
     ANIMATED_SCENE_FRAME_COUNT / 2
@@ -55,19 +56,16 @@ fn model_matrix_scaled_only() -> Mat4 {
     Mat4::from_mat3(Mat3::from_diagonal(Vec3::splat(MESH_SCALE_XZ)))
 }
 
-/// **Non-uniform Y squash:** **`x`/`z`** stay at [`MESH_SCALE_XZ`]; **`y`** eases **`MESH_SCALE_XZ → Y_SCALE_MIN → MESH_SCALE_XZ`**
-/// over **`frame_index`** in **`0‥lap_frames`**.
+/// **Squash + bulge:** **`y`** eases **`MESH_SCALE_XZ → Y_SCALE_MIN → MESH_SCALE_XZ`**; **`x`/`z`** **`MESH_SCALE_XZ → MESH_SCALE_XZ_MAX → MESH_SCALE_XZ`**
+/// over **`frame_index`** in **`0‥lap_frames`** (shared **`sin(π·t)`** blend after cubic ease).
 fn model_matrix_y_scale_sweep(frame_index: u32, lap_frames: u32) -> Mat4 {
     let n = lap_frames.max(1) as f32;
     let u = frame_index as f32 / n;
     let t = ease_in_out_cubic(u);
     let blend = (t * std::f32::consts::PI).sin();
     let y_scale = MESH_SCALE_XZ + (Y_SCALE_MIN - MESH_SCALE_XZ) * blend;
-    Mat4::from_mat3(Mat3::from_diagonal(Vec3::new(
-        MESH_SCALE_XZ,
-        y_scale,
-        MESH_SCALE_XZ,
-    )))
+    let xz_scale = MESH_SCALE_XZ + (MESH_SCALE_XZ_MAX - MESH_SCALE_XZ) * blend;
+    Mat4::from_mat3(Mat3::from_diagonal(Vec3::new(xz_scale, y_scale, xz_scale)))
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
