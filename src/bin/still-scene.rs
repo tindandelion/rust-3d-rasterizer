@@ -2,8 +2,8 @@ use std::path::Path;
 
 use glam::{Mat3, Mat4, Vec3};
 
+use thorus_forge::BlinnShadingModel;
 use thorus_forge::Material;
-use thorus_forge::PhongLightModel;
 use thorus_forge::shapes::sphere;
 use thorus_forge::{Camera, FrameBuffer, SCENE_HEIGHT, SCENE_WIDTH, WebpEncoder, draw_facets};
 
@@ -19,7 +19,7 @@ fn model_matrix_still() -> Mat4 {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut framebuffer = FrameBuffer::new(SCENE_WIDTH, SCENE_HEIGHT);
     let camera = Camera::for_viewport(SCENE_WIDTH, SCENE_HEIGHT).move_to(CAMERA_POS);
-    let light = PhongLightModel::new(LIGHT_DIRECTION.into(), Material::shiny(0.15, 100.0));
+    let light = BlinnShadingModel::new(LIGHT_DIRECTION.into(), Material::shiny(0.15, 100.0));
 
     let mesh = sphere(4).transform(model_matrix_still());
     draw_facets(&mut framebuffer, &camera, &mesh, &light);

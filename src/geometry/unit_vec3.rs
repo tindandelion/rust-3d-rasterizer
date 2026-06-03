@@ -1,4 +1,4 @@
-use std::ops::{Deref, Neg};
+use std::ops::{Add, Deref, Neg};
 
 use approx::{AbsDiffEq, RelativeEq};
 use glam::Vec3;
@@ -23,8 +23,8 @@ impl UnitVec3 {
         vec2.cross(vec1).into()
     }
 
-    pub fn dot(&self, other: Self) -> f32 {
-        self.0.dot(other.0)
+    pub fn dot(&self, other: impl Into<Vec3>) -> f32 {
+        self.0.dot(other.into())
     }
 
     pub fn as_vec3(&self) -> &Vec3 {
@@ -62,6 +62,14 @@ impl Neg for UnitVec3 {
 
     fn neg(self) -> Self::Output {
         Self(-self.0)
+    }
+}
+
+impl Add for UnitVec3 {
+    type Output = Vec3;
+
+    fn add(self, other: Self) -> Self::Output {
+        self.0 + other.0
     }
 }
 

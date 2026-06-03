@@ -14,7 +14,7 @@ pub mod shapes;
 pub mod webp_encoder;
 
 pub use framebuffer::{FrameBuffer, Rgb};
-pub use lighting::{Material, PhongLightModel};
+pub use lighting::{BlinnShadingModel, Material};
 pub use ortho_camera::Camera;
 pub use webp_encoder::WebpEncoder;
 
@@ -63,12 +63,12 @@ pub trait TriMesh {
 
 /// Filled mesh: **[`ShadedFillTriangle::draw`](framebuffer::ShadedFillTriangle::draw)** per [`Triangle`] from **[`TriMesh::visible_facets`]**.
 ///
-/// **[`PhongLightModel::calc_intensity`]** runs at each corner on **`triangle.normals[i]`** with per-vertex **toward-eye**; **`ShadedFillTriangle`** interpolates intensity across the triangle and scales **`SHAPE_BASE_COLOR`** per pixel (**Gouraud**). **Cube** / **dodecahedron** duplicate the facet normal at all three corners, so shading stays **faceted**.
+/// **[`BlinnShadingModel::calc_intensity`]** runs at each corner on **`triangle.normals[i]`** with per-vertex **toward-eye**; **`ShadedFillTriangle`** interpolates intensity across the triangle and scales **`SHAPE_BASE_COLOR`** per pixel (**Gouraud**). **Cube** / **dodecahedron** duplicate the facet normal at all three corners, so shading stays **faceted**.
 pub fn draw_facets(
     fb: &mut FrameBuffer,
     camera: &Camera,
     mesh: &impl TriMesh,
-    light_model: &PhongLightModel,
+    shading_model: &BlinnShadingModel,
 ) {
     let forward = camera.direction();
     let toward_eye: UnitVec3 = -camera.direction();
@@ -77,7 +77,7 @@ pub fn draw_facets(
             let vertex = triangle.corners[i];
             let vertex_normal = triangle.normals[i];
 
-            let intensity = light_model.calc_intensity(vertex_normal, toward_eye);
+            let intensity = shading_model.calc_intensity(vertex_normal, toward_eye);
             ShadedCorner {
                 pos: camera.transform(vertex),
                 intensity,

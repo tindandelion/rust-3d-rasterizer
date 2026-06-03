@@ -27,12 +27,12 @@ impl Material {
     }
 }
 
-pub struct PhongLightModel {
+pub struct BlinnShadingModel {
     toward_light: UnitVec3,
     material: Material,
 }
 
-impl PhongLightModel {
+impl BlinnShadingModel {
     pub fn new(toward_light: UnitVec3, material: Material) -> Self {
         Self {
             toward_light,
@@ -46,13 +46,8 @@ impl PhongLightModel {
             .material
             .shininess
             .map(|shininess| {
-                let half_vector = self.toward_light.as_vec3() + toward_eye.as_vec3();
-                if half_vector.length_squared() > 0.0 {
-                    let half_vector: UnitVec3 = half_vector.into();
-                    half_vector.dot(normal).max(0.0).powf(shininess)
-                } else {
-                    0.0
-                }
+                let half_vector = (self.toward_light + toward_eye).normalize();
+                normal.dot(half_vector).max(0.0).powf(shininess)
             })
             .unwrap_or(0.0);
         self.material.ambient_factor + self.material.diffuse_factor * (diffuse + specular)
@@ -60,10 +55,10 @@ impl PhongLightModel {
 }
 
 #[cfg(test)]
-mod phong_light_model {
+mod blinn_shading_model {
     use crate::geometry::UnitVec3;
 
-    use super::{Material, PhongLightModel};
+    use super::{BlinnShadingModel, Material};
     use approx::assert_relative_eq;
     use glam::Vec3;
 
@@ -76,7 +71,7 @@ mod phong_light_model {
     #[test]
     fn pure_directional_fully_lit_when_normal_aligns_with_light() {
         let toward_light = UnitVec3::Z;
-        let light = PhongLightModel::new(toward_light, PURE_DIFFUSE);
+        let light = BlinnShadingModel::new(toward_light, PURE_DIFFUSE);
 
         let normal = UnitVec3::Z;
         let toward_eye = UnitVec3::Z;
@@ -85,7 +80,7 @@ mod phong_light_model {
 
     #[test]
     fn pure_directional_zero_when_normal_perpendicular_to_light() {
-        let light = PhongLightModel::new(TOWARD_LIGHT, PURE_DIFFUSE);
+        let light = BlinnShadingModel::new(TOWARD_LIGHT, PURE_DIFFUSE);
 
         let normal = UnitVec3::X;
         let toward_eye = UnitVec3::Z;
@@ -94,7 +89,7 @@ mod phong_light_model {
 
     #[test]
     fn pure_directional_zero_when_normal_faces_away_from_light() {
-        let light = PhongLightModel::new(TOWARD_LIGHT, PURE_DIFFUSE);
+        let light = BlinnShadingModel::new(TOWARD_LIGHT, PURE_DIFFUSE);
         assert_relative_eq!(light.calc_intensity(UnitVec3::NEG_Z, UnitVec3::Z), 0.0);
     }
 
@@ -103,13 +98,13 @@ mod phong_light_model {
         let normal = UnitVec3::NEG_Z;
         let toward_eye = -normal;
 
-        let light = PhongLightModel::new(TOWARD_LIGHT, FULL_AMBIENT);
+        let light = BlinnShadingModel::new(TOWARD_LIGHT, FULL_AMBIENT);
         assert_relative_eq!(light.calc_intensity(normal, toward_eye), 1.0);
     }
 
     #[test]
     fn half_ambient_blends_directional_term() {
-        let light = PhongLightModel::new(TOWARD_LIGHT, HALF_BLEND);
+        let light = BlinnShadingModel::new(TOWARD_LIGHT, HALF_BLEND);
         assert_relative_eq!(light.calc_intensity(UnitVec3::Z, UnitVec3::Z), 1.0);
         assert_relative_eq!(light.calc_intensity(UnitVec3::X, UnitVec3::Z), 0.5);
         assert_relative_eq!(light.calc_intensity(UnitVec3::NEG_Z, UnitVec3::Z), 0.5);
@@ -117,7 +112,7 @@ mod phong_light_model {
 
     #[test]
     fn matte_material_ignores_view_direction() {
-        let light = PhongLightModel::new(TOWARD_LIGHT, PURE_DIFFUSE);
+        let light = BlinnShadingModel::new(TOWARD_LIGHT, PURE_DIFFUSE);
         let from_front = light.calc_intensity(UnitVec3::Z, UnitVec3::Z);
         let from_side = light.calc_intensity(UnitVec3::Z, UnitVec3::Y);
         assert_relative_eq!(from_front, from_side);
@@ -125,8 +120,8 @@ mod phong_light_model {
 
     #[test]
     fn shiny_material_brightens_tangent_view_over_matte() {
-        let matte = PhongLightModel::new(TOWARD_LIGHT, PURE_DIFFUSE);
-        let shiny = PhongLightModel::new(TOWARD_LIGHT, Material::shiny(0.0, 1.0));
+        let matte = BlinnShadingModel::new(TOWARD_LIGHT, PURE_DIFFUSE);
+        let shiny = BlinnShadingModel::new(TOWARD_LIGHT, Material::shiny(0.0, 1.0));
         let normal = UnitVec3::Z;
         let toward_eye = UnitVec3::Y;
         assert_relative_eq!(matte.calc_intensity(normal, toward_eye), 1.0);
@@ -138,7 +133,7 @@ mod phong_light_model {
 
     #[test]
     fn specular_adds_to_diffuse_when_view_aligns_with_light() {
-        let light = PhongLightModel::new(TOWARD_LIGHT, Material::shiny(0.0, 1.0));
+        let light = BlinnShadingModel::new(TOWARD_LIGHT, Material::shiny(0.0, 1.0));
 
         let normal = UnitVec3::Z;
         let toward_eye = UnitVec3::Z;
@@ -147,7 +142,7 @@ mod phong_light_model {
 
     #[test]
     fn specular_is_weaker_when_view_is_tangent_to_surface() {
-        let light = PhongLightModel::new(TOWARD_LIGHT, Material::shiny(0.0, 1.0));
+        let light = BlinnShadingModel::new(TOWARD_LIGHT, Material::shiny(0.0, 1.0));
         let aligned = light.calc_intensity(UnitVec3::Z, UnitVec3::Z);
         let tangent = light.calc_intensity(UnitVec3::Z, UnitVec3::Y);
         assert_relative_eq!(tangent, 1.0 + 2.0_f32.sqrt().recip());
@@ -156,19 +151,19 @@ mod phong_light_model {
 
     #[test]
     fn half_ambient_scales_specular_on_aligned_view() {
-        let light = PhongLightModel::new(TOWARD_LIGHT, Material::shiny(0.5, 1.0));
+        let light = BlinnShadingModel::new(TOWARD_LIGHT, Material::shiny(0.5, 1.0));
         assert_relative_eq!(light.calc_intensity(UnitVec3::Z, UnitVec3::Z), 1.5);
     }
 
     #[test]
     fn shiny_material_falls_back_to_ambient_on_unlit_surface() {
-        let light = PhongLightModel::new(TOWARD_LIGHT, Material::shiny(0.5, 1.0));
+        let light = BlinnShadingModel::new(TOWARD_LIGHT, Material::shiny(0.5, 1.0));
         assert_relative_eq!(light.calc_intensity(UnitVec3::NEG_Z, UnitVec3::Z), 0.5);
     }
 
     #[test]
     fn specular_is_skipped_when_light_and_view_cancel() {
-        let light = PhongLightModel::new(TOWARD_LIGHT, Material::shiny(0.0, 1.0));
+        let light = BlinnShadingModel::new(TOWARD_LIGHT, Material::shiny(0.0, 1.0));
 
         let normal = UnitVec3::Z;
         let toward_eye = -TOWARD_LIGHT;
@@ -177,19 +172,19 @@ mod phong_light_model {
 
     #[test]
     fn higher_shininess_tightens_specular_highlight() {
-        let light = PhongLightModel::new(TOWARD_LIGHT, Material::shiny(0.0, 2.0));
+        let light = BlinnShadingModel::new(TOWARD_LIGHT, Material::shiny(0.0, 2.0));
         assert_relative_eq!(light.calc_intensity(UnitVec3::Z, UnitVec3::Y), 1.5);
     }
 
     #[test]
     fn high_shininess_approaches_diffuse_only_off_axis() {
-        let light = PhongLightModel::new(TOWARD_LIGHT, Material::shiny(0.0, 128.0));
+        let light = BlinnShadingModel::new(TOWARD_LIGHT, Material::shiny(0.0, 128.0));
         assert_relative_eq!(light.calc_intensity(UnitVec3::Z, UnitVec3::Y), 1.0);
     }
 
     #[test]
     fn zero_shininess_yields_broad_specular_highlight() {
-        let light = PhongLightModel::new(TOWARD_LIGHT, Material::shiny(0.0, 0.0));
+        let light = BlinnShadingModel::new(TOWARD_LIGHT, Material::shiny(0.0, 0.0));
         assert_relative_eq!(light.calc_intensity(UnitVec3::Z, UnitVec3::Z), 2.0);
         assert_relative_eq!(light.calc_intensity(UnitVec3::Z, UnitVec3::Y), 2.0);
     }
@@ -198,7 +193,7 @@ mod phong_light_model {
     fn specular_is_zero_when_half_vector_faces_away_from_normal() {
         let toward_light: UnitVec3 = Vec3::new(1.0, 0.0, -1.0).into();
         let toward_eye: UnitVec3 = Vec3::new(-1.0, 0.0, -1.0).into();
-        let light = PhongLightModel::new(toward_light, Material::shiny(0.0, 2.0));
+        let light = BlinnShadingModel::new(toward_light, Material::shiny(0.0, 2.0));
         assert_relative_eq!(light.calc_intensity(UnitVec3::Z, toward_eye), 0.0);
     }
 
@@ -206,7 +201,7 @@ mod phong_light_model {
     fn oblique_light_and_view_produce_known_intensity() {
         let toward_light: UnitVec3 = Vec3::new(1.0, 0.0, 1.0).into();
         let toward_eye: UnitVec3 = Vec3::new(-1.0, 0.0, 1.0).into();
-        let light = PhongLightModel::new(toward_light, Material::shiny(0.0, 1.0));
+        let light = BlinnShadingModel::new(toward_light, Material::shiny(0.0, 1.0));
         assert_relative_eq!(
             light.calc_intensity(UnitVec3::Z, toward_eye),
             1.0 + 2.0_f32.sqrt().recip()
@@ -215,7 +210,7 @@ mod phong_light_model {
 
     #[test]
     fn non_unit_toward_light_is_normalized() {
-        let light = PhongLightModel::new(Vec3::new(0.0, 0.0, 3.0).into(), PURE_DIFFUSE);
+        let light = BlinnShadingModel::new(Vec3::new(0.0, 0.0, 3.0).into(), PURE_DIFFUSE);
         assert_relative_eq!(light.calc_intensity(UnitVec3::Z, UnitVec3::Z), 1.0);
     }
 }
