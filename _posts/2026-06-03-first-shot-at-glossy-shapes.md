@@ -18,7 +18,7 @@ We still see a blue sphere, but notice the difference from the [previous iterati
 This animation demonstrates a few crucial areas for improvement, though:
 
 - The white highlight does not look very natural. That shows a limitation of Gouraud shading: it works well for matte surfaces, but specular highlights suffer when intensities are interpolated across triangle corners.
-- If you look carefully, you will notice that the shadows and the highlight behave somewhat unexpectedly when the sphere gets squeezed. That is a bug in our rendering pipeline that we plan to address next.
+- If you look carefully, you will notice that the shadows and the highlight behave somewhat unexpectedly when the sphere gets squeezed in the second part of the animation. That is a bug in our rendering pipeline that we plan to address next.
 
 ## From matte to glossy
 
@@ -28,7 +28,7 @@ Imagine a billiard ball, for example. Apart from the broad diffuse shading, you 
 
 This new effect complements the diffuse reflection we implemented earlier. Several lighting models approximate glossiness. Among them, the [_Blinn–Phong_][blinn-phong] model is probably the simplest: it is not physically accurate, but it is computationally cheap and produces plausible visual effects.
 
-## The derivation of the Blinn–Phong specular term
+## Blinn–Phong reflection model
 
 Let's recall the law of specular reflection:
 
