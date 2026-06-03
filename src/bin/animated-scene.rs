@@ -1,5 +1,5 @@
 //! **`shapes::sphere(4)`** (unit-radius octasphere seed, four subdivision passes),
-//! **Gouraud** **`BlinnShadingModel`** on radial vertex normals, **`SHAPE_BASE_COLOR`**, back-face culled — **two-phase** **`ANIMATED_SCENE_FRAME_COUNT`**-frame clip.
+//! **Gouraud** **`BlinnLightModel`** on radial vertex normals, **`SHAPE_BASE_COLOR`**, back-face culled — **two-phase** **`ANIMATED_SCENE_FRAME_COUNT`**-frame clip.
 //!
 //! 1. **Camera orbit (`… / 2` frames):** **eye** **`(0, 0.2, −1)` → … → `(0, 0.2, −1)`** by **`360°`** around **`+Y`** on **`xz`** radius **`CAMERA_ORBIT_RADIUS`**, **`y = 0.2`** (**`(sin θ, 0.2, −cos θ)`**); **cubic ease‑in‑out** on angle per lap (slow ends, quicker middle); mesh **does not squash** (**`0.75`** uniform scale only).
 //! 2. **Y squash (`… / 2` frames):** **camera** pinned at **`(0, 0.2, −1)`**; **`0.75`** on **`x`/`z`**, **`y`** eased **`0.75 → 0.4 → 0.75`** (same cubic pacing as orbit).
@@ -11,7 +11,7 @@ use glam::{Mat3, Mat4, Vec3};
 use thorus_forge::Material;
 use thorus_forge::shapes::sphere;
 use thorus_forge::{
-    ANIMATED_SCENE_FRAME_COUNT, ANIMATED_SCENE_FRAME_SPACING_MS, BlinnShadingModel, Camera,
+    ANIMATED_SCENE_FRAME_COUNT, ANIMATED_SCENE_FRAME_SPACING_MS, BlinnLightModel, Camera,
     FrameBuffer, SCENE_HEIGHT, SCENE_WIDTH, WebpEncoder, draw_facets, output_webp_path_from_args,
 };
 
@@ -79,7 +79,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         SCENE_HEIGHT,
         ANIMATED_SCENE_FRAME_SPACING_MS,
     )?;
-    let light = BlinnShadingModel::new(
+    let light = BlinnLightModel::new(
         glam::Vec3::new(1.0, 0.5, -1.0).into(),
         Material::shiny(0.15, 100.0),
     );
