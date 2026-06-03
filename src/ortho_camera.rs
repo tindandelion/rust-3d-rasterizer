@@ -233,7 +233,7 @@ mod tests {
 
             assert_relative_eq!(
                 Vec3::new(0.0, -consts::SQRT_2 / 2.0, consts::SQRT_2 / 2.0),
-                camera.direction()
+                camera.direction().into()
             );
         }
 

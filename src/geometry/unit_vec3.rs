@@ -1,4 +1,4 @@
-use std::ops::{Add, Deref, Neg};
+use std::ops::{Add, Neg};
 
 use approx::{AbsDiffEq, RelativeEq};
 use glam::Vec3;
@@ -49,13 +49,13 @@ impl From<UnitVec3> for Vec3 {
     }
 }
 
-impl Deref for UnitVec3 {
-    type Target = Vec3;
+// impl Deref for UnitVec3 {
+//     type Target = Vec3;
 
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
+//     fn deref(&self) -> &Self::Target {
+//         &self.0
+//     }
+// }
 
 impl Neg for UnitVec3 {
     type Output = Self;
@@ -115,7 +115,7 @@ mod tests {
     #[test]
     fn neg_preserves_unit_length() {
         let n = UnitVec3::from(Vec3::new(1.0, 2.0, 8.0));
-        assert_relative_eq!((-n).length(), 1.0);
+        assert_relative_eq!((-n).0.length(), 1.0);
     }
 
     #[test]
@@ -136,7 +136,7 @@ mod tests {
         ];
         let n = UnitVec3::from_points_ccw(&corners);
         assert_relative_eq!(n, UnitVec3::from(Vec3::ONE));
-        assert_relative_eq!(n.length_squared(), 1.0);
+        assert_relative_eq!(n.0.length_squared(), 1.0);
     }
 
     #[test]
