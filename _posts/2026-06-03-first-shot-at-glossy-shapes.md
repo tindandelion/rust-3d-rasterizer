@@ -11,7 +11,7 @@ In [the last session][post-the-sphere-gets-smooth], we explored Gouraud shading 
 
 ## What you will see
 
-We still see a blue sphere, but notice the difference from the [previous iteration][post-the-sphere-gets-smooth]: a bright specular highlight now appears on the surface. We extended the lighting model and made the material shinier.
+We still see a blue sphere, but notice the difference from the [previous iteration][post-the-sphere-gets-smooth]: a bright specular highlight now appears on the surface. We upgraded the lighting model and made the material shinier.
 
 ![Animated Blinn–Phong sphere with specular highlight, camera orbit and vertical squash](https://raw.githubusercontent.com/tindandelion/rust-3d-rasterizer/0.0.13/doc/output/current.webp)
 
@@ -68,7 +68,7 @@ $$
 I_s = I \cdot \left(\mathbf{n} \cdot \mathbf{h}\right)^s
 $$
 
-That is essentially the approach we use in the code. [`BlinnLightModel`][source-blinn-light] replaces the old diffuse-only light type and implements [`calc_intensity`][source-calc-intensity] with both diffuse and specular terms.
+That is essentially the approach we use in the code. [`BlinnLightModel`][source-blinn-light] replaces the old diffuse-only light model and implements [`calc_intensity`][source-calc-intensity] that takes into account both diffuse and specular terms.
 
 ## What comes next
 
