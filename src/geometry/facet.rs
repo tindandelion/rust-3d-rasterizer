@@ -2,8 +2,9 @@
 //!
 //! Stored indices reference a parent mesh **`vertices`** (**[`Shape`](crate::geometry::Shape)**, e.g. [`cube`](crate::shapes::cube), [`dodecahedron`](crate::shapes::dodecahedron))—**Facet** stays mesh‑agnostic and **does not** embed positions.
 
-use glam::{Mat4, Vec3};
+use glam::Vec3;
 
+use super::normals::NormalTransform;
 use super::unit_vec3::UnitVec3;
 
 /// One planar triangle: three **CCW** vertex indices (**`verts`**) into a mesh **`vertices`**, plus outward **unit** **[`UnitVec3`]** (**same spatial frame** as **`vertices`**).
@@ -11,7 +12,7 @@ use super::unit_vec3::UnitVec3;
 /// **`verts[k]` ↔ `verts[(k + 1) % 3]`** (**k = 0, 1, 2**) traverses boundary **counter‑clockwise** when looking from outside along **`normal`** toward the facet interior.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Facet {
-    /// Outward **unit** normal (**[`Facet::transform`]** keeps **`normal`** coherent with **`vertices`** after each matrix—same caveat as **`Shape::transform`** / **`cube`** **for non‑uniform scales**).
+    /// Outward **unit** normal (posed with **[`Facet::transform`]** + **[`NormalTransform`]**).
     normal: UnitVec3,
     /// Indices into the parent mesh **`vertices`** (CCW winding as seen against **`normal`**).
     verts: [usize; 3],
@@ -67,14 +68,14 @@ impl Facet {
         &self.vertex_normals
     }
 
-    /// Re-transforms **`normal`** with **`m.transform_vector3`**, normalized; copies **`verts` unchanged**.
-    pub fn transform(&self, m: Mat4) -> Facet {
+    /// Re-transforms stored normals with **`normal_transform`**; copies **`verts`** unchanged.
+    pub fn transform(&self, normal_transform: NormalTransform) -> Facet {
         Facet {
             verts: self.verts,
-            normal: m.transform_vector3(self.normal.into()).into(),
+            normal: normal_transform.apply(self.normal.into()).into(),
             vertex_normals: self
                 .vertex_normals
-                .map(|n| m.transform_vector3(n.into()).into()),
+                .map(|n| normal_transform.apply(n.into()).into()),
         }
     }
 
@@ -98,7 +99,7 @@ mod tests {
     use glam::{Mat4, Vec3};
     use std::f32::consts::FRAC_PI_2;
 
-    use super::{Facet, UnitVec3};
+    use super::{Facet, NormalTransform, UnitVec3};
 
     const VERTS: [usize; 3] = [1, 2, 7];
 
@@ -108,8 +109,8 @@ mod tests {
         let expected_normal: UnitVec3 = Vec3::new(0.0, -1.0, 0.0).into();
         let facet = Facet::with_facet_normal(VERTS, original_normal);
 
-        let m = Mat4::from_rotation_x(FRAC_PI_2);
-        let posed = facet.transform(m);
+        let normal_transform = NormalTransform::from_model(Mat4::from_rotation_x(FRAC_PI_2));
+        let posed = facet.transform(normal_transform);
         assert_relative_eq!(expected_normal, posed.facet_normal());
     }
 
@@ -118,8 +119,8 @@ mod tests {
         let facet =
             Facet::with_normals(VERTS, UnitVec3::Z, [UnitVec3::X, UnitVec3::Y, UnitVec3::Z]);
 
-        let m = Mat4::from_rotation_x(FRAC_PI_2);
-        let posed = facet.transform(m);
+        let normal_transform = NormalTransform::from_model(Mat4::from_rotation_x(FRAC_PI_2));
+        let posed = facet.transform(normal_transform);
         let expected = [UnitVec3::X, UnitVec3::Z, UnitVec3::NEG_Y];
         for (actual, expected) in posed.vertex_normals().iter().zip(expected) {
             assert_relative_eq!(*actual, expected);

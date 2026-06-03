@@ -4,8 +4,6 @@
 //!
 //! We start from Wikipedia **`three.js`** golden‑ratio Cartesian coordinates (max coordinate **φ**), then **`0.5 /  φ`** so **`max |x|, |y|, |z| = 0.5`**. Hull edge length **`1 /  φ² ≈ 0.382`**, triangulation chords **`1 /  φ ≈ 0.618`**.
 //!
-//! [`Facet::transform`](crate::geometry::Facet::transform) follows **`cube`**’s **non‑uniform scale** caveat on stored normals.
-
 use glam::Vec3;
 
 use crate::geometry::{Facet, Shape, UnitVec3};
@@ -84,7 +82,7 @@ fn platonic_scaled_vertices_array() -> [Vec3; 20] {
 
 /// Default **scaled Platonic dodecahedron** as **`Shape`**: **20** verts, **36** wedge **`Facet`**s (**`three.js`** detail **0** tri list).
 ///
-/// Pose with **`Shape::transform`** ( **`Mat4`** per-corner + **`Facet::transform`** per facet).
+/// Pose with **`Shape::transform`**.
 pub fn dodecahedron() -> Shape {
     let vertices_arr = platonic_scaled_vertices_array();
     let facets: Vec<Facet> = THREE_JS_DETAIL0_TRIANGLES

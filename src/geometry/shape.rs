@@ -1,10 +1,11 @@
 //! Indexed triangle mesh backed by **`Vec<glam::Vec3>`** + **`Vec<Facet>`**.
 //!
-//! Construction takes arbitrary **vertex positions** + **facet list** (**CCW**, outward **[`Facet::normal`](crate::geometry::Facet::normal)**); **[`Shape::transform`](Shape::transform)** poses like procedural **[`cube`](crate::shapes::cube)** or **[`dodecahedron`](crate::shapes::dodecahedron)** (**[`Facet::transform`](crate::geometry::Facet::transform)** per facet).
+//! Construction takes arbitrary **vertex positions** + **facet list** (**CCW**, outward facet normal); **[`Shape::transform`](Shape::transform)** poses like procedural **[`cube`](crate::shapes::cube)** or **[`dodecahedron`](crate::shapes::dodecahedron)**.
 
 use glam::{Mat4, Vec3};
 
 use super::facet::Facet;
+use super::normals::NormalTransform;
 use super::unit_vec3::UnitVec3;
 
 use crate::{TriMesh, Triangle};
@@ -33,8 +34,10 @@ impl Shape {
         &self.facets
     }
 
-    /// Applies **`Mat4::transform_point3`** per vertex and **[`Facet::transform`]** per facet (composition matches **`dodecahedron`** / **`cube`**).
+    /// Applies **`Mat4::transform_point3`** per vertex and **[`Facet::transform`]** per facet
+    /// (one **[`NormalTransform::from_model`]** for all facet normals).
     pub fn transform(&self, m: Mat4) -> Shape {
+        let normal_transform = NormalTransform::from_model(m);
         Shape {
             vertices: self
                 .vertices
@@ -42,7 +45,11 @@ impl Shape {
                 .copied()
                 .map(|v| m.transform_point3(v))
                 .collect(),
-            facets: self.facets.iter().map(|f| f.transform(m)).collect(),
+            facets: self
+                .facets
+                .iter()
+                .map(|f| f.transform(normal_transform))
+                .collect(),
         }
     }
 }
@@ -65,6 +72,8 @@ impl TriMesh for Shape {
 #[cfg(test)]
 mod tests {
     use std::f32::consts::PI;
+
+    use approx::assert_relative_eq;
 
     use super::*;
     use glam::Mat4;
@@ -124,5 +133,36 @@ mod tests {
             shape.visible_facets(UnitVec3::Z).count(),
             flipped.visible_facets(UnitVec3::NEG_Z).count(),
         );
+    }
+
+    #[test]
+    fn transform_applies_to_facet_normal() {
+        let vertices = [
+            Vec3::new(2.0, 0.0, 0.0),
+            Vec3::new(0.0, 0.0, 2.0),
+            Vec3::new(0.0, 2.0, 0.0),
+        ];
+        let facet_normal = UnitVec3::from_points_ccw(&vertices);
+        let shape = Shape::new(
+            vertices.to_vec(),
+            vec![Facet::with_facet_normal([0, 1, 2], facet_normal)],
+        );
+
+        let transformed_shape = shape.transform(Mat4::from_scale(Vec3::new(1.0, 0.5, 1.0)));
+        let transformed_facet = transformed_shape.facets()[0];
+        let transformed_vertices =
+            transformed_facet.resolve_vertices(&transformed_shape.vertices());
+
+        let expected_transformed_normal = UnitVec3::from_points_ccw(&transformed_vertices);
+        let transformed_facet_normal = transformed_shape.facets()[0].facet_normal();
+
+        assert_relative_eq!(expected_transformed_normal, transformed_facet_normal);
+        for (actual, expected) in transformed_facet
+            .vertex_normals()
+            .iter()
+            .zip([expected_transformed_normal; 3])
+        {
+            assert_relative_eq!(*actual, expected);
+        }
     }
 }
