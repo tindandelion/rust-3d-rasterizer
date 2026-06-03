@@ -66,13 +66,15 @@ For the cube and dodecahedron, [`Facet::with_facet_normal`][source-facet-with-fa
 
 ## What comes next
 
-Gouraud shading is a useful technique for smooth matte surfaces, but it has limits: once you start rendering "shiny" objects that reflect light differently, it is no longer enough. In upcoming posts we will explore those limits and introduce [_Phong shading_][phong], which can produce more realistic highlights, although at greater computational cost. Stay tuned!
+Gouraud shading is a useful technique for smooth matte surfaces, but it has limits: once you start rendering "shiny" objects that reflect light differently, it is no longer enough. We took the next step in [First Shot at Glossy Shapes][post-first-shot-at-glossy-shapes]: [_Blinn–Phong_][blinn-phong] specular on top of the same Gouraud path, so the sphere picks up a moving highlight before we move to full per-pixel [_Phong shading_][phong].
 
 [post-yet-another-shape-the-sphere]: {{site.baseurl}}/{% post_url 2026-05-27-yet-another-shape-the-sphere %}
 [post-the-cube-gets-light]: {{site.baseurl}}/{% post_url 2026-05-22-the-cube-gets-light %}
 [version-0-0-12]: https://github.com/tindandelion/rust-3d-rasterizer/tree/0.0.12
 [gouraud]: https://en.wikipedia.org/wiki/Gouraud_shading
 [phong]: https://en.wikipedia.org/wiki/Phong_shading
+[blinn-phong]: https://en.wikipedia.org/wiki/Blinn%E2%80%93Phong_reflection_model
+[post-first-shot-at-glossy-shapes]: {{site.baseurl}}/{% post_url 2026-06-03-first-shot-at-glossy-shapes %}
 [source-calc-intensity]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.12/src/lighting.rs#L35
 [source-facet-with-vertex-normals]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.12/src/geometry/facet.rs#L27
 [source-facet-with-facet-normal]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.12/src/geometry/facet.rs#L23
