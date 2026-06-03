@@ -66,7 +66,7 @@ For the cube and dodecahedron, [`Facet::with_facet_normal`][source-facet-with-fa
 
 ## What comes next
 
-Gouraud shading is a useful technique for smooth matte surfaces, but it has limits: once you start rendering "shiny" objects that reflect light differently, it is no longer enough. We took the next step in [First Shot at Glossy Shapes][post-first-shot-at-glossy-shapes]: [_Blinn–Phong_][blinn-phong] specular on top of the same Gouraud path, so the sphere picks up a moving highlight before we move to full per-pixel [_Phong shading_][phong].
+Gouraud shading is a useful technique for smooth diffuse surfaces, but it has limits: once you render shiny objects that reflect light differently, it is no longer enough. In [upcoming posts][post-first-shot-at-glossy-shapes] we will explore those limits and introduce [_Phong shading_][phong], which can produce more realistic highlights at greater computational cost. Stay tuned!
 
 [post-yet-another-shape-the-sphere]: {{site.baseurl}}/{% post_url 2026-05-27-yet-another-shape-the-sphere %}
 [post-the-cube-gets-light]: {{site.baseurl}}/{% post_url 2026-05-22-the-cube-gets-light %}
