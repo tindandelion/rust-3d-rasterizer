@@ -50,7 +50,7 @@ $$
 I_s = I \cdot \left(\frac{\mathbf{v} \cdot \mathbf{r}}{|\mathbf{v}| |\mathbf{r}|}\right)^s
 $$
 
-where $\mathbf{v}$ is a unit vector toward the viewer's eye, $I$ is the light's intensity, and $s$ is a _shininess exponent_. The value of $s$ is a material parameter that controls how sharp the highlight will be: the larger $s$, the sharper and smaller the highlight in the render.
+where $\mathbf{v}$ is a unit vector toward the viewer's eye, $I$ is the light's intensity, and $s$ is a _shininess exponent_. The value of $s$ is a material parameter that controls how sharp the highlight will be: the larger $s$, the sharper and smaller the highlight appears in the render.
 
 ### Blinn–Phong variation
 
