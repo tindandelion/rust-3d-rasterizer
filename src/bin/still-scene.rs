@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use glam::{Mat3, Mat4, Vec3};
+use glam::{Mat4, Vec3};
 
 use thorus_forge::BlinnLightModel;
 use thorus_forge::Material;
@@ -12,8 +12,7 @@ const LIGHT_DIRECTION: Vec3 = Vec3::new(-10.0, 10.0, -10.0);
 const OUT_PATH: &str = "still-scene.webp";
 
 fn model_matrix_still() -> Mat4 {
-    let scale = Mat3::from_diagonal(Vec3::splat(0.7));
-    Mat4::from_mat3(scale)
+    Mat4::from_scale(Vec3::new(0.7, 0.15, 0.7))
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
