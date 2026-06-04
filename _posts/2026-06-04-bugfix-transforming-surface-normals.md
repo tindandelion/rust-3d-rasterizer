@@ -61,22 +61,10 @@ $$
 
 That formular also reveals why we haven't noticed that error before, when we only used rotation transforms. Rotation matrix is _orthogonal_ ($\mathbf{T}^{-1} = \mathbf{T}^T$), so $\mathbf{T_n} = (\mathbf{T}^T)^T = \mathbf{T}$. 
 
+### Derivation of the normal transform
 
-## Directions are not normals under scale
+TODO: To be written 
 
-When we pose a mesh with a model matrix $M$, we transform vertex positions with $M$ as points (homogeneous coordinates, then perspective divide if needed). For a pure rotation or uniform scale, you can also multiply a normal $\mathbf{n}$ by the same $3 \times 3$ linear part and renormalize — that is what `Mat4::transform_vector3` does.
-
-A _non-uniform_ scale is different. Normals are covectors: they describe which direction is "perpendicular to the surface" in a way that stays consistent with tangent vectors. If you scale the mesh by $2$ along $+\mathrm{Y}$ only, tangent vectors along $+\mathrm{Y}$ stretch, but the outward normal should shrink along $+\mathrm{Y}$ so that lighting still uses the true slant of the squashed surface. Applying the same scale matrix to $\mathbf{n}$ overshoots along that axis.
-
-The correct linear map for normals is the **inverse transpose** of the model's upper-left $3 \times 3$ block $L$:
-
-$$
-\mathbf{n}' = (L^{-1})^{\mathsf T}\, \mathbf{n}
-$$
-
-then renormalize to a unit vector. Rotations and uniform scales are special cases where this matches `transform_vector3`; anisotropic squash is not.
-
-Our old [`Facet::transform`][source-facet-transform-old] path used `m.transform_vector3` on the facet normal and each vertex normal. That was fine for the tumbling cube and orbit-only sphere in earlier releases, but wrong as soon as [`still-scene`][source-still-scene] and the animation's squash phase applied different scale factors on different axes.
 
 ## The fix
 
