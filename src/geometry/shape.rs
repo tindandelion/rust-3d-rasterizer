@@ -4,8 +4,7 @@
 
 use glam::{Mat4, Vec3};
 
-use super::facet::Facet;
-use super::normals::NormalTransform;
+use super::facet::{Facet, NormalTransform};
 use super::unit_vec3::UnitVec3;
 
 use crate::{TriMesh, Triangle};
