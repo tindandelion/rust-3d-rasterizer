@@ -6,13 +6,31 @@ authors: Sergey and Cursor
 tags: [bugfix]
 ---
 
-In [First Shot at Glossy Shapes][post-first-shot-at-glossy-shapes], we shipped Blinn–Phong specular on the sphere and called out a rendering glitch: during the vertical squash in the demo animation, shadows and the highlight did not move the way we expected. That was not a lighting-model bug — our stored _surface normals_ were being transformed the wrong way whenever the mesh was non-uniformly scaled.
+In the [last post][post-first-shot-at-glossy-shapes] we left a teaser that we've discovered a long-living bug in our renderer, without explaining what it was. Now, it's time to dive deep into the details and fix that nasty error that have been living in the codebase for far too long, to be honest. 
 
 [Version 0.0.14 on GitHub][version-0-0-14]{: .no-github-icon}
 
 ## What you will see
 
-The animated scene is unchanged in structure — camera orbit, then a squash phase — but lighting now tracks the deformed surface. The [`still-scene`][source-still-scene] export (heavy Y squash) makes the difference easy to see side by side:
+The animated scene itself hasn't changed much, but you'll notice that we now squash the sphere much more heavily [than in previous iterations][Link to prev what you will see]. That's deliberate: the bug we've been working on has been unnoticed because we were not brave enough with deforming our sample shapes. 
+
+![Animated Blinn–Phong sphere with corrected normals under squash](https://raw.githubusercontent.com/tindandelion/rust-3d-rasterizer/0.0.14/doc/output/current.webp)
+
+When you look at this animation, pay attention to the shadows and the highlight: the way it behaves when the sphere gets heavily squashed. They look quite natural, don't they? Well, it wouldn't be the case if we hadn't fixed the bug. 
+
+Let's jump into it. 
+
+## How we found the bug 
+
+Sergey was revisiting a book [_The Ray Tracer Challenge_][link-to-good-reads], while suddenly in the chapter _"Light and Shading"_ he found a section dedicated to applying transformations to surface normals. Having read that section, he realized that we've being doing it wrong all along! 
+
+A [quick unit test][link to the test code] that used a non-uniform scaling transform (i. e. the transform that scaled the shape by different amounts along different axes) revealed the bug. Essentially, that test verified the following invariant: 
+
+> After transformation, the facet normal should be the same as if we took the transformed vertices, and recalculated the normal from their new coordinates. 
+
+In other words, the facet normal must stay perpendicular to the facet's plane. And it was broken. But the nasty thing that let this bug live is that not every transformation was broken, essentially. Rotations, uniform scaling - the transformations we routinely used - worked just fine, by their mathematical nature. 
+
+The things get really wrong when we apply non-uniform scaling to the shape. let's have a look at how it manifests itself in the render. Take the sphere and squash it into a flat pebble:  
 
 <div class="still-compare">
 <figure>
@@ -21,33 +39,28 @@ The animated scene is unchanged in structure — camera orbit, then a squash pha
 </figure>
 <figure>
 <img src="{{site.baseurl}}/assets/images/2026-06-04-bugfix-transforming-surface-normals/still-scene-buggy.webp" alt="Squashed sphere with incorrect specular and shading" />
-<figcaption>After squashing: buggy transform</figcaption>
+<figcaption>Buggy image after squashing</figcaption>
 </figure>
 </div>
 
-<div class="still-compare">
-<figure>
-<img src="{{site.baseurl}}/assets/images/2026-06-04-bugfix-transforming-surface-normals/still-scene-orig.webp" alt="Squashed sphere with corrected normals" />
-<figcaption>Original sphere</figcaption>
-</figure>
-<figure>
-<img src="{{site.baseurl}}/assets/images/2026-06-04-bugfix-transforming-surface-normals/still-scene-fixed.webp" alt="Squashed sphere with incorrect specular and shading" />
-<figcaption>After squashing: correct transform</figcaption>
-</figure>
-</div>
+Indeed, the shadows and the highlight don't look as they would've appeared on a pebble-shaped object. Instead, it looks like someone just took the sphere and resized the raster image! That's all because of the broken surface normals. 
 
+## Surface normals need a special kind of transform 
 
-After the fix, the same deformation in the full animation keeps highlights and diffuse shading aligned with the squeezed sphere:
+Let's explore in details what was wrong in the code. If you look at the previous version of [`Shape::transform()`][link-to-prev-impl] and its companion [`Facet::transform()`][link-to-prev-impl], you'd see that we applied _the same transform matrix_ everything: vertices, facet's normal, and vertex normals. Visually, that's what was going on when we did that: 
 
-![Animated Blinn–Phong sphere with corrected normals under squash](https://raw.githubusercontent.com/tindandelion/rust-3d-rasterizer/0.0.14/doc/output/current.webp)
+![Picture][apply-scaling-to-normal]
 
-The squash phase is also more extreme than in 0.0.13 (Y down to **0.2**, X/Z up to **0.95** at peak) so the bug would have been even harder to miss without the fix.
+As you can see, the normal vector $n$ gets scaled as well, and now its new value $n'$ is no longer perpendicular to the plane! What we actually need is to make the normal transform into $n''$. 
 
-## How we spotted it
+It turns out that there's a special kind of transform, called _normal transform_, that needs to be applied to the normals, to stay perpendicular to the surface. It's related to the original model transform $\mathbf{T}$ by the following equation: 
 
-The symptom showed up in motion first. With [`BlinnLightModel`][source-blinn-light] and Gouraud interpolation, a stretched sphere should still read as glossy: the specular patch should slide as the surface tilts and compresses. Instead, during the second half of [`animated-scene`][source-animated-scene], the highlight and diffuse shading looked glued to the wrong parts of the mesh — as if the triangles moved but their normals did not follow.
+$$
+\mathbf{T_n} = (\mathbf{T}^{-1})^T \quad \quad \mathbf{n}' = \mathbf{T_n}\, \mathbf{n}
+$$
 
-To pin it down without staring at every frame, Sergey added an integration test on [`Shape::transform`][source-shape-transform]: build a triangle, apply a non-uniform scale, and compare the stored facet normal to the normal recomputed from the transformed corner positions (`UnitVec3::from_points_ccw`). Vertices were already correct; **only the stored normals failed**.
+That formular also reveals why we haven't noticed that error before, when we only used rotation transforms. Rotation matrix is _orthogonal_ ($\mathbf{T}^{-1} = \mathbf{T}^T$), so $\mathbf{T_n} = (\mathbf{T}^T)^T = \mathbf{T}$. 
+
 
 ## Directions are not normals under scale
 
@@ -67,7 +80,7 @@ Our old [`Facet::transform`][source-facet-transform-old] path used `m.transform_
 
 ## The fix
 
-We introduced a small crate-internal type, [`NormalTransform`][source-normal-transform], built once per pose in [`Shape::transform`][source-shape-transform]:
+We introduced a small internal type, [`NormalTransform`][source-normal-transform], built once in [`Shape::transform`][source-shape-transform] from the original model transform, using the formula above:
 
 ```rust
 let normal_transform = NormalTransform::from_model(m);
@@ -75,13 +88,26 @@ let normal_transform = NormalTransform::from_model(m);
 .map(|f| f.transform(normal_transform))
 ```
 
-`NormalTransform::from_model` takes the inverse transpose of $L$; each facet only applies that fixed `Mat3` to its stored normals — no matrix inverse per triangle. Uniform and rotation-only poses still match the old `transform_vector3` behavior; the new unit test on non-uniform scale (`scale(1, 0.5, 1)` doubles the normal's $+\mathrm{Y}$ component before normalization) guards the regression.
+That small fix has dramatic consequences. Now, when we squeeze the sphere into the pebble, it renders correctly: 
 
-We kept a before snapshot ([`still-scene-buggy.webp`][still-scene-buggy]) and the corrected still export from main ([`still-scene.webp`][still-scene-orig]) for comparison; the animation [`current.webp`][current-output] was refreshed after the fix. [`still-scene`][source-still-scene] uses `Mat4::from_scale(Vec3::new(0.7, 0.15, 0.7))` as a compact reproducer for the squash case.
+<div class="still-compare">
+<figure>
+<img src="{{site.baseurl}}/assets/images/2026-06-04-bugfix-transforming-surface-normals/still-scene-orig.webp" alt="Squashed sphere with corrected normals" />
+<figcaption>Original sphere</figcaption>
+</figure>
+<figure>
+<img src="{{site.baseurl}}/assets/images/2026-06-04-bugfix-transforming-surface-normals/still-scene-fixed.webp" alt="Squashed sphere with incorrect specular and shading" />
+<figcaption>Correct image after squashing</figcaption>
+</figure>
+</div>
+
+The shadow and the light highlight look exactly what they would look like on a pebble-shaped object. Nice!
+
+
 
 ## What comes next
 
-With normals trustworthy under deformation, we can return to the plan from the glossy-shapes milestone: [_Phong shading_][phong-shading] (per-pixel normals) instead of Gouraud specular, for sharper highlights on the sphere.
+With normals trustworthy under deformation, we can return to the plan from the glossy-shapes milestone: replace Gouraud shading with [_Phong_][phong-shading], for more natural specular highlights on glossy surfaces.
 
 
 [post-first-shot-at-glossy-shapes]: {{site.baseurl}}/{% post_url 2026-06-03-first-shot-at-glossy-shapes %}
