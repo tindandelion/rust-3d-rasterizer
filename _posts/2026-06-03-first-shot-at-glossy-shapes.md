@@ -18,7 +18,7 @@ We still see a blue sphere, but notice the difference from the [previous iterati
 This animation demonstrates a few crucial areas for improvement, though:
 
 - The white highlight does not look very natural. That shows a limitation of Gouraud shading: it works well for matte surfaces, but specular highlights suffer when intensities are interpolated across triangle corners.
-- If you look carefully, you will notice that the shadows and the highlight behave somewhat unexpectedly when the sphere gets squeezed in the second part of the animation. We chased that in [Bugfix: Transforming Surface Normals][post-bugfix-transforming-surface-normals] — stored surface normals were not surviving non-uniform scale.
+- If you look carefully, you will notice that the shadows and the highlight behave somewhat unexpectedly when the sphere gets squeezed in the second part of the animation. We chased that in [Bugfix: Transforming Surface Normals][post-bugfix-transforming-surface-normals] — it turned out that we were applying a wrong transform to the surface normals.
 
 ## From matte to glossy
 
@@ -74,7 +74,7 @@ That is essentially the approach we use in the code. [`BlinnLightModel`][source-
 
 We now combine the Blinn–Phong lighting model with Gouraud shading, which produces an effect often called _Gouraud specular_. Because our sphere mesh is dense enough, the highlight looks plausible, although it still reveals the faceted nature of the sphere. Our next step is to replace Gouraud shading with [_Phong shading_][phong-shading], which interpolates normals and yields more realistic-looking specular highlights.
 
-That normal-transform bug is fixed in [Bugfix: Transforming Surface Normals][post-bugfix-transforming-surface-normals]; Phong shading is the next feature milestone.
+However, the first thing to do is to [fix a bug with transforming surface normals][post-bugfix-transforming-surface-normals], that has been living in the code undetected for a while now. Let's do some bug hunting!
 
 
 [post-bugfix-transforming-surface-normals]: {{site.baseurl}}/{% post_url 2026-06-04-bugfix-transforming-surface-normals %}
