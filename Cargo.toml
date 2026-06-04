@@ -11,4 +11,3 @@ webp-animation = "0.10"
 
 [dev-dependencies]
 tempfile = "3"
-cargo-watch = "8"
