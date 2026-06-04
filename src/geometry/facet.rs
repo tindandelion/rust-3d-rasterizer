@@ -26,12 +26,8 @@ impl Facet {
     }
 
     pub fn with_vertex_normals(verts: [usize; 3], vertex_normals: [UnitVec3; 3]) -> Self {
-        let facet_normal = vertex_normals
-            .iter()
-            .map(|n| n.as_vec3())
-            .sum::<Vec3>()
-            .into();
-        Self::with_normals(verts, facet_normal, vertex_normals)
+        let facet_normal = vertex_normals[0] + vertex_normals[1] + vertex_normals[2];
+        Self::with_normals(verts, facet_normal.into(), vertex_normals)
     }
 
     const fn with_normals(

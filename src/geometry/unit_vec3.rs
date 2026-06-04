@@ -26,10 +26,6 @@ impl UnitVec3 {
     pub fn dot(&self, other: impl Into<Vec3>) -> f32 {
         self.0.dot(other.into())
     }
-
-    pub fn as_vec3(&self) -> &Vec3 {
-        &self.0
-    }
 }
 
 impl From<Vec3> for UnitVec3 {
@@ -49,14 +45,6 @@ impl From<UnitVec3> for Vec3 {
     }
 }
 
-// impl Deref for UnitVec3 {
-//     type Target = Vec3;
-
-//     fn deref(&self) -> &Self::Target {
-//         &self.0
-//     }
-// }
-
 impl Neg for UnitVec3 {
     type Output = Self;
 
@@ -70,6 +58,14 @@ impl Add for UnitVec3 {
 
     fn add(self, other: Self) -> Self::Output {
         self.0 + other.0
+    }
+}
+
+impl Add<UnitVec3> for Vec3 {
+    type Output = Vec3;
+
+    fn add(self, other: UnitVec3) -> Self::Output {
+        self + other.0
     }
 }
 
