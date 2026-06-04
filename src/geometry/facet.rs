@@ -11,7 +11,7 @@ use super::unit_vec3::UnitVec3;
 /// **`verts[k]` ↔ `verts[(k + 1) % 3]`** (**k = 0, 1, 2**) traverses boundary **counter‑clockwise** when looking from outside along **`normal`** toward the facet interior.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Facet {
-    /// Outward **unit** normal (posed with **[`Facet::transform`]** + **[`NormalTransform`]**).
+    /// Outward **unit** normal (re-posed via inverse-transpose when the mesh is transformed).
     normal: UnitVec3,
     /// Indices into the parent mesh **`vertices`** (CCW winding as seen against **`normal`**).
     verts: [usize; 3],
@@ -90,9 +90,7 @@ impl Facet {
 
 /// Linear map for transforming **normals** alongside a **`Mat4`** point transform.
 ///
-/// Construct with **[`NormalTransform::from_model`]** once per pose (e.g. in
-/// **[`Shape::transform`](crate::geometry::Shape::transform)**), then pass to
-/// **[`Facet::transform`]**.
+/// Built from the model matrix once per pose (e.g. in **`Shape::transform`**), then applied per facet.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) struct NormalTransform(Mat3);
 

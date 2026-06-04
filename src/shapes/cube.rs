@@ -1,7 +1,7 @@
 //! Axis-aligned **unit cube** (edge length **1**, **`[-½, ½]³`**) built as **[`Shape`](crate::geometry::Shape)**.
 //!
 //! Use **[`cube`]** plus **[`Shape::transform`](crate::geometry::Shape::transform)** for posing
-//! (**`Facet::transform`** / **`TriMesh::visible_facets`** — same **`Camera`** +**Z**‑forward semantics as the rest of the crate).
+//! (**`Shape::transform`** / **`TriMesh::visible_facets`** — same **`Camera`** +**Z**‑forward semantics as the rest of the crate).
 //!
 //! Planning: `doc/planning/project-spec.md`, `doc/planning/project-breakdown.md`.
 

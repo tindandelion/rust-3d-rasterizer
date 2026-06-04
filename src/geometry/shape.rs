@@ -33,8 +33,8 @@ impl Shape {
         &self.facets
     }
 
-    /// Applies **`Mat4::transform_point3`** per vertex and **[`Facet::transform`]** per facet
-    /// (one **[`NormalTransform::from_model`]** for all facet normals).
+    /// Applies **`Mat4::transform_point3`** per vertex and re-poses stored normals per facet
+    /// (inverse-transpose of **`m`**'s upper-left **3×3**, computed once for all facets).
     pub fn transform(&self, m: Mat4) -> Shape {
         let normal_transform = NormalTransform::from_model(m);
         Shape {
