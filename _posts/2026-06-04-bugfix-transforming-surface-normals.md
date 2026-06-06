@@ -12,7 +12,7 @@ In the [last post][post-first-shot-at-glossy-shapes] we left a teaser that we'd 
 
 ## What you will see
 
-The animated scene itself hasn't changed much, but you'll notice that we now squash the sphere much more heavily [than in the previous iteration][post-first-shot-at-glossy-shapes]. That's deliberate: the bug went unnoticed because we were not brave enough with deforming our sample shapes.
+The animated scene itself hasn't changed much, but you'll notice that we now squash the sphere much more heavily [than in the previous iteration][post-first-shot-at-glossy-shapes]. That's a deliberate choice: the bug went unnoticed because we were not brave enough with deforming our sample shapes.
 
 ![Animated Blinn–Phong sphere with corrected normals under squash](https://raw.githubusercontent.com/tindandelion/rust-3d-rasterizer/0.0.14/doc/output/current.webp)
 
@@ -43,7 +43,7 @@ Things get really wrong when we apply non-uniform scaling to the shape. Let's ha
 </figure>
 </div>
 
-Indeed, the shadows and the highlight don't look as they would've appeared on a pebble-shaped object. Instead, it looks like someone just took the sphere and resized the raster image! That's all because of the broken surface normals.
+Indeed, the shadows and the highlight don't look as they would've appeared on a pebble-shaped object. Instead, it looks like someone just took the sphere and resized the rasterized image! That's all because of broken surface normals.
 
 ## Surface normals need a special kind of transform
 
@@ -51,7 +51,7 @@ Let's explore in detail what was wrong in the code. If you look at the previous 
 
 ![Applying the same scaling transform to a normal]({{site.baseurl}}/assets/images/2026-06-04-bugfix-transforming-surface-normals/apply-scaling-to-normal.svg)
 
-As you can see, the normal vector $n$ gets scaled as well, and the scaled result is no longer perpendicular to the plane! What we actually need is for the normal to transform into $n'$.
+As you can see, the normal vector $\mathbf{n}$ gets scaled as well, and the scaled result is no longer perpendicular to the plane! What we actually need is for the normal to transform into $\mathbf{n}'$.
 
 It turns out that there's a special kind of transform, called _normal transform_, that needs to be applied to the normals to keep them perpendicular to the surface. It's related to the original model transform $\mathbf{T}$ by the following equation:
 
@@ -140,7 +140,9 @@ impl Shape {
 }
 ```
 
-Notice that `Facet::transform()` now requires its argument to be of type `NormalTransform`, so that we can't pass an arbitrary `Mat4` into it. That's a bit of a guardrail to avoid nasty hard-to-detect errors in the future. 
+Inside [`Facet::transform()`][source-facet-transform], the same `NormalTransform` applies to the facet normal and all three vertex normals. That matters here because Gouraud shading interpolates vertex normals across each triangle.
+
+Notice that `Facet::transform()` now requires its argument to be of type `NormalTransform`, so that we can't pass an arbitrary `Mat4` into it anymore. That's a bit of a guardrail to avoid nasty hard-to-detect errors in the future. 
 
 ### The visual effect of the fix
 
@@ -161,9 +163,10 @@ The shadow and the light highlight look exactly as they would on a pebble-shaped
 
 ## What comes next
 
-With normals trustworthy under deformation, we can return to the plan from the [glossy-shapes milestone][post-first-shot-at-glossy-shapes]: replace Gouraud with [_Phong shading_][phong-shading], for more natural specular highlights on glossy surfaces.
+With that bug out of our way, we can return to the plan from the [glossy-shapes milestone][project-breakdown-glossy-shapes]: replace Gouraud with [_Phong shading_][phong-shading], for more natural specular highlights on glossy surfaces. Let's do it!
 
 [post-first-shot-at-glossy-shapes]: {{site.baseurl}}/{% post_url 2026-06-03-first-shot-at-glossy-shapes %}
+[project-breakdown-glossy-shapes]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.14/doc/planning/project-breakdown.md#--sphere-phong-shading--interpolated-normals--specular
 [version-0-0-14]: https://github.com/tindandelion/rust-3d-rasterizer/tree/0.0.14
 [link-to-good-reads]: https://www.goodreads.com/book/show/39933047-the-ray-tracer-challenge
 [phong-shading]: https://en.wikipedia.org/wiki/Phong_shading
@@ -171,4 +174,5 @@ With normals trustworthy under deformation, we can return to the plan from the [
 [source-shape-transform-old]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.13/src/geometry/shape.rs#L37
 [source-facet-transform-old]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.13/src/geometry/facet.rs#L71
 [source-shape-transform]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.14/src/geometry/shape.rs#L36
+[source-facet-transform]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.14/src/geometry/facet.rs#L67
 [source-normal-transform]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.14/src/geometry/facet.rs#L95
