@@ -1,3 +1,5 @@
+//! **`shapes::sphere(4)`** still: **Phong** **`BlinnLightModel`** (**`Material::shiny(0.15, 100.0)`**), **`0.7`** uniform scale.
+
 use std::path::Path;
 
 use glam::{Mat4, Vec3};

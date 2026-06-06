@@ -1,7 +1,9 @@
-//! Integration: **`draw_facets`** on the default unit cube vs a hand-built golden framebuffer (**[`GouraudShadedTriangle`]**).
+//! Integration: **`draw_facets`** on the default unit cube vs a hand-built golden framebuffer.
 //!
-//! With **`Camera::direction` = +Z**, the strictly front-facing hull facet is the **−Z** cap (outward normal
-//! **`NEG_Z`**). **`BlinnLightModel`** toward **`NEG_Z`** with a high-ambient matte yields uniform corner intensity, so
+//! The golden builds **`GouraudShadedTriangle`** passes directly (equivalent here: duplicated facet normals → uniform
+//! intensity, so **Phong** and **Gouraud** agree on the cube). With **`Camera::direction` = +Z**, the strictly
+//! front-facing hull facet is the **−Z** cap (outward normal **`NEG_Z`**). **`BlinnLightModel`** toward **`NEG_Z`**
+//! with a high-ambient matte yields uniform intensity, so
 //! [`thorus_forge::SHAPE_BASE_COLOR`] is unchanged after **`Rgb::scale`**. On this **`FB_WIDTH`×`FB_HEIGHT`** canvas,
 //! **`scale = (min(w,h) − 1) / 2`** is an integer, so unit-cube **`±0.5`** corners land exactly on
 //! **`FILLED_MIN…FILLED_LAST`** (**no** intermediate **`f32::round`**).

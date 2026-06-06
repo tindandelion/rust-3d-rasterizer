@@ -1,6 +1,6 @@
 //! **Thorus Forge** — software rasterizer building blocks: RGB framebuffer, orthographic screen mapping, lossless WebP encode.
 //!
-//! Shared raster canvas size and export defaults live here (**`still-cube`**, **`animated-scene`** default output — see **`doc/planning/project-spec.md`**).
+//! Shared raster canvas size and export defaults live here (**`still-scene`**, **`animated-scene`** default output — see **`doc/planning/project-spec.md`**).
 
 use std::array;
 use std::env;
