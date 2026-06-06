@@ -8,12 +8,12 @@ use std::path::Path;
 
 use glam::{Mat3, Mat4, Vec3};
 
-use thorus_forge::Material;
 use thorus_forge::shapes::sphere;
 use thorus_forge::{
     ANIMATED_SCENE_FRAME_COUNT, ANIMATED_SCENE_FRAME_SPACING_MS, BlinnLightModel, Camera,
-    FrameBuffer, SCENE_HEIGHT, SCENE_WIDTH, WebpEncoder, draw_facets, output_webp_path_from_args,
+    FrameBuffer, SCENE_HEIGHT, SCENE_WIDTH, WebpEncoder, output_webp_path_from_args,
 };
+use thorus_forge::{Material, draw_facets};
 
 const CAMERA_ORBIT_RADIUS: f32 = 1.0;
 /// **`y`** elevation shared by default **orbit** start/end and **squash** pin (horizontal circle **`y =`** this).

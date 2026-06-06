@@ -18,8 +18,7 @@ pub use lighting::{BlinnLightModel, Material};
 pub use ortho_camera::Camera;
 pub use webp_encoder::WebpEncoder;
 
-use crate::framebuffer::GouraudShadedTriangle;
-use crate::framebuffer::ShadedCorner;
+use crate::framebuffer::{PhongCorner, PhongShadedTriangle};
 use crate::geometry::UnitVec3;
 
 /// Raster width in pixels (golden stills / integration tests must agree).
@@ -61,9 +60,9 @@ pub trait TriMesh {
     fn visible_facets(&self, view_direction: UnitVec3) -> impl Iterator<Item = Triangle> + '_;
 }
 
-/// Filled mesh: **[`GouraudShadedTriangle::draw`](framebuffer::GouraudShadedTriangle::draw)** per [`Triangle`] from **[`TriMesh::visible_facets`]**.
+/// Filled mesh: **[`PhongShadedTriangle::draw`](framebuffer::PhongShadedTriangle::draw)** per [`Triangle`] from **[`TriMesh::visible_facets`]**.
 ///
-/// **[`BlinnLightModel::calc_intensity`]** runs at each corner on **`triangle.normals[i]`** with per-vertex **toward-eye**; **`GouraudShadedTriangle`** interpolates intensity across the triangle and scales **`SHAPE_BASE_COLOR`** per pixel (**Gouraud**). **Cube** / **dodecahedron** duplicate the facet normal at all three corners, so shading stays **faceted**.
+/// **[`BlinnLightModel::calc_intensity`]** runs **per pixel** on the interpolated normal with a constant **toward-eye** (orthographic **`Camera::direction`**); **`PhongShadedTriangle`** interpolates **`UnitVec3`** normals across the triangle and scales **`SHAPE_BASE_COLOR`** per fragment (**Phong**).
 pub fn draw_facets(
     fb: &mut FrameBuffer,
     camera: &Camera,
@@ -73,16 +72,11 @@ pub fn draw_facets(
     let forward = camera.direction();
     let toward_eye: UnitVec3 = -camera.direction();
     for triangle in mesh.visible_facets(forward) {
-        let shaded_corners: [ShadedCorner; 3] = array::from_fn(|i| {
-            let vertex = triangle.corners[i];
-            let vertex_normal = triangle.normals[i];
-
-            let intensity = light_model.calc_intensity(vertex_normal, toward_eye);
-            ShadedCorner {
-                pos: camera.transform(vertex),
-                intensity,
-            }
+        let corners: [PhongCorner; 3] = array::from_fn(|i| PhongCorner {
+            pos: camera.transform(triangle.corners[i]),
+            normal: triangle.normals[i],
         });
-        GouraudShadedTriangle::new(shaded_corners, SHAPE_BASE_COLOR).draw(fb);
+        PhongShadedTriangle::new(corners, SHAPE_BASE_COLOR)
+            .draw(fb, |normal| light_model.calc_intensity(normal, toward_eye));
     }
 }

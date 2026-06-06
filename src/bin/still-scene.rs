@@ -4,15 +4,16 @@ use glam::{Mat4, Vec3};
 
 use thorus_forge::BlinnLightModel;
 use thorus_forge::Material;
+use thorus_forge::draw_facets;
 use thorus_forge::shapes::sphere;
-use thorus_forge::{Camera, FrameBuffer, SCENE_HEIGHT, SCENE_WIDTH, WebpEncoder, draw_facets};
+use thorus_forge::{Camera, FrameBuffer, SCENE_HEIGHT, SCENE_WIDTH, WebpEncoder};
 
 const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.0, -1.0);
 const LIGHT_DIRECTION: Vec3 = Vec3::new(-10.0, 10.0, -10.0);
 const OUT_PATH: &str = "still-scene.webp";
 
 fn model_matrix_still() -> Mat4 {
-    Mat4::from_scale(Vec3::new(0.7, 0.15, 0.7))
+    Mat4::from_scale(Vec3::new(0.7, 0.7, 0.7))
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
