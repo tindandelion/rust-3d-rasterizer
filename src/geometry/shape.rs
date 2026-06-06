@@ -150,7 +150,7 @@ mod tests {
         let transformed_shape = shape.transform(Mat4::from_scale(Vec3::new(1.0, 0.5, 1.0)));
         let transformed_facet = transformed_shape.facets()[0];
         let transformed_vertices =
-            transformed_facet.resolve_vertices(&transformed_shape.vertices());
+            transformed_facet.resolve_vertices(transformed_shape.vertices());
 
         let expected_transformed_normal = UnitVec3::from_points_ccw(&transformed_vertices);
         let transformed_facet_normal = transformed_shape.facets()[0].facet_normal();
