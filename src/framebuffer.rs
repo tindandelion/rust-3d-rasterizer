@@ -2,14 +2,14 @@
 
 mod colors;
 mod fill_triangle;
+mod gouraud_shaded_triangle;
 mod line;
 mod linear_fn;
-mod shaded_fill_triangle;
 
 pub use colors::Rgb;
 pub use fill_triangle::FillTriangle;
+pub use gouraud_shaded_triangle::{GouraudShadedTriangle, ShadedCorner};
 pub use line::Line;
-pub use shaded_fill_triangle::{ShadedCorner, ShadedFillTriangle};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FrameBuffer {

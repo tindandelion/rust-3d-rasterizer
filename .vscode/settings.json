@@ -1,3 +1,11 @@
 {
-  "cSpell.words": ["Blinn", "interp", "Octa", "phong", "rasterizer", "Scanline"]
+  "cSpell.words": [
+    "Blinn",
+    "Gouraud",
+    "interp",
+    "Octa",
+    "phong",
+    "rasterizer",
+    "Scanline"
+  ]
 }

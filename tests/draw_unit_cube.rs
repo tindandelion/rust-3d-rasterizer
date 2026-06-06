@@ -1,4 +1,4 @@
-//! Integration: **`draw_facets`** on the default unit cube vs a hand-built golden framebuffer (**[`ShadedFillTriangle`]**).
+//! Integration: **`draw_facets`** on the default unit cube vs a hand-built golden framebuffer (**[`GouraudShadedTriangle`]**).
 //!
 //! With **`Camera::direction` = +Z**, the strictly front-facing hull facet is the **−Z** cap (outward normal
 //! **`NEG_Z`**). **`BlinnLightModel`** toward **`NEG_Z`** with a high-ambient matte yields uniform corner intensity, so
@@ -9,7 +9,7 @@
 use glam::{UVec2, Vec3};
 use thorus_forge::{
     BlinnLightModel, Camera, FrameBuffer, Material, SHAPE_BASE_COLOR, draw_facets,
-    framebuffer::{ShadedCorner, ShadedFillTriangle},
+    framebuffer::{GouraudShadedTriangle, ShadedCorner},
     shapes::cube,
 };
 
@@ -45,7 +45,7 @@ fn expected_framebuffer_unit_cube_camera_front() -> FrameBuffer {
             intensity: 1.0,
         })
     };
-    ShadedFillTriangle::new(shaded([0, 1, 2]), SHAPE_BASE_COLOR).draw(&mut fb);
-    ShadedFillTriangle::new(shaded([0, 2, 3]), SHAPE_BASE_COLOR).draw(&mut fb);
+    GouraudShadedTriangle::new(shaded([0, 1, 2]), SHAPE_BASE_COLOR).draw(&mut fb);
+    GouraudShadedTriangle::new(shaded([0, 2, 3]), SHAPE_BASE_COLOR).draw(&mut fb);
     fb
 }

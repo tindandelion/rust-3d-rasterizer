@@ -10,12 +10,12 @@ pub struct ShadedCorner {
     pub intensity: f32,
 }
 
-pub struct ShadedFillTriangle {
+pub struct GouraudShadedTriangle {
     corners: [ShadedCorner; 3],
     color: Rgb,
 }
 
-impl ShadedFillTriangle {
+impl GouraudShadedTriangle {
     pub fn new(mut corners: [ShadedCorner; 3], color: Rgb) -> Self {
         corners.sort_by_key(|v| v.pos.y);
         Self { corners, color }
@@ -108,7 +108,7 @@ mod tests {
         #[test]
         fn fill_degenerate_triangle_is_line_segment() {
             let mut fb = FrameBuffer::new(10, 5);
-            ShadedFillTriangle::new(pts([(2, 3), (8, 3), (7, 3)]), Rgb::WHITE).draw(&mut fb);
+            GouraudShadedTriangle::new(pts([(2, 3), (8, 3), (7, 3)]), Rgb::WHITE).draw(&mut fb);
 
             let expected = to_ascii_art(&[
                 "          ",
@@ -124,7 +124,7 @@ mod tests {
         #[test]
         fn fill_degenerate_triangle_two_corners_coincide() {
             let mut fb = FrameBuffer::new(10, 5);
-            ShadedFillTriangle::new(pts([(2, 3), (7, 3), (7, 3)]), Rgb::WHITE).draw(&mut fb);
+            GouraudShadedTriangle::new(pts([(2, 3), (7, 3), (7, 3)]), Rgb::WHITE).draw(&mut fb);
 
             let expected = to_ascii_art(&[
                 "          ",
@@ -140,7 +140,7 @@ mod tests {
         #[test]
         fn fill_degenerate_all_corners_same_point() {
             let mut fb = FrameBuffer::new(10, 5);
-            ShadedFillTriangle::new(pts([(4, 2), (4, 2), (4, 2)]), Rgb::WHITE).draw(&mut fb);
+            GouraudShadedTriangle::new(pts([(4, 2), (4, 2), (4, 2)]), Rgb::WHITE).draw(&mut fb);
 
             let expected = to_ascii_art(&[
                 "          ",
@@ -156,7 +156,7 @@ mod tests {
         fn fill_axis_aligned_shapes_isosceles() {
             let mut fb = FrameBuffer::new(10, 5);
             // Apex at top; CCW cyclic order for consistent half-plane winding.
-            ShadedFillTriangle::new(pts([(4, 1), (6, 3), (2, 3)]), Rgb::WHITE).draw(&mut fb);
+            GouraudShadedTriangle::new(pts([(4, 1), (6, 3), (2, 3)]), Rgb::WHITE).draw(&mut fb);
 
             let expected = to_ascii_art(&[
                 "          ",
@@ -182,7 +182,7 @@ mod tests {
 
             for start in 0..3 {
                 let mut fb = FrameBuffer::new(10, 5);
-                ShadedFillTriangle::new(
+                GouraudShadedTriangle::new(
                     pts([
                         corners_ccw[start],
                         corners_ccw[(start + 1) % 3],
@@ -203,7 +203,7 @@ mod tests {
         fn draw_right_triangle() {
             let mut fb = FrameBuffer::new(10, 5);
             // Right-angle corner at (2,1); hypotenuse runs toward (14,1) so only x ∈ [2,9] is drawable.
-            ShadedFillTriangle::new(pts([(2, 1), (4, 1), (2, 3)]), Rgb::WHITE).draw(&mut fb);
+            GouraudShadedTriangle::new(pts([(2, 1), (4, 1), (2, 3)]), Rgb::WHITE).draw(&mut fb);
 
             let expected = to_ascii_art(&[
                 "          ",
@@ -219,7 +219,7 @@ mod tests {
         fn fill_clips_when_triangle_extends_past_buffer() {
             let mut fb = FrameBuffer::new(10, 5);
             // Right-angle corner at (2,1); hypotenuse runs toward (14,1) so only x ∈ [2,9] is drawable.
-            ShadedFillTriangle::new(pts([(2, 1), (14, 1), (2, 3)]), Rgb::WHITE).draw(&mut fb);
+            GouraudShadedTriangle::new(pts([(2, 1), (14, 1), (2, 3)]), Rgb::WHITE).draw(&mut fb);
 
             let expected = to_ascii_art(&[
                 "          ",
@@ -234,7 +234,7 @@ mod tests {
         #[test]
         fn fill_slanted_triangle() {
             let mut fb = FrameBuffer::new(10, 5);
-            ShadedFillTriangle::new(pts([(2, 3), (7, 3), (8, 1)]), Rgb::WHITE).draw(&mut fb);
+            GouraudShadedTriangle::new(pts([(2, 3), (7, 3), (8, 1)]), Rgb::WHITE).draw(&mut fb);
 
             let expected = to_ascii_art(&[
                 "          ",
@@ -251,7 +251,7 @@ mod tests {
         fn fill_triangle_with_vertical_edge() {
             let mut fb = FrameBuffer::new(10, 5);
             // Vertical segment (2,1)–(2,4); apex (6, 2). Consistent CCW half-plane winding.
-            ShadedFillTriangle::new(pts([(2, 1), (2, 4), (6, 2)]), Rgb::WHITE).draw(&mut fb);
+            GouraudShadedTriangle::new(pts([(2, 1), (2, 4), (6, 2)]), Rgb::WHITE).draw(&mut fb);
 
             let expected = to_ascii_art(&[
                 "          ",
@@ -278,7 +278,7 @@ mod tests {
         #[test]
         fn uniform_intensity_scales_color_on_horizontal_segment() {
             let mut fb = FrameBuffer::new(10, 5);
-            ShadedFillTriangle::new(
+            GouraudShadedTriangle::new(
                 pts([((2, 3), 0.5), ((8, 3), 0.5), ((7, 3), 0.5)]),
                 Rgb::WHITE,
             )
@@ -298,7 +298,7 @@ mod tests {
         #[test]
         fn horizontal_span_interpolates_intensity_from_corners() {
             let mut fb = FrameBuffer::new(10, 5);
-            ShadedFillTriangle::new(
+            GouraudShadedTriangle::new(
                 pts([((2, 3), 1.0), ((8, 3), 0.1), ((7, 3), 1.0 / 6.0)]),
                 Rgb::WHITE,
             )
@@ -318,7 +318,7 @@ mod tests {
         #[test]
         fn isosceles_interpolates_intensity_along_edges_per_scanline() {
             let mut fb = FrameBuffer::new(10, 5);
-            ShadedFillTriangle::new(
+            GouraudShadedTriangle::new(
                 pts([((4, 1), 1.0), ((6, 3), 0.1), ((2, 3), 0.1)]),
                 Rgb::WHITE,
             )
@@ -339,7 +339,7 @@ mod tests {
         fn fill_clips_when_triangle_extends_past_buffer() {
             let mut fb = FrameBuffer::new(10, 5);
             // Right-angle corner at (2,1); hypotenuse runs toward (14,1) so only x ∈ [2,9] is drawable.
-            ShadedFillTriangle::new(
+            GouraudShadedTriangle::new(
                 pts([((2, 1), 1.0), ((14, 1), 0.1), ((2, 3), 0.1)]),
                 Rgb::WHITE,
             )
@@ -359,7 +359,7 @@ mod tests {
         #[test]
         fn slanted_triangle_interpolates_intensity_in_x_and_y() {
             let mut fb = FrameBuffer::new(10, 5);
-            ShadedFillTriangle::new(
+            GouraudShadedTriangle::new(
                 pts([((2, 3), 0.1), ((7, 3), 1.0), ((8, 1), 0.5)]),
                 Rgb::WHITE,
             )

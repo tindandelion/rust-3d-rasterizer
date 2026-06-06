@@ -18,8 +18,8 @@ pub use lighting::{BlinnLightModel, Material};
 pub use ortho_camera::Camera;
 pub use webp_encoder::WebpEncoder;
 
+use crate::framebuffer::GouraudShadedTriangle;
 use crate::framebuffer::ShadedCorner;
-use crate::framebuffer::ShadedFillTriangle;
 use crate::geometry::UnitVec3;
 
 /// Raster width in pixels (golden stills / integration tests must agree).
@@ -61,9 +61,9 @@ pub trait TriMesh {
     fn visible_facets(&self, view_direction: UnitVec3) -> impl Iterator<Item = Triangle> + '_;
 }
 
-/// Filled mesh: **[`ShadedFillTriangle::draw`](framebuffer::ShadedFillTriangle::draw)** per [`Triangle`] from **[`TriMesh::visible_facets`]**.
+/// Filled mesh: **[`GouraudShadedTriangle::draw`](framebuffer::GouraudShadedTriangle::draw)** per [`Triangle`] from **[`TriMesh::visible_facets`]**.
 ///
-/// **[`BlinnLightModel::calc_intensity`]** runs at each corner on **`triangle.normals[i]`** with per-vertex **toward-eye**; **`ShadedFillTriangle`** interpolates intensity across the triangle and scales **`SHAPE_BASE_COLOR`** per pixel (**Gouraud**). **Cube** / **dodecahedron** duplicate the facet normal at all three corners, so shading stays **faceted**.
+/// **[`BlinnLightModel::calc_intensity`]** runs at each corner on **`triangle.normals[i]`** with per-vertex **toward-eye**; **`GouraudShadedTriangle`** interpolates intensity across the triangle and scales **`SHAPE_BASE_COLOR`** per pixel (**Gouraud**). **Cube** / **dodecahedron** duplicate the facet normal at all three corners, so shading stays **faceted**.
 pub fn draw_facets(
     fb: &mut FrameBuffer,
     camera: &Camera,
@@ -83,6 +83,6 @@ pub fn draw_facets(
                 intensity,
             }
         });
-        ShadedFillTriangle::new(shaded_corners, SHAPE_BASE_COLOR).draw(fb);
+        GouraudShadedTriangle::new(shaded_corners, SHAPE_BASE_COLOR).draw(fb);
     }
 }
