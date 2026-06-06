@@ -1,26 +1,25 @@
+use glam::Vec3;
+
 use crate::geometry::UnitVec3;
 
-pub struct NormalInterpolator {
-    start: (f32, UnitVec3),
-    end: (f32, UnitVec3),
-    scale: f32,
-}
+pub struct NormalInterpolator(Option<Vec3>, Vec3);
 
 impl NormalInterpolator {
     pub fn from_endpoints(a: (f32, UnitVec3), b: (f32, UnitVec3)) -> Self {
-        Self {
-            start: a,
-            end: b,
-            scale: b.0 - a.0,
+        if a.0 == b.0 {
+            return Self(None, a.1.into());
         }
+        let slope = (b.1 - a.1) / (b.0 - a.0);
+        let intercept = a.1 - slope * a.0;
+        Self(Some(slope), intercept)
     }
 
     pub fn get(&self, x: f32) -> UnitVec3 {
-        if self.scale == 0.0 {
-            return self.start.1;
+        if let Some(slope) = self.0 {
+            (x * slope + self.1).into()
+        } else {
+            self.1.into()
         }
-        let t = (x - self.start.0) / self.scale;
-        ((1.0 - t) * self.start.1 + t * self.end.1).into()
     }
 }
 

@@ -1,20 +1,20 @@
-pub struct LinearFn(f32, f32);
+pub struct LinearFn(Option<f32>, f32);
 
 impl LinearFn {
     pub fn from_endpoints(a: (f32, f32), b: (f32, f32)) -> Self {
         if a.0 == b.0 {
-            return Self(f32::NAN, a.1);
+            return Self(None, a.1);
         }
         let slope = (b.1 - a.1) / (b.0 - a.0);
         let intercept = a.1 - slope * a.0;
-        Self(slope, intercept)
+        Self(Some(slope), intercept)
     }
 
     pub fn get(&self, x: f32) -> f32 {
-        if self.0.is_nan() {
-            self.1
+        if let Some(slope) = self.0 {
+            (x * slope + self.1).into()
         } else {
-            x * self.0 + self.1
+            self.1.into()
         }
     }
 }
