@@ -2,7 +2,9 @@
 
 use glam::{UVec2, Vec2};
 
-use super::{FrameBuffer, Rgb, interpolator};
+use crate::framebuffer::interpolator::ScalarInterpolator;
+
+use super::{FrameBuffer, Rgb};
 
 #[derive(Clone, Copy, Debug)]
 pub struct ShadedCorner {
@@ -15,8 +17,6 @@ pub struct GouraudShadedTriangle {
     color: Rgb,
 }
 
-type IntensityInterpolator = interpolator::Interpolator<f32>;
-
 impl GouraudShadedTriangle {
     pub fn new(mut corners: [ShadedCorner; 3], color: Rgb) -> Self {
         corners.sort_by_key(|v| v.pos.y);
@@ -25,7 +25,7 @@ impl GouraudShadedTriangle {
 
     pub fn draw(&self, fb: &mut FrameBuffer) {
         for ((x1, start_intensity), (x2, end_intensity), y) in self.scan_lines() {
-            let horz_intensity = IntensityInterpolator::from_endpoints(
+            let horz_intensity = ScalarInterpolator::from_endpoints(
                 (x1 as f32, start_intensity),
                 (x2 as f32, end_intensity),
             );
@@ -70,8 +70,8 @@ impl GouraudShadedTriangle {
 
 struct EdgeWalker {
     start_pt: (Vec2, f32),
-    x_interp: IntensityInterpolator,
-    intensity_interp: IntensityInterpolator,
+    x_interp: ScalarInterpolator,
+    intensity_interp: ScalarInterpolator,
 }
 
 impl EdgeWalker {
@@ -82,11 +82,11 @@ impl EdgeWalker {
 
             Self {
                 start_pt: (pos_a, a.intensity),
-                x_interp: IntensityInterpolator::from_endpoints(
+                x_interp: ScalarInterpolator::from_endpoints(
                     (pos_a.y, pos_a.x),
                     (pos_b.y, pos_b.x),
                 ),
-                intensity_interp: IntensityInterpolator::from_endpoints(
+                intensity_interp: ScalarInterpolator::from_endpoints(
                     (0.0, a.intensity),
                     ((pos_b - pos_a).length(), b.intensity),
                 ),
