@@ -9,7 +9,7 @@ mod line;
 pub use colors::Rgb;
 pub use fill_triangle::FillTriangle;
 pub use gouraud_shaded_triangle::{GouraudShadedTriangle, ShadedCorner};
-pub use interpolator::{LinearFn, NormalInterpolator};
+pub use interpolator::NormalInterpolator;
 pub use line::Line;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
