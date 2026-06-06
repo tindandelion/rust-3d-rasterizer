@@ -1,14 +1,12 @@
 //! RGB framebuffer: `width × height` pixels, three `u8` channels per pixel, row-major.
 
 mod colors;
-mod fill_triangle;
 mod gouraud_shaded_triangle;
 mod interpolator;
 mod line;
 mod phong_shaded_triangle;
 
 pub use colors::Rgb;
-pub use fill_triangle::FillTriangle;
 pub use gouraud_shaded_triangle::{GouraudShadedTriangle, ShadedCorner};
 pub use line::Line;
 pub use phong_shaded_triangle::{PhongCorner, PhongShadedTriangle};
