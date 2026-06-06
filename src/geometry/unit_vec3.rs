@@ -1,4 +1,4 @@
-use std::ops::{Add, Neg};
+use std::ops::{Add, Mul, Neg};
 
 use approx::{AbsDiffEq, RelativeEq};
 use glam::Vec3;
@@ -66,6 +66,14 @@ impl Add<UnitVec3> for Vec3 {
 
     fn add(self, other: UnitVec3) -> Self::Output {
         self + other.0
+    }
+}
+
+impl Mul<UnitVec3> for f32 {
+    type Output = Vec3;
+
+    fn mul(self, other: UnitVec3) -> Self::Output {
+        other.0 * self
     }
 }
 

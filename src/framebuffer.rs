@@ -5,11 +5,13 @@ mod fill_triangle;
 mod gouraud_shaded_triangle;
 mod line;
 mod linear_fn;
+mod normal_interpolator;
 
 pub use colors::Rgb;
 pub use fill_triangle::FillTriangle;
 pub use gouraud_shaded_triangle::{GouraudShadedTriangle, ShadedCorner};
 pub use line::Line;
+pub use normal_interpolator::NormalInterpolator;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FrameBuffer {
