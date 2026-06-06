@@ -2,7 +2,7 @@
 
 use glam::{UVec2, Vec2};
 
-use super::{FrameBuffer, Rgb, linear_fn::LinearFn};
+use super::{FrameBuffer, LinearFn, Rgb};
 
 #[derive(Clone, Copy, Debug)]
 pub struct ShadedCorner {
