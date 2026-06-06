@@ -6,7 +6,7 @@ authors: Sergey and Cursor
 tags: [bugfix]
 ---
 
-In the [last post][post-first-shot-at-glossy-shapes] we left a teaser that we'd discovered a long-living bug in our renderer, without explaining what it was. Now it's time to dive into the details and fix that nasty error that has been living in the codebase for far too long, to be honest.
+In the [last post][post-first-shot-at-glossy-shapes] we left a teaser that we'd discovered a long-lived bug in our renderer, without explaining what it was. Now it's time to dive into the details and fix that nasty error that has been living in the codebase for far too long, to be honest.
 
 [Version 0.0.14 on GitHub][version-0-0-14]{: .no-github-icon}
 
@@ -51,7 +51,7 @@ Let's explore in detail what was wrong in the code. If you look at the previous 
 
 ![Applying the same scaling transform to a normal]({{site.baseurl}}/assets/images/2026-06-04-bugfix-transforming-surface-normals/apply-scaling-to-normal.svg)
 
-As you can see, the normal vector $n$ gets scaled as well, and now its new value $n'$ is no longer perpendicular to the plane! What we actually need is for the normal to transform into $n''$.
+As you can see, the normal vector $n$ gets scaled as well, and the scaled result is no longer perpendicular to the plane! What we actually need is for the normal to transform into $n'$.
 
 It turns out that there's a special kind of transform, called _normal transform_, that needs to be applied to the normals to keep them perpendicular to the surface. It's related to the original model transform $\mathbf{T}$ by the following equation:
 
@@ -63,13 +63,13 @@ That formula also reveals why we hadn't noticed that error before, when we only 
 
 ### Derivation of the normal transform
 
-Where does the equation above come from? The answer comes from one geometric requirement we care about: after transforming the facet, the stored normal must still be perpendicular to the facet plane. In other words, the original property of the normal was 
+Where does the equation above come from? The answer comes from one geometric requirement we care about: after transforming the facet, the stored normal must still be perpendicular to the facet plane. In other words, the original property of the normal was
 
 $$
 \mathbf{n} \cdot \mathbf{t} = 0
 $$
 
-for any vector $\mathbf{t}$ that lies on the facet's plane. We would like to find a transform $\mathbf{T_n}$ that we can apply to the normal, so that after the transformation the transformed normal $\mathbf{n}'$ would still be perpendicular to vectors $\mathbf{t}'$ transformed with the model transform $\mathbf{T}$. In mathematical terms, we can write it as: 
+for any vector $\mathbf{t}$ that lies on the facet's plane. We would like to find a transform $\mathbf{T_n}$ that we can apply to the normal, so that after the transformation the transformed normal $\mathbf{n}'$ would still be perpendicular to vectors $\mathbf{t}'$ transformed with the model transform $\mathbf{T}$. In mathematical terms, we can write it as:
 
 $$
 \begin{gather}
@@ -78,7 +78,7 @@ $$
 \end{gather}
 $$
 
-Remembering that we can write the dot product as a matrix multiplication $\mathbf{a} \cdot \mathbf{b} = \mathbf{a}^T\mathbf{b}\$ and that $(\mathbf{x}\mathbf{y})^T = \mathbf{y}^T\mathbf{x}^T$, we can apply a couple of tricks to this equation: 
+Remembering that we can write the dot product as a matrix multiplication $\mathbf{a} \cdot \mathbf{b} = \mathbf{a}^T\mathbf{b}$ and that $(\mathbf{x}\mathbf{y})^T = \mathbf{y}^T\mathbf{x}^T$, we can apply a couple of tricks to this equation: 
 
 $$
 (\mathbf{T_n}\mathbf{n}) \cdot (\mathbf{T}\mathbf{t}) = 0 
@@ -100,7 +100,7 @@ $$
 
 ## The fix
 
-To make the code more error-prone, so that we don't accidentally apply a wrong type of transform to the facet's normals, we've introduced a small _newtype_ [`NormalTransform`][source-normal-transform], to build a normal transform: 
+To make the code less error-prone, so that we don't accidentally apply a wrong type of transform to the facet's normals, we've introduced a small wrapper type [`NormalTransform`][source-normal-transform] to build a normal transform: 
 
 ```rust
 pub(crate) struct NormalTransform(Mat3);
@@ -118,7 +118,7 @@ impl NormalTransform {
 }
 ```
 
-We build this kind of transform once in in [`Shape::transform`][source-shape-transform], and apply it to the facets: 
+We build this kind of transform once in [`Shape::transform`][source-shape-transform], and apply it to the facets: 
 ```rust
 impl Shape {
     pub fn transform(&self, m: Mat4) -> Shape {
@@ -140,7 +140,7 @@ impl Shape {
 }
 ```
 
-Notice that `Facet::transform()` now requires its argument to be of type `NormalTransform`, so that we can't pass an arbitrary `Mat4` into it. That's a small guardrail to avoid nasty hard-to-detect errors in the future. 
+Notice that `Facet::transform()` now requires its argument to be of type `NormalTransform`, so that we can't pass an arbitrary `Mat4` into it. That's a bit of a guardrail to avoid nasty hard-to-detect errors in the future. 
 
 ### The visual effect of the fix
 
@@ -157,7 +157,7 @@ That small fix has dramatic consequences. Now, when we squeeze the sphere into t
 </figure>
 </div>
 
-The shadow and the light highlight look exactly like what they would on a pebble-shaped object. Nice!
+The shadow and the light highlight look exactly as they would on a pebble-shaped object. Nice!
 
 ## What comes next
 
@@ -171,4 +171,4 @@ With normals trustworthy under deformation, we can return to the plan from the [
 [source-shape-transform-old]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.13/src/geometry/shape.rs#L37
 [source-facet-transform-old]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.13/src/geometry/facet.rs#L71
 [source-shape-transform]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.14/src/geometry/shape.rs#L36
-[source-normal-transform]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.14/src/geometry/facet.rs#L91
+[source-normal-transform]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.14/src/geometry/facet.rs#L95
