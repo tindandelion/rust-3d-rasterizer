@@ -6,13 +6,14 @@ use glam::{Mat4, Vec3};
 
 use thorus_forge::BlinnLightModel;
 use thorus_forge::Material;
+use thorus_forge::Rgb;
 use thorus_forge::meshes::sphere;
-use thorus_forge::render_mesh;
-use thorus_forge::{Camera, FrameBuffer, SCENE_HEIGHT, SCENE_WIDTH, WebpEncoder};
+use thorus_forge::{Camera, FrameBuffer, SCENE_HEIGHT, SCENE_WIDTH, Shape, WebpEncoder};
 
 const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.0, -1.0);
 const LIGHT_DIRECTION: Vec3 = Vec3::new(-10.0, 10.0, -10.0);
 const OUT_PATH: &str = "still-scene.webp";
+const SPHERE_COLOR: Rgb = Rgb(52, 110, 210);
 
 fn model_matrix_still() -> Mat4 {
     Mat4::from_scale(Vec3::new(0.7, 0.7, 0.7))
@@ -23,8 +24,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let camera = Camera::for_viewport(SCENE_WIDTH, SCENE_HEIGHT).move_to(CAMERA_POS);
     let light = BlinnLightModel::new(LIGHT_DIRECTION.into(), Material::shiny(0.15, 100.0));
 
-    let mesh = sphere(4).transform(model_matrix_still());
-    render_mesh(&mesh, &mut framebuffer, &camera, &light);
+    let shape = Shape::new(sphere(4).transform(model_matrix_still()), SPHERE_COLOR);
+    shape.render(&mut framebuffer, &camera, &light);
 
     let mut encoder = WebpEncoder::new(SCENE_WIDTH, SCENE_HEIGHT)?;
     encoder.add_frame(&framebuffer)?;

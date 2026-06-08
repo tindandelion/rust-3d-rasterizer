@@ -8,12 +8,12 @@ use std::path::Path;
 
 use glam::{Mat3, Mat4, Vec3};
 
+use thorus_forge::Material;
 use thorus_forge::meshes::sphere;
 use thorus_forge::{
     ANIMATED_SCENE_FRAME_COUNT, ANIMATED_SCENE_FRAME_SPACING_MS, BlinnLightModel, Camera,
-    FrameBuffer, SCENE_HEIGHT, SCENE_WIDTH, WebpEncoder, output_webp_path_from_args,
+    FrameBuffer, Rgb, SCENE_HEIGHT, SCENE_WIDTH, Shape, WebpEncoder, output_webp_path_from_args,
 };
-use thorus_forge::{Material, render_mesh};
 
 const CAMERA_ORBIT_RADIUS: f32 = 1.0;
 /// **`y`** elevation shared by default **orbit** start/end and **squash** pin (horizontal circle **`y =`** this).
@@ -23,6 +23,8 @@ const CAMERA_DEFAULT_EYE: Vec3 = Vec3::new(0.0, CAMERA_EYE_Y, -CAMERA_ORBIT_RADI
 const MESH_SCALE_XZ: f32 = 0.75;
 const MESH_SCALE_XZ_MAX: f32 = 0.95;
 const Y_SCALE_MIN: f32 = 0.2;
+
+const SHAPE_BASE_COLOR: Rgb = Rgb(52, 110, 210);
 
 fn half_lap_frames() -> u32 {
     ANIMATED_SCENE_FRAME_COUNT / 2
@@ -110,7 +112,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         };
 
         let camera = Camera::for_viewport(SCENE_WIDTH, SCENE_HEIGHT).move_to(camera_pos);
-        render_mesh(&mesh, &mut framebuffer, &camera, &light);
+        let shape = Shape::new(mesh, SHAPE_BASE_COLOR);
+        shape.render(&mut framebuffer, &camera, &light);
 
         encoder.add_frame(&framebuffer)?;
     }
