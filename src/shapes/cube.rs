@@ -1,9 +1,6 @@
 //! Axis-aligned **unit cube** (edge length **1**, **`[-½, ½]³`**) built as **[`Shape`](crate::geometry::Shape)**.
 //!
 //! Use **[`cube`]** plus **[`Shape::transform`](crate::geometry::Shape::transform)** for posing
-//! (**`Shape::transform`** / **`Shape::visible_facets`** — same **`Camera`** +**Z**‑forward semantics as the rest of the crate).
-//!
-//! Planning: `doc/planning/project-spec.md`, `doc/planning/project-breakdown.md`.
 
 use glam::Vec3;
 
@@ -72,26 +69,29 @@ mod tests {
     }
 
     #[test]
-    fn visible_facets_count_from_front() {
+    fn visible_triangles_count_from_front() {
         let mesh = cube();
         let forward = UnitVec3::Z;
-        assert_eq!(mesh.visible_facets(forward).count(), 2);
+        assert_eq!(mesh.visible_triangles(forward).count(), 2);
     }
 
     #[test]
-    fn visible_facets_count_from_arbitrary_direction() {
+    fn visible_triangles_count_from_arbitrary_direction() {
         let mesh = cube();
         let forward = Vec3::new(-1.0, -1.0, -1.0).into();
-        assert_eq!(mesh.visible_facets(forward).count(), 6);
+        assert_eq!(mesh.visible_triangles(forward).count(), 6);
     }
 
     #[test]
-    fn visible_facets_count_after_transform() {
+    fn visible_triangles_count_after_transform() {
         let forward = UnitVec3::Z;
         let transform = Mat4::from_rotation_x(FRAC_PI_4) * Mat4::from_rotation_y(FRAC_PI_4);
 
         assert_eq!(
-            cube().transform(transform).visible_facets(forward).count(),
+            cube()
+                .transform(transform)
+                .visible_triangles(forward)
+                .count(),
             6,
         );
     }
@@ -99,7 +99,7 @@ mod tests {
     #[test]
     fn looking_at_cube_from_front() {
         let mesh = cube();
-        let visible = mesh.visible_facets(UnitVec3::Z).collect::<Vec<_>>();
+        let visible = mesh.visible_triangles(UnitVec3::Z).collect::<Vec<_>>();
         assert_eq!(visible.len(), 2);
         assert!(
             visible

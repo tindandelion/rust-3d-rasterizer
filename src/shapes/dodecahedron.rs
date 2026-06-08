@@ -154,8 +154,8 @@ mod tests {
     }
 
     #[test]
-    fn visible_facets_count_from_pos_z() {
+    fn visible_triangles_count_from_pos_z() {
         let d = dodecahedron();
-        assert_eq!(d.visible_facets(UnitVec3::Z).count(), 13);
+        assert_eq!(d.visible_triangles(UnitVec3::Z).count(), 13);
     }
 }

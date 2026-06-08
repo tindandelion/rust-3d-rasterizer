@@ -47,16 +47,7 @@ pub fn output_webp_path_from_args() -> OsString {
         .unwrap_or_else(|| DEFAULT_OUT_PATH.into())
 }
 
-type Vertex = glam::Vec3;
-
-/// One strictly front-filled **triangle** in world space: **`corners`** plus per-vertex **[`UnitVec3`]** normals for shading.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Triangle {
-    pub corners: [Vertex; 3],
-    pub normals: [UnitVec3; 3],
-}
-
-/// Filled mesh: **[`PhongShadedTriangle::draw`](framebuffer::PhongShadedTriangle::draw)** per [`Triangle`] from **[`Shape::visible_facets`]**.
+/// Filled mesh: **[`PhongShadedTriangle::draw`](framebuffer::PhongShadedTriangle::draw)** per [`Triangle`] from **[`Shape::visible_triangles`]**.
 ///
 /// **[`BlinnLightModel::calc_intensity`]** runs **per pixel** on the interpolated normal with a constant **toward-eye** (orthographic **`Camera::direction`**); **`PhongShadedTriangle`** interpolates **`UnitVec3`** normals across the triangle and scales **`SHAPE_BASE_COLOR`** per fragment (**Phong**).
 pub fn render_shape(
@@ -67,7 +58,7 @@ pub fn render_shape(
 ) {
     let forward = camera.direction();
     let toward_eye: UnitVec3 = -camera.direction();
-    for triangle in shape.visible_facets(forward) {
+    for triangle in shape.visible_triangles(forward) {
         let corners: [PhongCorner; 3] = array::from_fn(|i| PhongCorner {
             pos: camera.transform(triangle.corners[i]),
             normal: triangle.normals[i],

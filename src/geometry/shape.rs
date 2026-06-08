@@ -7,7 +7,12 @@ use glam::{Mat4, Vec3};
 use super::facet::{Facet, NormalTransform};
 use super::unit_vec3::UnitVec3;
 
-use crate::Triangle;
+/// One strictly front-filled **triangle** in world space: **`corners`** plus per-vertex **[`UnitVec3`]** normals for shading.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Triangle {
+    pub corners: [Vec3; 3],
+    pub normals: [UnitVec3; 3],
+}
 
 /// Generic mesh: **`Facet::verts`** index into vertex positions from **[`vertices`](Shape::vertices)**.
 ///
@@ -53,7 +58,10 @@ impl Shape {
     }
 
     /// Front-facing facets as world-space **[`Triangle`]**s (corners + per-vertex normals).
-    pub fn visible_facets(&self, view_direction: UnitVec3) -> impl Iterator<Item = Triangle> + '_ {
+    pub fn visible_triangles(
+        &self,
+        view_direction: UnitVec3,
+    ) -> impl Iterator<Item = Triangle> + '_ {
         self.facets
             .iter()
             .filter(move |f| f.is_front_facing(view_direction))
@@ -98,7 +106,7 @@ mod tests {
     #[test]
     fn from_pos_z_both_facets_visible_with_neg_z_normals() {
         let shape = flat_square_xy();
-        let visible = shape.visible_facets(UnitVec3::Z).collect::<Vec<_>>();
+        let visible = shape.visible_triangles(UnitVec3::Z).collect::<Vec<_>>();
         assert_eq!(visible.len(), 2);
         assert!(
             visible
@@ -109,14 +117,17 @@ mod tests {
 
     #[test]
     fn from_neg_z_no_facets_visible() {
-        assert_eq!(flat_square_xy().visible_facets(UnitVec3::NEG_Z).count(), 0);
+        assert_eq!(
+            flat_square_xy().visible_triangles(UnitVec3::NEG_Z).count(),
+            0
+        );
     }
 
     #[test]
     fn perpendicular_view_is_grazing_neither_triangle_front() {
         let shape = flat_square_xy();
-        assert_eq!(shape.visible_facets(UnitVec3::X).count(), 0);
-        assert_eq!(shape.visible_facets(UnitVec3::Y).count(), 0);
+        assert_eq!(shape.visible_triangles(UnitVec3::X).count(), 0);
+        assert_eq!(shape.visible_triangles(UnitVec3::Y).count(), 0);
     }
 
     #[test]
@@ -124,12 +135,12 @@ mod tests {
         let shape = flat_square_xy();
         let flipped = shape.transform(Mat4::from_rotation_y(PI));
 
-        assert_eq!(flipped.visible_facets(UnitVec3::Z).count(), 0);
-        assert_eq!(flipped.visible_facets(UnitVec3::NEG_Z).count(), 2);
+        assert_eq!(flipped.visible_triangles(UnitVec3::Z).count(), 0);
+        assert_eq!(flipped.visible_triangles(UnitVec3::NEG_Z).count(), 2);
 
         assert_eq!(
-            shape.visible_facets(UnitVec3::Z).count(),
-            flipped.visible_facets(UnitVec3::NEG_Z).count(),
+            shape.visible_triangles(UnitVec3::Z).count(),
+            flipped.visible_triangles(UnitVec3::NEG_Z).count(),
         );
     }
 
