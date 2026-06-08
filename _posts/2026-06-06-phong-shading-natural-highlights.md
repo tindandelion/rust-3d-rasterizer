@@ -5,57 +5,52 @@ date: 2026-06-06 10:00:00 +0200
 authors: Sergey and Cursor
 ---
 
-In [First Shot at Glossy Shapes][post-first-shot-at-glossy-shapes] we extended our lighting model to support glossy materials. Our first attempt was to render specular highlight on the sphere using Gouraud shading algorithm. The result was encouraging, but the highlight still looked quite artificial. In this section, we're going to implement a more advanced shading algorithm: [_Phong shading_][phong-shading]. This algorithm produces rasterizations with more naturally looking specular highlights. 
+In [First Shot at Glossy Shapes][post-first-shot-at-glossy-shapes], we extended our lighting model to support glossy materials. Our first attempt was to render the specular highlight on the sphere using the Gouraud shading algorithm. The result was encouraging, but the highlight still looked quite artificial. In this post, we're going to implement a more advanced shading algorithm: [_Phong shading_][phong-shading]. This algorithm produces rasterizations with more natural-looking specular highlights.
 
 [Version 0.0.15 on GitHub][version-0-0-15]{: .no-github-icon}
 
 ## What you will see
 
-With Phong shading, the highlight on the sphere surface looks much more convincing, compared to our [previous attempt][post-first-shot-at-glossy-shapes]. We no longer see the artifacts of the underlying triangular mesh: the bright spot on the sphere looks much more convincing. 
+With Phong shading, the highlight on the sphere looks much more convincing than in our [previous attempt][post-first-shot-at-glossy-shapes]. We no longer see artifacts from the underlying triangular mesh. 
 
 ![Animated Phong-shaded sphere with Blinn–Phong specular, camera orbit and vertical squash](https://raw.githubusercontent.com/tindandelion/rust-3d-rasterizer/0.0.15/doc/output/current.webp)
 
 ## From Gouraud shading to Phong shading
 
-Recall the idea of [Gouraud shading][Link to post with Gouraud shading] for triangular mesh: 
+Recall the idea of [Gouraud shading][post-the-sphere-gets-smooth] for a triangular mesh:
 
-* calculate the reflected light intensity at each vertex; 
-* interpolate the intensity along the triangle's edges; 
-* then interpolate the intensity along each horizontal line that makes up the triangle interior. 
+* calculate the reflected light intensity at each vertex;
+* interpolate the intensity along the triangle's edges;
+* then interpolate the intensity along each horizontal line that makes up the triangle interior.
 
-Phong shading uses the same interpolation idea, but takes it further: what if instead of light intensities we interpolated the normals themselves? Then, using the approximated normal values, we could calculate the light intensity at each pixel of the triangle's interior. 
+Phong shading uses the same interpolation idea, but takes it further: what if instead of light intensities we interpolated the normals themselves? Then, using the approximated normal values, we could calculate the light intensity at each pixel of the triangle's interior.
 
-This algorithm is more involved from the computational standpoint: instead of interpolating a single floating point number (light intensity) we now need to interpolate three coordinates of the normal vector. We also need to invoke lightind model calculation `LightingModel::calc_intensity()` at each point, which adds to the computation cost. 
+This algorithm is more involved from a computational standpoint: instead of interpolating a single floating-point number (light intensity), we now need to interpolate three coordinates of the normal vector. We also need to invoke [`BlinnLightModel::calc_intensity()`][source-calc-intensity] at each pixel now, which adds to the computation cost.
 
-However, this cost pays off because we're able to produce much more plausibly looking raster images. 
+However, this cost pays off because we're able to produce much more plausible-looking raster images.
 
-## Implementation notes 
+## Implementation notes
 
-We've implemented Phong shading algorithm in [`PhongShadedTriangle`][source-phong-shaded-triangle] data type. Gouraud shading is still there too in [`GouraudShadedTriangle`][link to source]. If you look at both sources, you'll see that there's a great deal of duplication in the code between these two implementations. It's not surprising: as we've alluded above, both algorithms use a similar interpolation idea. 
+We've implemented the Phong shading algorithm in the [`PhongShadedTriangle`][source-phong-shaded-triangle] type. Gouraud shading is still there too, in [`GouraudShadedTriangle`][source-gouraud-shaded-triangle]. If you look at both sources, you'll see that there's a great deal of duplication in the code between these two implementations. It's not surprising: as we've alluded above, both algorithms use a similar interpolation idea.
 
-This is a theme for a future refactoring: extract the shared interpolation algorithm from both implementations. However, at this point it looks a bit premature. Most probably, we'll get rid of Gouraud shading in the near future, so this code duplication won't be an issue. 
+This is a theme for a future refactoring: extract the shared interpolation algorithm from both implementations. However, at this point it looks a bit premature. Most probably, we'll get rid of Gouraud shading in the near future, so this code duplication won't be an issue.
 
-We've done a bit of refactoring around this area, though, when it comes to linear inerpolation algorithm. Now we have a generic [`Interpolator<T>`][source-interpolator] type that implements the linear interpolation for any value type `T`, as long as it supports basic arithmetic operations. This data type is reused in the code to calculate the coordinates of rectangle edges (`Interpolator<f32>`), and also to interpolate the normals (`Interpolator<Vec3>`). 
+We've done a bit of refactoring around this area, though, when it comes to the linear interpolation algorithm. Now we have a generic [`Interpolator<T>`][source-interpolator] type that implements linear interpolation for any value type `T`, as long as it supports basic arithmetic operations. This type is reused in the code to calculate the coordinates of rectangle edges (`Interpolator<f32>`), and also to interpolate the normals (`Interpolator<Vec3>`).
 
-## What's next 
+## What's next
 
-Phong shading concludes our journey in lighting models and shading algorithms. Next we're going to look at a completely different topic: how can we draw a scene that includes several objects that occlude one another? In particular, can we convinsingly render two spheres where one of them is partially hidden behind another? 
+Phong shading concludes our journey through lighting models and shading algorithms. 
 
-We can't do it yet, but soon we will! 
+Next we're going to look at a completely different topic: how can we draw a scene that includes several objects that occlude each other? In particular, can we convincingly render two spheres where one of them is partially hidden behind another? 
+
+We can't do it yet, but soon we will!
 
 [post-first-shot-at-glossy-shapes]: {{site.baseurl}}/{% post_url 2026-06-03-first-shot-at-glossy-shapes %}
-[post-bugfix-transforming-surface-normals]: {{site.baseurl}}/{% post_url 2026-06-04-bugfix-transforming-surface-normals %}
 [post-the-sphere-gets-smooth]: {{site.baseurl}}/{% post_url 2026-05-29-the-sphere-gets-smooth %}
 [version-0-0-15]: https://github.com/tindandelion/rust-3d-rasterizer/tree/0.0.15
 [phong-shading]: https://en.wikipedia.org/wiki/Phong_shading
-[gouraud]: https://en.wikipedia.org/wiki/Gouraud_shading
 [depth-buffer]: https://en.wikipedia.org/wiki/Z-buffering
 [source-calc-intensity]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.15/src/lighting.rs#L42
-[source-material-shiny]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.15/src/lighting.rs#L16
-[source-draw-facets]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.15/src/lib.rs#L66
 [source-phong-shaded-triangle]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.15/src/framebuffer/phong_shaded_triangle.rs#L15
-[source-edge-walker]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.15/src/framebuffer/phong_shaded_triangle.rs#L88
-[source-unit-vec3]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.15/src/geometry/unit_vec3.rs#L6
 [source-interpolator]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.15/src/framebuffer/interpolator.rs#L3
-[source-facet-with-facet-normal]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.15/src/geometry/facet.rs#L23
 [source-gouraud-shaded-triangle]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.15/src/framebuffer/gouraud_shaded_triangle.rs#L13
