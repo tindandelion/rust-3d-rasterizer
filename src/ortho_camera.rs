@@ -81,7 +81,7 @@ impl Camera {
     /// Unit vector in world space pointing **into** the scene: **`normalize(scene_target − eye)`**
     /// with **`scene_target = Vec3::ZERO`** (same convention as the internal **look-at**).
     ///
-    /// Consumed by [`TriMesh::visible_facets`](crate::TriMesh) /
+    /// Consumed by [`Shape::visible_facets`](crate::geometry::Shape::visible_facets) /
     /// [`Facet::is_front_facing`](crate::geometry::Facet::is_front_facing).
     pub fn direction(&self) -> UnitVec3 {
         self.direction

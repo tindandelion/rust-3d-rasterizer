@@ -116,7 +116,7 @@ mod tests {
 
     use approx::assert_relative_eq;
 
-    use crate::{TriMesh, geometry::UnitVec3};
+    use crate::geometry::UnitVec3;
 
     use super::*;
 

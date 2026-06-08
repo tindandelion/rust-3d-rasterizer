@@ -1,7 +1,7 @@
 //! Axis-aligned **unit cube** (edge length **1**, **`[-½, ½]³`**) built as **[`Shape`](crate::geometry::Shape)**.
 //!
 //! Use **[`cube`]** plus **[`Shape::transform`](crate::geometry::Shape::transform)** for posing
-//! (**`Shape::transform`** / **`TriMesh::visible_facets`** — same **`Camera`** +**Z**‑forward semantics as the rest of the crate).
+//! (**`Shape::transform`** / **`Shape::visible_facets`** — same **`Camera`** +**Z**‑forward semantics as the rest of the crate).
 //!
 //! Planning: `doc/planning/project-spec.md`, `doc/planning/project-breakdown.md`.
 
@@ -56,7 +56,7 @@ mod tests {
     use glam::{Mat4, Vec3};
 
     use super::cube;
-    use crate::{TriMesh, geometry::UnitVec3};
+    use crate::geometry::UnitVec3;
     use std::f32::consts::FRAC_PI_4;
 
     #[test]

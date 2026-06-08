@@ -6,7 +6,7 @@ use glam::{Mat4, Vec3};
 
 use thorus_forge::BlinnLightModel;
 use thorus_forge::Material;
-use thorus_forge::draw_facets;
+use thorus_forge::render_shape;
 use thorus_forge::shapes::sphere;
 use thorus_forge::{Camera, FrameBuffer, SCENE_HEIGHT, SCENE_WIDTH, WebpEncoder};
 
@@ -24,7 +24,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let light = BlinnLightModel::new(LIGHT_DIRECTION.into(), Material::shiny(0.15, 100.0));
 
     let mesh = sphere(4).transform(model_matrix_still());
-    draw_facets(&mut framebuffer, &camera, &mesh, &light);
+    render_shape(&mesh, &mut framebuffer, &camera, &light);
 
     let mut encoder = WebpEncoder::new(SCENE_WIDTH, SCENE_HEIGHT)?;
     encoder.add_frame(&framebuffer)?;

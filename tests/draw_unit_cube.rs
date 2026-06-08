@@ -1,4 +1,4 @@
-//! Integration: **`draw_facets`** on the default unit cube vs a hand-built golden framebuffer.
+//! Integration: **`render_shape`** on the default unit cube vs a hand-built golden framebuffer.
 //!
 //! The golden builds **`GouraudShadedTriangle`** passes directly (equivalent here: duplicated facet normals → uniform
 //! intensity, so **Phong** and **Gouraud** agree on the cube). With **`Camera::direction` = +Z**, the strictly
@@ -10,8 +10,9 @@
 
 use glam::{UVec2, Vec3};
 use thorus_forge::{
-    BlinnLightModel, Camera, FrameBuffer, Material, SHAPE_BASE_COLOR, draw_facets,
+    BlinnLightModel, Camera, FrameBuffer, Material, SHAPE_BASE_COLOR,
     framebuffer::{GouraudShadedTriangle, ShadedCorner},
+    render_shape,
     shapes::cube,
 };
 
@@ -26,7 +27,7 @@ fn draw_unit_cube() {
     let light = BlinnLightModel::new(-camera.direction(), Material::matte(0.9));
     let mesh = cube();
 
-    draw_facets(&mut fb, &camera, &mesh, &light);
+    render_shape(&mesh, &mut fb, &camera, &light);
 
     let expected = expected_framebuffer_unit_cube_camera_front();
     assert_eq!(fb, expected);

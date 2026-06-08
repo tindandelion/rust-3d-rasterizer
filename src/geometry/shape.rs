@@ -7,11 +7,11 @@ use glam::{Mat4, Vec3};
 use super::facet::{Facet, NormalTransform};
 use super::unit_vec3::UnitVec3;
 
-use crate::{TriMesh, Triangle};
+use crate::Triangle;
 
 /// Generic mesh: **`Facet::verts`** index into vertex positions from **[`vertices`](Shape::vertices)**.
 ///
-/// Canonical **`TriMesh`** examples: **[`cube`](crate::shapes::cube)**, **[`dodecahedron`](crate::shapes::dodecahedron)**.
+/// Procedural builders: **[`cube`](crate::shapes::cube)**, **[`dodecahedron`](crate::shapes::dodecahedron)**.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Shape {
     vertices: Vec<Vec3>,
@@ -51,10 +51,9 @@ impl Shape {
                 .collect(),
         }
     }
-}
 
-impl TriMesh for Shape {
-    fn visible_facets(&self, view_direction: UnitVec3) -> impl Iterator<Item = Triangle> + '_ {
+    /// Front-facing facets as world-space **[`Triangle`]**s (corners + per-vertex normals).
+    pub fn visible_facets(&self, view_direction: UnitVec3) -> impl Iterator<Item = Triangle> + '_ {
         self.facets
             .iter()
             .filter(move |f| f.is_front_facing(view_direction))
@@ -149,8 +148,7 @@ mod tests {
 
         let transformed_shape = shape.transform(Mat4::from_scale(Vec3::new(1.0, 0.5, 1.0)));
         let transformed_facet = transformed_shape.facets()[0];
-        let transformed_vertices =
-            transformed_facet.resolve_vertices(transformed_shape.vertices());
+        let transformed_vertices = transformed_facet.resolve_vertices(transformed_shape.vertices());
 
         let expected_transformed_normal = UnitVec3::from_points_ccw(&transformed_vertices);
         let transformed_facet_normal = transformed_shape.facets()[0].facet_normal();

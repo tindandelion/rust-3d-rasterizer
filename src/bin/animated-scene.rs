@@ -13,7 +13,7 @@ use thorus_forge::{
     ANIMATED_SCENE_FRAME_COUNT, ANIMATED_SCENE_FRAME_SPACING_MS, BlinnLightModel, Camera,
     FrameBuffer, SCENE_HEIGHT, SCENE_WIDTH, WebpEncoder, output_webp_path_from_args,
 };
-use thorus_forge::{Material, draw_facets};
+use thorus_forge::{Material, render_shape};
 
 const CAMERA_ORBIT_RADIUS: f32 = 1.0;
 /// **`y`** elevation shared by default **orbit** start/end and **squash** pin (horizontal circle **`y =`** this).
@@ -110,7 +110,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         };
 
         let camera = Camera::for_viewport(SCENE_WIDTH, SCENE_HEIGHT).move_to(camera_pos);
-        draw_facets(&mut framebuffer, &camera, &mesh, &light);
+        render_shape(&mesh, &mut framebuffer, &camera, &light);
 
         encoder.add_frame(&framebuffer)?;
     }
