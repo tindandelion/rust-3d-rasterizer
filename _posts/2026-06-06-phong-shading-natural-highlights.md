@@ -15,6 +15,18 @@ With Phong shading, the highlight on the sphere looks much more convincing than 
 
 ![Animated Phong-shaded sphere with Blinn–Phong specular, camera orbit and vertical squash](https://raw.githubusercontent.com/tindandelion/rust-3d-rasterizer/0.0.15/doc/output/current.webp)
 
+## Why Gouraud isn't enough for glossy surfaces
+
+In [First Shot at Glossy Shapes][post-first-shot-at-glossy-shapes], we paired the [_Blinn–Phong_][blinn-phong] lighting model with [Gouraud shading][post-the-sphere-gets-smooth]. That combination is sometimes called _Gouraud specular_, and it was a useful first step to extend the lighting model — but the highlight still looked wrong if you knew what to look for.
+
+The issue is what we interpolate. Gouraud evaluates lighting at the three triangle corners, then linearly blends those scalar intensities across the triangle interior. For [matte surfaces][lambertian], that shortcut works well: across a small facet, brightness tends to change gradually, so interpolating corner values usually produces a smooth matte surface.
+
+Specular reflections are different. In Blinn–Phong model, the highlight comes from a term like $(\mathbf{n} \cdot \mathbf{h})^s$ — a dot product raised to a shininess exponent $s$. That function is sharply peaked: it changes quickly as the normal swings even slightly. Light intensity is no longer "almost linear" across the triangle; it can rise and fall much faster between corners than a straight-line blend would suggest.
+
+So when Gouraud interpolates three corner intensities, it tends to smear the highlight, flatten its peak, or leave faint triangular fingerprints on the surface. A dense sphere mesh hides some of that, but the faceted look returns whenever the highlight is small or the tessellation is coarse. 
+
+Phong shading fixes this by interpolating normals instead, and evaluating the nonlinear lighting model at each pixel.
+
 ## From Gouraud shading to Phong shading
 
 Recall the idea of [Gouraud shading][post-the-sphere-gets-smooth] for a triangular mesh:
@@ -49,6 +61,8 @@ We can't do it yet, but soon we will!
 [post-the-sphere-gets-smooth]: {{site.baseurl}}/{% post_url 2026-05-29-the-sphere-gets-smooth %}
 [version-0-0-15]: https://github.com/tindandelion/rust-3d-rasterizer/tree/0.0.15
 [phong-shading]: https://en.wikipedia.org/wiki/Phong_shading
+[blinn-phong]: https://en.wikipedia.org/wiki/Blinn%E2%80%93Phong_reflection_model
+[lambertian]: https://en.wikipedia.org/wiki/Lambertian_reflectance
 [depth-buffer]: https://en.wikipedia.org/wiki/Z-buffering
 [source-calc-intensity]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.15/src/lighting.rs#L42
 [source-phong-shaded-triangle]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.15/src/framebuffer/phong_shaded_triangle.rs#L15
