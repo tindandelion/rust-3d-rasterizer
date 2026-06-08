@@ -163,9 +163,10 @@ The shadow and the light highlight look exactly as they would on a pebble-shaped
 
 ## What comes next
 
-With that bug out of our way, we can return to the plan from the [glossy-shapes milestone][project-breakdown-glossy-shapes]: replace Gouraud with [_Phong shading_][phong-shading], for more natural specular highlights on glossy surfaces. Let's do it!
+With that bug out of our way, we can return to the plan from the [glossy-shapes milestone][project-breakdown-glossy-shapes]: replace Gouraud with [_Phong shading_][post-phong-shading-natural-highlights], for more natural specular highlights on glossy surfaces. Let's do it!
 
 [post-first-shot-at-glossy-shapes]: {{site.baseurl}}/{% post_url 2026-06-03-first-shot-at-glossy-shapes %}
+[post-phong-shading-natural-highlights]: {{site.baseurl}}/{% post_url 2026-06-06-phong-shading-natural-highlights %}
 [project-breakdown-glossy-shapes]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.14/doc/planning/project-breakdown.md#--sphere-phong-shading--interpolated-normals--specular
 [version-0-0-14]: https://github.com/tindandelion/rust-3d-rasterizer/tree/0.0.14
 [link-to-good-reads]: https://www.goodreads.com/book/show/39933047-the-ray-tracer-challenge
