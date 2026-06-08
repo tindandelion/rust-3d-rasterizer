@@ -1,38 +1,47 @@
-//! **`meshes::sphere(4)`** (unit-radius octasphere seed, four subdivision passes),
-//! **Phong** **`BlinnLightModel`** on interpolated radial vertex normals, **`SHAPE_BASE_COLOR`**, back-face culled — **two-phase** **`ANIMATED_SCENE_FRAME_COUNT`**-frame clip.
+//! Two **`meshes::sphere(4)`** instances (**radius 0.3** at **`(±0.5, 0, 0)`**, distinct colors),
+//! **Phong** **`BlinnLightModel`**, back-face culled — **`ANIMATED_SCENE_FRAME_COUNT`**-frame lossless WebP.
 //!
-//! 1. **Camera orbit (`… / 2` frames):** **eye** **`(0, 0.2, −1)` → … → `(0, 0.2, −1)`** by **`360°`** around **`+Y`** on **`xz`** radius **`CAMERA_ORBIT_RADIUS`**, **`y = 0.2`** (**`(sin θ, 0.2, −cos θ)`**); **cubic ease‑in‑out** on angle per lap (slow ends, quicker middle); mesh **does not squash** (**`0.75`** uniform scale only).
-//! 2. **Y squash (`… / 2` frames):** **camera** pinned at **`(0, 0.2, −1)`**; **`y`** eased **`0.75 → 0.2 → 0.75`**, **`x`/`z`** **`0.75 → 0.95 → 0.75`** in lockstep (same cubic pacing as orbit).
+//! **Camera orbit:** **eye** on **`xz`** radius **`CAMERA_ORBIT_RADIUS`**, **`y = CAMERA_EYE_Y`**, one eased
+//! **`360°`** lap around **`Vec3::ZERO`** over the full clip (**`ease_in_out_cubic`** on frame index).
 
+use std::env;
+use std::ffi::OsString;
 use std::path::Path;
 
-use glam::{Mat3, Mat4, Vec3};
+use glam::{Mat4, Quat, Vec3};
 
 use thorus_forge::Material;
+use thorus_forge::geometry::Mesh;
 use thorus_forge::meshes::sphere;
 use thorus_forge::{
     ANIMATED_SCENE_FRAME_COUNT, ANIMATED_SCENE_FRAME_SPACING_MS, BlinnLightModel, Camera,
-    FrameBuffer, Rgb, SCENE_HEIGHT, SCENE_WIDTH, Shape, WebpEncoder, output_webp_path_from_args,
+    FrameBuffer, Rgb, SCENE_HEIGHT, SCENE_WIDTH, Shape, WebpEncoder,
 };
 
 const CAMERA_ORBIT_RADIUS: f32 = 1.0;
-/// **`y`** elevation shared by default **orbit** start/end and **squash** pin (horizontal circle **`y =`** this).
 const CAMERA_EYE_Y: f32 = 0.2;
-const CAMERA_DEFAULT_EYE: Vec3 = Vec3::new(0.0, CAMERA_EYE_Y, -CAMERA_ORBIT_RADIUS);
-/// Uniform scale at loop endpoints; **squash** phase drives **`y`** to [`Y_SCALE_MIN`] and **`x`/`z`** to [`MESH_SCALE_XZ_MAX`].
-const MESH_SCALE_XZ: f32 = 0.75;
-const MESH_SCALE_XZ_MAX: f32 = 0.95;
-const Y_SCALE_MIN: f32 = 0.2;
 
-const SHAPE_BASE_COLOR: Rgb = Rgb(52, 110, 210);
+const SPHERE_RADIUS: f32 = 0.3;
+const SPHERE_SPLITS: usize = 4;
 
-fn half_lap_frames() -> u32 {
-    ANIMATED_SCENE_FRAME_COUNT / 2
+const LEFT_SPHERE_CENTER: Vec3 = Vec3::new(-0.5, 0.0, 0.0);
+const RIGHT_SPHERE_CENTER: Vec3 = Vec3::new(0.5, 0.0, 0.0);
+
+const LEFT_SPHERE_COLOR: Rgb = Rgb(52, 110, 210);
+const RIGHT_SPHERE_COLOR: Rgb = Rgb(210, 90, 52);
+
+const DEFAULT_OUT_PATH: &str = "scene.webp";
+
+/// Output **`.webp`** path: first **argv** argument if set, else [`DEFAULT_OUT_PATH`].
+fn output_webp_path_from_args() -> OsString {
+    env::args_os()
+        .nth(1)
+        .unwrap_or_else(|| DEFAULT_OUT_PATH.into())
 }
 
-/// **Ease‑in‑out (cubic):** slow at the ends, faster in the middle — applied separately to **each** animation half (**orbit**, **squash**).
+/// **Ease‑in‑out (cubic):** slow at the ends, faster in the middle.
 ///
-/// **`u`** is linear progress in **`[0, 1]`** (**`frame_index / lap_frames`** in this bin); **`0 → 1`** and **`d/du`** zero at **`u ∈ {0, 1}`** so motion eases without overshoot.
+/// **`u`** is linear progress in **`[0, 1]`**; **`0 → 1`** and **`d/du`** zero at **`u ∈ {0, 1}`**.
 fn ease_in_out_cubic(u: f32) -> f32 {
     let u = u.clamp(0.0, 1.0);
     if u < 0.5 {
@@ -44,7 +53,7 @@ fn ease_in_out_cubic(u: f32) -> f32 {
 }
 
 /// **Eye** position on the **`xz`** circle (**`CAMERA_ORBIT_RADIUS`**) framing **`Vec3::ZERO`**, **`+Y`** up.
-/// **`angle = 0`** yields **`CAMERA_DEFAULT_EYE`** (**`−Z`** at **`CAMERA_EYE_Y`**); angle increases toward **world +X** (**right‑hand wrap** around **+Y**).
+/// **`angle = 0`** yields **`(0, CAMERA_EYE_Y, −CAMERA_ORBIT_RADIUS)`**; angle increases toward **world +X**.
 fn camera_eye_orbit(angle: f32) -> Vec3 {
     Vec3::new(
         angle.sin() * CAMERA_ORBIT_RADIUS,
@@ -53,21 +62,10 @@ fn camera_eye_orbit(angle: f32) -> Vec3 {
     )
 }
 
-/// Fixed uniform scaled mesh for the orbit segment (same **`x`/`z`** scale as squash phase).
-fn model_matrix_scaled_only() -> Mat4 {
-    Mat4::from_mat3(Mat3::from_diagonal(Vec3::splat(MESH_SCALE_XZ)))
-}
-
-/// **Squash + bulge:** **`y`** eases **`MESH_SCALE_XZ → Y_SCALE_MIN → MESH_SCALE_XZ`**; **`x`/`z`** **`MESH_SCALE_XZ → MESH_SCALE_XZ_MAX → MESH_SCALE_XZ`**
-/// over **`frame_index`** in **`0‥lap_frames`** (shared **`sin(π·t)`** blend after cubic ease).
-fn model_matrix_y_scale_sweep(frame_index: u32, lap_frames: u32) -> Mat4 {
-    let n = lap_frames.max(1) as f32;
-    let u = frame_index as f32 / n;
-    let t = ease_in_out_cubic(u);
-    let blend = (t * std::f32::consts::PI).sin();
-    let y_scale = MESH_SCALE_XZ + (Y_SCALE_MIN - MESH_SCALE_XZ) * blend;
-    let xz_scale = MESH_SCALE_XZ + (MESH_SCALE_XZ_MAX - MESH_SCALE_XZ) * blend;
-    Mat4::from_mat3(Mat3::from_diagonal(Vec3::new(xz_scale, y_scale, xz_scale)))
+fn sphere_at(center: Vec3) -> Mesh {
+    let pose =
+        Mat4::from_scale_rotation_translation(Vec3::splat(SPHERE_RADIUS), Quat::IDENTITY, center);
+    sphere(SPHERE_SPLITS).transform(pose)
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -84,36 +82,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Material::shiny(0.15, 100.0),
     );
 
-    let base_mesh = sphere(4);
-    let half = half_lap_frames();
-    assert_eq!(
-        ANIMATED_SCENE_FRAME_COUNT,
-        half * 2,
-        "ANIMATED_SCENE_FRAME_COUNT must be even"
-    );
+    let shapes = [
+        Shape::new(sphere_at(LEFT_SPHERE_CENTER), LEFT_SPHERE_COLOR),
+        Shape::new(sphere_at(RIGHT_SPHERE_CENTER), RIGHT_SPHERE_COLOR),
+    ];
 
     let frame_production_start = std::time::Instant::now();
+    let lap_frames = ANIMATED_SCENE_FRAME_COUNT.max(1) as f32;
     for frame_index in 0..ANIMATED_SCENE_FRAME_COUNT {
         framebuffer.clear_black();
 
-        let (camera_pos, mesh) = if frame_index < half {
-            let n = half.max(1) as f32;
-            let u = frame_index as f32 / n;
-            let angle = ease_in_out_cubic(u) * std::f32::consts::TAU;
-            let eye = camera_eye_orbit(angle);
-            let mesh = base_mesh.transform(model_matrix_scaled_only());
-            (eye, mesh)
-        } else {
-            let local_frame = frame_index - half;
-            (
-                CAMERA_DEFAULT_EYE,
-                base_mesh.transform(model_matrix_y_scale_sweep(local_frame, half)),
-            )
-        };
+        let u = frame_index as f32 / lap_frames;
+        let angle = ease_in_out_cubic(u) * std::f32::consts::TAU;
+        let camera =
+            Camera::for_viewport(SCENE_WIDTH, SCENE_HEIGHT).move_to(camera_eye_orbit(angle));
 
-        let camera = Camera::for_viewport(SCENE_WIDTH, SCENE_HEIGHT).move_to(camera_pos);
-        let shape = Shape::new(mesh, SHAPE_BASE_COLOR);
-        shape.render(&mut framebuffer, &camera, &light);
+        for shape in &shapes {
+            shape.render(&mut framebuffer, &camera, &light);
+        }
 
         encoder.add_frame(&framebuffer)?;
     }

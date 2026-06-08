@@ -1,10 +1,8 @@
 //! **Thorus Forge** — software rasterizer building blocks: RGB framebuffer, orthographic screen mapping, lossless WebP encode.
 //!
-//! Shared raster canvas size and export defaults live here (**`still-scene`**, **`animated-scene`** default output — see **`doc/planning/project-spec.md`**).
+//! Shared raster canvas size and **`animated-scene`** timing constants live here (see **`doc/planning/project-spec.md`**).
 
 use std::array;
-use std::env;
-use std::ffi::OsString;
 
 pub mod framebuffer;
 pub mod geometry;
@@ -26,8 +24,6 @@ pub const SCENE_WIDTH: u32 = 800;
 /// Raster height in pixels (golden stills / integration tests must agree).
 pub const SCENE_HEIGHT: u32 = 600;
 
-pub const DEFAULT_OUT_PATH: &str = "scene.webp";
-
 /// Frame count for the **`animated-scene`** lossless WebP (integration tests must agree).
 pub const ANIMATED_SCENE_FRAME_COUNT: u32 = 360;
 
@@ -36,13 +32,6 @@ pub const ANIMATED_SCENE_FRAME_COUNT: u32 = 360;
 /// `libwebp` may merge identical consecutive frames in the mux, but the **animation timeline** (sum
 /// of frame durations) still matches **`ANIMATED_SCENE_FRAME_COUNT ×` this value**.
 pub const ANIMATED_SCENE_FRAME_SPACING_MS: i32 = 20;
-
-/// Output **`.webp`** path for export binaries: first **argv** argument if set, else [`DEFAULT_OUT_PATH`].
-pub fn output_webp_path_from_args() -> OsString {
-    env::args_os()
-        .nth(1)
-        .unwrap_or_else(|| DEFAULT_OUT_PATH.into())
-}
 
 /// A posed **[`Mesh`]** plus surface **[`Rgb`]** for filled rendering.
 #[derive(Clone, Debug, PartialEq)]

@@ -9,9 +9,7 @@
 //! **`FILLED_MIN…FILLED_LAST`** (**no** intermediate **`f32::round`**).
 
 use glam::{UVec2, Vec3};
-use thorus_forge::{
-    BlinnLightModel, Camera, FrameBuffer, Material, Rgb, Shape, meshes::cube,
-};
+use thorus_forge::{BlinnLightModel, Camera, FrameBuffer, Material, Rgb, Shape, meshes::cube};
 
 const FB_WIDTH: u32 = 101;
 const FB_HEIGHT: u32 = 101;
