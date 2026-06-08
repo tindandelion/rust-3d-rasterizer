@@ -1,7 +1,7 @@
 //! Integration: **`render_shape`** on the default unit cube vs a hand-built golden framebuffer.
 //!
-//! The golden builds **`GouraudShadedTriangle`** passes directly (equivalent here: duplicated facet normals → uniform
-//! intensity, so **Phong** and **Gouraud** agree on the cube). With **`Camera::direction` = +Z**, the strictly
+//! The golden fills the projected **−Z** cap with a local **`fill_rect`** helper (duplicated facet normals → uniform
+//! intensity, so the shaded square matches a flat fill). With **`Camera::direction` = +Z**, the strictly
 //! front-facing hull facet is the **−Z** cap (outward normal **`NEG_Z`**). **`BlinnLightModel`** toward **`NEG_Z`**
 //! with a high-ambient matte yields uniform intensity, so
 //! [`thorus_forge::SHAPE_BASE_COLOR`] is unchanged after **`Rgb::scale`**. On this **`FB_WIDTH`×`FB_HEIGHT`** canvas,
@@ -10,9 +10,7 @@
 
 use glam::{UVec2, Vec3};
 use thorus_forge::{
-    BlinnLightModel, Camera, FrameBuffer, Material, SHAPE_BASE_COLOR,
-    framebuffer::{GouraudShadedTriangle, ShadedCorner},
-    render_shape,
+    BlinnLightModel, Camera, FrameBuffer, Material, Rgb, SHAPE_BASE_COLOR, render_shape,
     shapes::cube,
 };
 
@@ -33,22 +31,22 @@ fn draw_unit_cube() {
     assert_eq!(fb, expected);
 }
 
+fn fill_rect(fb: &mut FrameBuffer, top_left: UVec2, bottom_right: UVec2, color: Rgb) {
+    for y in top_left.y..=bottom_right.y {
+        for x in top_left.x..=bottom_right.x {
+            fb.set_pixel(x, y, color);
+        }
+    }
+}
+
 fn expected_framebuffer_unit_cube_camera_front() -> FrameBuffer {
     let mut fb = FrameBuffer::new(FB_WIDTH, FB_HEIGHT);
-    let corners = [
-        UVec2::new(25, 25),
-        UVec2::new(25, 75),
-        UVec2::new(75, 75),
-        UVec2::new(75, 25),
-    ];
     // Front **−Z** facet: duplicated normals → uniform **`calc_intensity` = 1.0**.
-    let shaded = |indices: [usize; 3]| {
-        indices.map(|i| ShadedCorner {
-            pos: corners[i],
-            intensity: 1.0,
-        })
-    };
-    GouraudShadedTriangle::new(shaded([0, 1, 2]), SHAPE_BASE_COLOR).draw(&mut fb);
-    GouraudShadedTriangle::new(shaded([0, 2, 3]), SHAPE_BASE_COLOR).draw(&mut fb);
+    fill_rect(
+        &mut fb,
+        UVec2::new(25, 25),
+        UVec2::new(75, 75),
+        SHAPE_BASE_COLOR,
+    );
     fb
 }
