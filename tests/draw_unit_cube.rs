@@ -1,4 +1,4 @@
-//! Integration: **`render_shape`** on the default unit cube vs a hand-built golden framebuffer.
+//! Integration: **`render_mesh`** on the default unit cube vs a hand-built golden framebuffer.
 //!
 //! The golden fills the projected **−Z** cap with a local **`fill_rect`** helper (duplicated facet normals → uniform
 //! intensity, so the shaded square matches a flat fill). With **`Camera::direction` = +Z**, the strictly
@@ -10,8 +10,8 @@
 
 use glam::{UVec2, Vec3};
 use thorus_forge::{
-    BlinnLightModel, Camera, FrameBuffer, Material, Rgb, SHAPE_BASE_COLOR, render_shape,
-    shapes::cube,
+    BlinnLightModel, Camera, FrameBuffer, Material, Rgb, SHAPE_BASE_COLOR, meshes::cube,
+    render_mesh,
 };
 
 const FB_WIDTH: u32 = 101;
@@ -25,7 +25,7 @@ fn draw_unit_cube() {
     let light = BlinnLightModel::new(-camera.direction(), Material::matte(0.9));
     let mesh = cube();
 
-    render_shape(&mesh, &mut fb, &camera, &light);
+    render_mesh(&mesh, &mut fb, &camera, &light);
 
     let expected = expected_framebuffer_unit_cube_camera_front();
     assert_eq!(fb, expected);

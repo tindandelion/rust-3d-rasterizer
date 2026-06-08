@@ -1,10 +1,11 @@
-//! Axis-aligned **unit cube** (edge length **1**, **`[-½, ½]³`**) built as **[`Shape`](crate::geometry::Shape)**.
+//! Axis-aligned **unit cube** (edge length **1**, **`[-½, ½]³`**) built as **[`Mesh`](crate::geometry::Mesh)**.
 //!
-//! Use **[`cube`]** plus **[`Shape::transform`](crate::geometry::Shape::transform)** for posing
+//! Use **[`cube`]** plus **[`Mesh::transform`](crate::geometry::Mesh::transform)** for posing
+//! (**`Mesh::transform`** / **`Mesh::visible_triangles`** — same **`Camera`** +**Z**‑forward semantics as the rest of the crate).
 
 use glam::Vec3;
 
-use crate::geometry::{Facet, Shape, UnitVec3};
+use crate::geometry::{Facet, Mesh, UnitVec3};
 
 /// Two **`Facet`**s per planar hull quad (same **`normal`**, **`(w,x,y)` + `(w,y,z)`** given CCW verts **`w…z`** seen from outside along **`normal`**).
 const fn facets_from_quad_ccw_corner(normal: UnitVec3, verts: [usize; 4]) -> [Facet; 2] {
@@ -38,14 +39,14 @@ const UNIT_CUBE_QUADS: [(UnitVec3, [usize; 4]); 6] = [
 
 /// Canonical axis-aligned **`[-½, ½]³`** mesh (**eight verts**, twelve wedge **`Facet`**s (**`(w,x,y)` **`(w,y,z)`** per planar quad)).
 #[must_use]
-pub fn cube() -> Shape {
+pub fn cube() -> Mesh {
     let mut facets = Vec::with_capacity(12);
     for &(normal, corners) in &UNIT_CUBE_QUADS {
         let [a, b] = facets_from_quad_ccw_corner(normal, corners);
         facets.push(a);
         facets.push(b);
     }
-    Shape::new(UNIT_CUBE_VERTICES.into_iter().collect(), facets)
+    Mesh::new(UNIT_CUBE_VERTICES.into_iter().collect(), facets)
 }
 
 #[cfg(test)]

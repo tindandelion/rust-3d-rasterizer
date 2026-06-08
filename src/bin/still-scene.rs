@@ -1,4 +1,4 @@
-//! **`shapes::sphere(4)`** still: **Phong** **`BlinnLightModel`** (**`Material::shiny(0.15, 100.0)`**), **`0.7`** uniform scale.
+//! **`meshes::sphere(4)`** still: **Phong** **`BlinnLightModel`** (**`Material::shiny(0.15, 100.0)`**), **`0.7`** uniform scale.
 
 use std::path::Path;
 
@@ -6,8 +6,8 @@ use glam::{Mat4, Vec3};
 
 use thorus_forge::BlinnLightModel;
 use thorus_forge::Material;
-use thorus_forge::render_shape;
-use thorus_forge::shapes::sphere;
+use thorus_forge::meshes::sphere;
+use thorus_forge::render_mesh;
 use thorus_forge::{Camera, FrameBuffer, SCENE_HEIGHT, SCENE_WIDTH, WebpEncoder};
 
 const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.0, -1.0);
@@ -24,7 +24,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let light = BlinnLightModel::new(LIGHT_DIRECTION.into(), Material::shiny(0.15, 100.0));
 
     let mesh = sphere(4).transform(model_matrix_still());
-    render_shape(&mesh, &mut framebuffer, &camera, &light);
+    render_mesh(&mesh, &mut framebuffer, &camera, &light);
 
     let mut encoder = WebpEncoder::new(SCENE_WIDTH, SCENE_HEIGHT)?;
     encoder.add_frame(&framebuffer)?;

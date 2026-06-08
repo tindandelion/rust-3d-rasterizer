@@ -1,6 +1,6 @@
 //! Indexed triangle mesh backed by **`Vec<glam::Vec3>`** + **`Vec<Facet>`**.
 //!
-//! Construction takes arbitrary **vertex positions** + **facet list** (**CCW**, outward facet normal); **[`Shape::transform`](Shape::transform)** poses like procedural **[`cube`](crate::shapes::cube)** or **[`dodecahedron`](crate::shapes::dodecahedron)**.
+//! Construction takes arbitrary **vertex positions** + **facet list** (**CCW**, outward facet normal); **[`Mesh::transform`](Mesh::transform)** poses like procedural **[`cube`](crate::meshes::cube)** or **[`dodecahedron`](crate::meshes::dodecahedron)**.
 
 use glam::{Mat4, Vec3};
 
@@ -14,16 +14,16 @@ pub struct Triangle {
     pub normals: [UnitVec3; 3],
 }
 
-/// Generic mesh: **`Facet::verts`** index into vertex positions from **[`vertices`](Shape::vertices)**.
+/// Generic mesh: **`Facet::verts`** index into vertex positions from **[`vertices`](Mesh::vertices)**.
 ///
-/// Procedural builders: **[`cube`](crate::shapes::cube)**, **[`dodecahedron`](crate::shapes::dodecahedron)**.
+/// Procedural builders: **[`cube`](crate::meshes::cube)**, **[`dodecahedron`](crate::meshes::dodecahedron)**.
 #[derive(Clone, Debug, PartialEq)]
-pub struct Shape {
+pub struct Mesh {
     vertices: Vec<Vec3>,
     facets: Vec<Facet>,
 }
 
-impl Shape {
+impl Mesh {
     pub fn new(vertices: Vec<Vec3>, facets: Vec<Facet>) -> Self {
         Self { vertices, facets }
     }
@@ -40,9 +40,9 @@ impl Shape {
 
     /// Applies **`Mat4::transform_point3`** per vertex and re-poses stored normals per facet
     /// (inverse-transpose of **`m`**'s upper-left **3×3**, computed once for all facets).
-    pub fn transform(&self, m: Mat4) -> Shape {
+    pub fn transform(&self, m: Mat4) -> Mesh {
         let normal_transform = NormalTransform::from_model(m);
-        Shape {
+        Mesh {
             vertices: self
                 .vertices
                 .iter()
@@ -87,7 +87,7 @@ mod tests {
     /// **`z = 0`**, **`[-½, ½]²`** in **XY**. Two triangles, outward **[`UnitVec3::NEG_Z`]** —
     /// visible when **into‑scene** view is **`+Z`** (same rule as **`cube`** fronts vs
     /// [`Camera::direction`](crate::Camera::direction)).
-    fn flat_square_xy() -> Shape {
+    fn flat_square_xy() -> Mesh {
         #[rustfmt::skip]
         let vertices = vec![
             Vec3::new(-0.5, -0.5, 0.0),
@@ -100,13 +100,13 @@ mod tests {
             Facet::with_facet_normal([0, 2, 1], UnitVec3::NEG_Z),
             Facet::with_facet_normal([0, 3, 2], UnitVec3::NEG_Z),
         ];
-        Shape::new(vertices, facets)
+        Mesh::new(vertices, facets)
     }
 
     #[test]
     fn from_pos_z_both_facets_visible_with_neg_z_normals() {
-        let shape = flat_square_xy();
-        let visible = shape.visible_triangles(UnitVec3::Z).collect::<Vec<_>>();
+        let mesh = flat_square_xy();
+        let visible = mesh.visible_triangles(UnitVec3::Z).collect::<Vec<_>>();
         assert_eq!(visible.len(), 2);
         assert!(
             visible
@@ -125,21 +125,21 @@ mod tests {
 
     #[test]
     fn perpendicular_view_is_grazing_neither_triangle_front() {
-        let shape = flat_square_xy();
-        assert_eq!(shape.visible_triangles(UnitVec3::X).count(), 0);
-        assert_eq!(shape.visible_triangles(UnitVec3::Y).count(), 0);
+        let mesh = flat_square_xy();
+        assert_eq!(mesh.visible_triangles(UnitVec3::X).count(), 0);
+        assert_eq!(mesh.visible_triangles(UnitVec3::Y).count(), 0);
     }
 
     #[test]
     fn pi_rotation_y_swaps_which_direction_sees_square() {
-        let shape = flat_square_xy();
-        let flipped = shape.transform(Mat4::from_rotation_y(PI));
+        let mesh = flat_square_xy();
+        let flipped = mesh.transform(Mat4::from_rotation_y(PI));
 
         assert_eq!(flipped.visible_triangles(UnitVec3::Z).count(), 0);
         assert_eq!(flipped.visible_triangles(UnitVec3::NEG_Z).count(), 2);
 
         assert_eq!(
-            shape.visible_triangles(UnitVec3::Z).count(),
+            mesh.visible_triangles(UnitVec3::Z).count(),
             flipped.visible_triangles(UnitVec3::NEG_Z).count(),
         );
     }
@@ -152,17 +152,17 @@ mod tests {
             Vec3::new(0.0, 2.0, 0.0),
         ];
         let facet_normal = UnitVec3::from_points_ccw(&vertices);
-        let shape = Shape::new(
+        let mesh = Mesh::new(
             vertices.to_vec(),
             vec![Facet::with_facet_normal([0, 1, 2], facet_normal)],
         );
 
-        let transformed_shape = shape.transform(Mat4::from_scale(Vec3::new(1.0, 0.5, 1.0)));
-        let transformed_facet = transformed_shape.facets()[0];
-        let transformed_vertices = transformed_facet.resolve_vertices(transformed_shape.vertices());
+        let transformed_mesh = mesh.transform(Mat4::from_scale(Vec3::new(1.0, 0.5, 1.0)));
+        let transformed_facet = transformed_mesh.facets()[0];
+        let transformed_vertices = transformed_facet.resolve_vertices(transformed_mesh.vertices());
 
         let expected_transformed_normal = UnitVec3::from_points_ccw(&transformed_vertices);
-        let transformed_facet_normal = transformed_shape.facets()[0].facet_normal();
+        let transformed_facet_normal = transformed_mesh.facets()[0].facet_normal();
 
         assert_relative_eq!(expected_transformed_normal, transformed_facet_normal);
         for (actual, expected) in transformed_facet

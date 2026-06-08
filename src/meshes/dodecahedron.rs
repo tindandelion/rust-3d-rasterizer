@@ -1,12 +1,12 @@
-//! Platonic **dodecahedron** (**20** verts × **three.js** **`DodecahedronGeometry`** detail **0**) as **[`crate::geometry::Shape`]**.
+//! Platonic **dodecahedron** (**20** verts × **three.js** **`DodecahedronGeometry`** detail **0**) as **[`crate::geometry::Mesh`]**.
 //!
-//! Golden‑ratio coordinates scaled **`× (0.5 /  φ)`** — **`max |x|, |y|, |z| = 0.5`**, same bounding box axis as **[`cube`](crate::shapes::cube)**.
+//! Golden‑ratio coordinates scaled **`× (0.5 /  φ)`** — **`max |x|, |y|, |z| = 0.5`**, same bounding box axis as **[`cube`](crate::meshes::cube)**.
 //!
 //! We start from Wikipedia **`three.js`** golden‑ratio Cartesian coordinates (max coordinate **φ**), then **`0.5 /  φ`** so **`max |x|, |y|, |z| = 0.5`**. Hull edge length **`1 /  φ² ≈ 0.382`**, triangulation chords **`1 /  φ ≈ 0.618`**.
 //!
 use glam::Vec3;
 
-use crate::geometry::{Facet, Shape, UnitVec3};
+use crate::geometry::{Facet, Mesh, UnitVec3};
 
 /// Indices for **every** planar triangle (**12** pentagons × 3 wedges) lifted from **`three.js`** **`DodecahedronGeometry`** (detail **0**).
 const THREE_JS_DETAIL0_TRIANGLES: [[usize; 3]; 36] = [
@@ -80,17 +80,17 @@ fn platonic_scaled_vertices_array() -> [Vec3; 20] {
     verts.map(|v| v * scale)
 }
 
-/// Default **scaled Platonic dodecahedron** as **`Shape`**: **20** verts, **36** wedge **`Facet`**s (**`three.js`** detail **0** tri list).
+/// Default **scaled Platonic dodecahedron** as **`Mesh`**: **20** verts, **36** wedge **`Facet`**s (**`three.js`** detail **0** tri list).
 ///
-/// Pose with **`Shape::transform`**.
-pub fn dodecahedron() -> Shape {
+/// Pose with **`Mesh::transform`**.
+pub fn dodecahedron() -> Mesh {
     let vertices_arr = platonic_scaled_vertices_array();
     let facets: Vec<Facet> = THREE_JS_DETAIL0_TRIANGLES
         .into_iter()
         .map(|tri| facet_from_corners(&vertices_arr, tri))
         .collect();
 
-    Shape::new(vertices_arr.into_iter().collect(), facets)
+    Mesh::new(vertices_arr.into_iter().collect(), facets)
 }
 
 /// Outward **CCW** facet (left‑handed view along **`UnitVec3`**) matching [`Facet::is_front_facing`].

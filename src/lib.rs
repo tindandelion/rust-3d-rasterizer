@@ -9,8 +9,8 @@ use std::ffi::OsString;
 pub mod framebuffer;
 pub mod geometry;
 pub mod lighting;
+pub mod meshes;
 pub mod ortho_camera;
-pub mod shapes;
 pub mod webp_encoder;
 
 pub use framebuffer::{FrameBuffer, Rgb};
@@ -19,7 +19,7 @@ pub use ortho_camera::Camera;
 pub use webp_encoder::WebpEncoder;
 
 use crate::framebuffer::{PhongCorner, PhongShadedTriangle};
-use crate::geometry::{Shape, UnitVec3};
+use crate::geometry::{Mesh, UnitVec3};
 
 /// Raster width in pixels (golden stills / integration tests must agree).
 pub const SCENE_WIDTH: u32 = 800;
@@ -37,7 +37,7 @@ pub const ANIMATED_SCENE_FRAME_COUNT: u32 = 360;
 /// of frame durations) still matches **`ANIMATED_SCENE_FRAME_COUNT ×` this value**.
 pub const ANIMATED_SCENE_FRAME_SPACING_MS: i32 = 20;
 
-/// Shared **`Rgb`** **base color** for filled mesh rendering ([`render_shape`]) — saturated blue (**`#346ED2`**) tuned for diffuse shading.
+/// Shared **`Rgb`** **base color** for filled mesh rendering ([`render_mesh`]) — saturated blue (**`#346ED2`**) tuned for diffuse shading.
 pub const SHAPE_BASE_COLOR: Rgb = Rgb(52, 110, 210);
 
 /// Output **`.webp`** path for export binaries: first **argv** argument if set, else [`DEFAULT_OUT_PATH`].
@@ -47,18 +47,18 @@ pub fn output_webp_path_from_args() -> OsString {
         .unwrap_or_else(|| DEFAULT_OUT_PATH.into())
 }
 
-/// Filled mesh: **[`PhongShadedTriangle::draw`](framebuffer::PhongShadedTriangle::draw)** per [`Triangle`] from **[`Shape::visible_triangles`]**.
+/// Filled mesh: **[`PhongShadedTriangle::draw`](framebuffer::PhongShadedTriangle::draw)** per [`Triangle`] from **[`Mesh::visible_triangles`]**.
 ///
 /// **[`BlinnLightModel::calc_intensity`]** runs **per pixel** on the interpolated normal with a constant **toward-eye** (orthographic **`Camera::direction`**); **`PhongShadedTriangle`** interpolates **`UnitVec3`** normals across the triangle and scales **`SHAPE_BASE_COLOR`** per fragment (**Phong**).
-pub fn render_shape(
-    shape: &Shape,
+pub fn render_mesh(
+    mesh: &Mesh,
     fb: &mut FrameBuffer,
     camera: &Camera,
     light_model: &BlinnLightModel,
 ) {
     let forward = camera.direction();
     let toward_eye: UnitVec3 = -camera.direction();
-    for triangle in shape.visible_triangles(forward) {
+    for triangle in mesh.visible_triangles(forward) {
         let corners: [PhongCorner; 3] = array::from_fn(|i| PhongCorner {
             pos: camera.transform(triangle.corners[i]),
             normal: triangle.normals[i],

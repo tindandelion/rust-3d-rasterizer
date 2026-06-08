@@ -1,4 +1,4 @@
-//! **`shapes::sphere(4)`** (unit-radius octasphere seed, four subdivision passes),
+//! **`meshes::sphere(4)`** (unit-radius octasphere seed, four subdivision passes),
 //! **Phong** **`BlinnLightModel`** on interpolated radial vertex normals, **`SHAPE_BASE_COLOR`**, back-face culled — **two-phase** **`ANIMATED_SCENE_FRAME_COUNT`**-frame clip.
 //!
 //! 1. **Camera orbit (`… / 2` frames):** **eye** **`(0, 0.2, −1)` → … → `(0, 0.2, −1)`** by **`360°`** around **`+Y`** on **`xz`** radius **`CAMERA_ORBIT_RADIUS`**, **`y = 0.2`** (**`(sin θ, 0.2, −cos θ)`**); **cubic ease‑in‑out** on angle per lap (slow ends, quicker middle); mesh **does not squash** (**`0.75`** uniform scale only).
@@ -8,12 +8,12 @@ use std::path::Path;
 
 use glam::{Mat3, Mat4, Vec3};
 
-use thorus_forge::shapes::sphere;
+use thorus_forge::meshes::sphere;
 use thorus_forge::{
     ANIMATED_SCENE_FRAME_COUNT, ANIMATED_SCENE_FRAME_SPACING_MS, BlinnLightModel, Camera,
     FrameBuffer, SCENE_HEIGHT, SCENE_WIDTH, WebpEncoder, output_webp_path_from_args,
 };
-use thorus_forge::{Material, render_shape};
+use thorus_forge::{Material, render_mesh};
 
 const CAMERA_ORBIT_RADIUS: f32 = 1.0;
 /// **`y`** elevation shared by default **orbit** start/end and **squash** pin (horizontal circle **`y =`** this).
@@ -82,7 +82,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Material::shiny(0.15, 100.0),
     );
 
-    let shape = sphere(4);
+    let base_mesh = sphere(4);
     let half = half_lap_frames();
     assert_eq!(
         ANIMATED_SCENE_FRAME_COUNT,
@@ -99,18 +99,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let u = frame_index as f32 / n;
             let angle = ease_in_out_cubic(u) * std::f32::consts::TAU;
             let eye = camera_eye_orbit(angle);
-            let mesh = shape.transform(model_matrix_scaled_only());
+            let mesh = base_mesh.transform(model_matrix_scaled_only());
             (eye, mesh)
         } else {
             let local_frame = frame_index - half;
             (
                 CAMERA_DEFAULT_EYE,
-                shape.transform(model_matrix_y_scale_sweep(local_frame, half)),
+                base_mesh.transform(model_matrix_y_scale_sweep(local_frame, half)),
             )
         };
 
         let camera = Camera::for_viewport(SCENE_WIDTH, SCENE_HEIGHT).move_to(camera_pos);
-        render_shape(&mesh, &mut framebuffer, &camera, &light);
+        render_mesh(&mesh, &mut framebuffer, &camera, &light);
 
         encoder.add_frame(&framebuffer)?;
     }

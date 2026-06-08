@@ -154,7 +154,7 @@ mod tests {
         assert_relative_eq!(a, b);
     }
 
-    // Same corner order as `shapes::sphere` facet indices [4, 1, 0] (+ octant).
+    // Same corner order as `meshes::sphere` facet indices [4, 1, 0] (+ octant).
     #[test]
     fn from_vertices_ccw_octahedron_positive_octant() {
         let corners = [
