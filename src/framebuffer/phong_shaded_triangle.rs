@@ -2,7 +2,10 @@
 
 use glam::{UVec2, Vec2, Vec3};
 
-use crate::{framebuffer::interpolator::Interpolator, geometry::UnitVec3};
+use crate::{
+    framebuffer::{FbPoint, interpolator::Interpolator},
+    geometry::UnitVec3,
+};
 
 use super::{FrameBuffer, Rgb};
 
@@ -49,7 +52,10 @@ impl PhongShadedTriangle {
             for x in x1..=x2 {
                 let normal = horz_normal.get(x as f32);
                 let intensity = intensity_fn(normal);
-                fb.set_pixel(x, y, self.color.scale(intensity));
+                fb.write_pixel(
+                    FbPoint::new(x, y, f32::NEG_INFINITY),
+                    self.color.scale(intensity),
+                );
             }
         }
     }

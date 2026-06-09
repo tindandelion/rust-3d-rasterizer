@@ -1,14 +1,11 @@
 //! RGB framebuffer: `width × height` pixels, three `u8` channels per pixel, row-major.
 
 mod colors;
-mod gouraud_shaded_triangle;
 mod interpolator;
-mod line;
 mod phong_shaded_triangle;
 
 pub use colors::Rgb;
-pub use gouraud_shaded_triangle::{GouraudShadedTriangle, ShadedCorner};
-pub use line::Line;
+
 pub use phong_shaded_triangle::{PhongCorner, PhongShadedTriangle};
 
 /// Screen pixel location with **view-space depth** for depth testing.

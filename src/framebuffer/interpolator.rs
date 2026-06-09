@@ -5,8 +5,6 @@ pub struct Interpolator<T> {
     intercept: T,
 }
 
-pub type ScalarInterpolator = Interpolator<f32>;
-
 impl<T> Interpolator<T>
 where
     T: Copy + Add<T, Output = T> + Sub<T, Output = T> + Mul<f32, Output = T> + Div<f32, Output = T>,
