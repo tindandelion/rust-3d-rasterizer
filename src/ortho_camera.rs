@@ -39,11 +39,16 @@
 //!   maps to a **square** patch of pixels; corners **`(±1, ±1)`** touch the **shorter** image side’s edges
 //!   and sit inset on the longer side.
 //!
+//! # Depth
+//!
+//! - **`Camera::transform`** carries **view-space `z`** in **[`FbPoint::depth`]** (viewport leaves **`z`**
+//!   unchanged). **`PhongShadedTriangle`** linearly interpolates **`depth`** per fragment; **`FrameBuffer::write_pixel`**
+//!   keeps the nearer sample (**smaller **`z`**). **Perspective-correct **`z/w`** and NDC depth** stay deferred
+//!   (**see **`Perspective projection`** in the breakdown doc**). **World `z`** can still affect **`xy`**
+//!   whenever **`view`** rotates (**not** the default pose).
+//!
 //! # What we are *not* doing (yet)
 //!
-//! - **Depth:** **`Camera::transform`** carries **view-space `z`** in **[`FbPoint::depth`]** (viewport leaves **`z`**
-//!   unchanged). **Per-pixel depth interpolation** in the triangle rasterizer is **not** wired yet.
-//!   **World `z`** can still affect **`xy`** whenever **`view`** rotates (**not** the default pose).
 //! - **Border clamp:** Out-of-range **`xy`** is **not** clamped to the image. Values outside **`[-1, 1]`**
 //!   still produce **float** intermediates, then **`f32::round`** and **`as u32`**, which **does not** saturate
 //!   and may **wrap** for negative floats. **Line / edge** raster code should clip in float space so endpoints
