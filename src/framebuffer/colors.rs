@@ -7,6 +7,7 @@ impl Rgb {
     pub const BLACK: Self = Self(0, 0, 0);
     pub const WHITE: Self = Self(255, 255, 255);
     pub const BLUE: Self = Self(0, 0, 255);
+    pub const RED: Self = Self(255, 0, 0);
 
     /// **Brightness** in **`[0.0, 1.0]`**: arithmetic mean of **`R`**, **`G`**, and **`B`**
     /// (each channel normalized from **`u8`**).
