@@ -106,9 +106,10 @@ impl EdgeWalker {
 mod tests {
     use super::*;
     use crate::FrameBuffer;
-    use crate::framebuffer::{assert_ascii_art_eq, to_ascii_art};
 
     mod draw_triangle_shapes {
+        use crate::framebuffer::test_helpers::{assert_ascii_art_eq, to_ascii_art};
+
         use super::*;
 
         /// Degenerate input: two corners coincide—horizontal segment. All cross terms vanish for bbox samples, so pixels along that span are treated as inside.
@@ -279,6 +280,8 @@ mod tests {
     }
 
     mod shading_triangles {
+        use crate::framebuffer::test_helpers::{assert_ascii_art_eq, to_ascii_art};
+
         use super::*;
 
         /// Uniform corner intensity scales the base color across the whole fill.

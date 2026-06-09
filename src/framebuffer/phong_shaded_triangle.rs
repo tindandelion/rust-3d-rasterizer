@@ -184,9 +184,11 @@ mod normal_interpolator_tests {
 mod tests {
     use super::*;
     use crate::FrameBuffer;
-    use crate::framebuffer::{assert_ascii_art_eq, to_ascii_art};
+    use crate::framebuffer::test_helpers::assert_ascii_art_eq;
 
     mod draw_triangle_shapes {
+        use crate::framebuffer::test_helpers::to_ascii_art;
+
         use super::*;
 
         const FULL_BRIGHTNESS: fn(UnitVec3) -> f32 = |_| 1.0;
@@ -347,6 +349,8 @@ mod tests {
     }
 
     mod shading_triangles {
+        use crate::framebuffer::test_helpers::to_ascii_art;
+
         use super::*;
 
         const TOWARD_LIGHT: UnitVec3 = UnitVec3::Z;

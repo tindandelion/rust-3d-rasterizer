@@ -96,7 +96,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let frame_production_start = std::time::Instant::now();
     let lap_frames = ANIMATED_SCENE_FRAME_COUNT.max(1) as f32;
     for frame_index in 0..ANIMATED_SCENE_FRAME_COUNT {
-        framebuffer.clear_black();
+        framebuffer.clear();
 
         let u = frame_index as f32 / lap_frames;
         let angle = ease_in_out_cubic(u) * std::f32::consts::TAU;

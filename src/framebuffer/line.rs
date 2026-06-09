@@ -52,7 +52,9 @@ impl Line {
 mod tests {
     use glam::UVec2;
 
-    use super::super::{FrameBuffer, Rgb, assert_ascii_art_eq, to_ascii_art};
+    use crate::framebuffer::test_helpers::{assert_ascii_art_eq, to_ascii_art};
+
+    use super::super::{FrameBuffer, Rgb};
     use super::Line;
 
     #[test]

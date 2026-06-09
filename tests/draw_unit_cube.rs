@@ -9,7 +9,9 @@
 //! **`FILLED_MIN…FILLED_LAST`** (**no** intermediate **`f32::round`**).
 
 use glam::{Mat4, UVec2, Vec3};
-use thorus_forge::{BlinnLightModel, Camera, FrameBuffer, Material, Rgb, Shape, meshes::cube};
+use thorus_forge::{
+    BlinnLightModel, Camera, FrameBuffer, Material, Rgb, Shape, framebuffer::FbPoint, meshes::cube,
+};
 
 const FB_WIDTH: u32 = 101;
 const FB_HEIGHT: u32 = 101;
@@ -25,7 +27,7 @@ fn draw_single_unit_cube_produces_rectangle() {
     shape.render(&mut fb, &camera, &light);
 
     let expected = framebuffer_with_rectangle(UVec2::new(25, 25), UVec2::new(75, 75), Rgb::BLUE);
-    assert_eq!(fb, expected);
+    assert_eq!(fb.as_ref(), expected.as_ref());
 }
 
 #[test]
@@ -42,7 +44,7 @@ fn draw_occluded_cubes_hides_far_cube() {
     far_shape.render(&mut fb, &camera, &light);
 
     let expected = framebuffer_with_rectangle(UVec2::new(25, 25), UVec2::new(75, 75), Rgb::BLUE);
-    assert_eq!(fb, expected);
+    assert_eq!(fb.as_ref(), expected.as_ref());
 }
 
 fn positioned_cube(z_position: f32, color: Rgb) -> Shape {
@@ -56,7 +58,7 @@ fn framebuffer_with_rectangle(top_left: UVec2, bottom_right: UVec2, color: Rgb) 
     let mut fb = FrameBuffer::new(FB_WIDTH, FB_HEIGHT);
     for y in top_left.y..=bottom_right.y {
         for x in top_left.x..=bottom_right.x {
-            (&mut fb).set_pixel(x, y, color);
+            fb.write_pixel(FbPoint::new(x, y, 0.0), color);
         }
     }
     fb
