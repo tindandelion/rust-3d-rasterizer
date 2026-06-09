@@ -474,11 +474,81 @@ mod tests {
     }
 
     mod occlusion_tests {
+        use crate::framebuffer::test_helpers::{assert_ascii_art_eq, to_ascii_art};
+
         use super::*;
 
         #[test]
-        fn occludes_further_triangle() {
-            //todo!()
+        fn nearer_dimmed_triangle_occludes_further_bright_triangle() {
+            let expected = to_ascii_art(&[
+                "█                  ▒",
+                "███              ▒▒▒",
+                "█████           ▒▒▒▒",
+                "███████       ▒▒▒▒▒▒",
+                "████████    ▒▒▒▒▒▒▒▒",
+                "██████████▒▒▒▒▒▒▒▒▒▒",
+                "█████████▒▒▒▒▒▒▒▒▒▒▒",
+                "███████▒▒▒▒▒▒▒▒▒▒▒▒▒",
+                "█████████▒▒▒▒▒▒▒▒▒▒▒",
+                "██████████▒▒▒▒▒▒▒▒▒▒",
+                "████████    ▒▒▒▒▒▒▒▒",
+                "███████       ▒▒▒▒▒▒",
+                "█████           ▒▒▒▒",
+                "███              ▒▒▒",
+                "█                  ▒",
+            ]);
+            let mut fb = FrameBuffer::new(20, 15);
+            PhongShadedTriangle::new(
+                [corner(13, 7, 1.0), corner(0, 0, 1.0), corner(0, 14, 1.0)],
+                Rgb::WHITE,
+            )
+            .draw(&mut fb, |_| 1.0);
+            PhongShadedTriangle::new(
+                [corner(7, 7, 0.0), corner(19, 0, 0.0), corner(19, 14, 0.0)],
+                Rgb::WHITE,
+            )
+            .draw(&mut fb, |_| 0.25);
+            assert_ascii_art_eq(&fb.to_ascii_art(), &expected, "");
+        }
+
+        #[test]
+        fn dim_triangle_pierces_bright_triangle() {
+            let expected = to_ascii_art(&[
+                "█                  ▒",
+                "██                ▒▒",
+                "████             ▒▒▒",
+                "█████           ▒▒▒▒",
+                "██████         ▒▒▒▒▒",
+                "████████      ▒▒▒▒▒▒",
+                "█████████    ▒▒▒▒▒▒▒",
+                "███████████ ▒▒▒▒▒▒▒▒",
+                "████████████▒▒▒▒▒▒▒▒",
+                "█████████████▒▒▒▒▒▒▒",
+                "█████████▒█████▒▒▒▒▒",
+                "████████▒▒██████▒▒▒▒",
+                "███████▒▒▒███████▒▒▒",
+                "██████▒▒▒▒█████████▒",
+                "█████▒▒▒▒▒██████████",
+            ]);
+            let mut fb = FrameBuffer::new(20, 15);
+            PhongShadedTriangle::new(
+                [corner(0, 0, 1.0), corner(19, 14, 1.0), corner(0, 14, 1.0)],
+                Rgb::WHITE,
+            )
+            .draw(&mut fb, |_| 1.0);
+            PhongShadedTriangle::new(
+                [corner(19, 0, 2.0), corner(0, 19, 0.0), corner(19, 19, 2.0)],
+                Rgb::WHITE,
+            )
+            .draw(&mut fb, |_| 0.25);
+            assert_ascii_art_eq(&fb.to_ascii_art(), &expected, "");
+        }
+
+        fn corner(x: u32, y: u32, depth: f32) -> PhongCorner {
+            PhongCorner {
+                point: FbPoint::new(x, y, depth),
+                normal: UnitVec3::Z,
+            }
         }
     }
 }
