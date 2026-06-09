@@ -52,7 +52,7 @@ impl FrameBuffer {
             return;
         };
 
-        if point.depth >= self.depth[i] {
+        if point.depth > self.depth[i] {
             return;
         }
 

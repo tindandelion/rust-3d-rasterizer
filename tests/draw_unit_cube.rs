@@ -31,7 +31,6 @@ fn draw_single_unit_cube_produces_rectangle() {
 }
 
 #[test]
-#[ignore]
 fn draw_occluded_cubes_hides_far_cube() {
     let mut fb = FrameBuffer::new(FB_WIDTH, FB_HEIGHT);
     let camera = Camera::for_viewport(FB_WIDTH, FB_HEIGHT).move_to(CAMERA_POS);
