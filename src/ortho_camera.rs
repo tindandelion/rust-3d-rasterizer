@@ -5,7 +5,7 @@
 //!
 //! - [`Camera::for_viewport`](Camera::for_viewport) — default **eye** **`(0, 0, −1)`**, **scene target** **`(0, 0, 0)`**, **world +Y** up.
 //! - [`Camera::move_to`](Camera::move_to) — same **target** and **up** policy for a new **eye** (orbit-style **look-at**).
-//! - [`Camera::transform`](Camera::transform) — **world `Vec3` → pixel `UVec2`** through **`viewport × view`** (see below).
+//! - [`Camera::transform`](Camera::transform) — **world `Vec3` → [`FbPoint`]** through **`viewport × view`** (see below).
 //!
 //! Unit tests live in the **`tests`** submodule below (including **`degenerate_eye_positions`** for **panic** contracts).
 //!
@@ -41,7 +41,8 @@
 //!
 //! # What we are *not* doing (yet)
 //!
-//! - **Depth:** **`Camera::transform`** returns **only `xy`** pixels; there is **no z-buffer** or packed depth.
+//! - **Depth:** **`Camera::transform`** carries **view-space `z`** in **[`FbPoint::depth`]** (viewport leaves **`z`**
+//!   unchanged). **Per-pixel depth interpolation** in the triangle rasterizer is **not** wired yet.
 //!   **World `z`** can still affect **`xy`** whenever **`view`** rotates (**not** the default pose).
 //! - **Border clamp:** Out-of-range **`xy`** is **not** clamped to the image. Values outside **`[-1, 1]`**
 //!   still produce **float** intermediates, then **`f32::round`** and **`as u32`**, which **does not** saturate
@@ -51,14 +52,15 @@
 //! - **Configurable target / poles:** Scene target stays **`Vec3::ZERO`**; **±Y poles** **`panic`** (no fallback
 //!   **up** vector yet).
 
-use glam::{Mat3, Mat4, UVec2, Vec3};
+use glam::{Mat3, Mat4, Vec3};
 
+use crate::framebuffer::FbPoint;
 use crate::geometry::UnitVec3;
 
 /// Orthographic **world `Vec3` → framebuffer pixel** mapping for one **`width × height`** raster target.
 ///
 /// Precomputes **`viewport × view`** (**look-at** origin, **world +Y** up when valid — see module docs).
-/// **`transform`** uses the first two components after the **`Mat4`** multiply (before **`round`**).
+/// **`transform`** rounds **`xy`** to pixels and passes **view-space `z`** through as **`FbPoint::depth`**.
 #[derive(Clone, Copy, Debug)]
 pub struct Camera {
     position: Vec3,
@@ -88,13 +90,13 @@ impl Camera {
         self.position
     }
 
-    /// **World** point through **`viewport × view`**; **rounded `xy`** → pixel. For the **default**
-    /// **`for_viewport`** pose, **in-bounds demo `xy`** are **NDC-like `[-1, 1]`**; changing **only**
-    /// **`world_point.z`** does **not** change **`xy`** (see **`world_z_shift_does_not_change_screen_xy`**).
+    /// **World** point through **`viewport × view`**; **rounded `xy`** → pixel, **`z`** → **view-space depth**.
+    /// For the **default** **`for_viewport`** pose, **in-bounds demo `xy`** are **NDC-like `[-1, 1]`**; changing
+    /// **only** **`world_point.z`** does **not** change **`xy`** (see **`world_z_shift_does_not_change_screen_xy`**).
     /// After **`move_to`**, **world `z`** may change **`xy`** when **view** is rotated.
-    pub fn transform(&self, world_point: Vec3) -> UVec2 {
-        let p = self.transform_matrix * world_point.extend(1.0);
-        UVec2::new(p.x.round() as u32, p.y.round() as u32)
+    pub fn transform(&self, world_point: Vec3) -> FbPoint {
+        let p = self.transform_matrix.transform_point3(world_point);
+        FbPoint::new(p.x.round() as u32, p.y.round() as u32, p.z)
     }
 
     fn with_viewport_transform(position: Vec3, viewport_transform: Mat4) -> Self {
@@ -169,7 +171,7 @@ mod tests {
             let camera = Camera::for_viewport(101, 51);
             assert_eq!(
                 camera.transform(Vec3::new(0.0, 0.0, 0.0)),
-                UVec2::new(50, 25),
+                FbPoint::new(50, 25, 1.0),
             );
         }
 
@@ -179,19 +181,19 @@ mod tests {
 
             assert_eq!(
                 camera.transform(Vec3::new(-1.0, -1.0, 0.0)),
-                UVec2::new(25, 50),
+                FbPoint::new(25, 50, 1.0),
             );
             assert_eq!(
                 camera.transform(Vec3::new(1.0, 1.0, 0.0)),
-                UVec2::new(75, 0),
+                FbPoint::new(75, 0, 1.0),
             );
             assert_eq!(
                 camera.transform(Vec3::new(-1.0, 1.0, 0.0)),
-                UVec2::new(25, 0),
+                FbPoint::new(25, 0, 1.0),
             );
             assert_eq!(
                 camera.transform(Vec3::new(1.0, -1.0, 0.0)),
-                UVec2::new(75, 50),
+                FbPoint::new(75, 50, 1.0),
             );
         }
 
@@ -211,9 +213,18 @@ mod tests {
         fn world_z_shift_does_not_change_screen_xy() {
             let camera = Camera::for_viewport(640, 480);
 
-            let a = Vec3::new(0.12, -0.34, 5.0);
-            let b = Vec3::new(0.12, -0.34, -900.0);
-            assert_eq!(camera.transform(a), camera.transform(b));
+            let a = camera.transform(Vec3::new(0.12, -0.34, 5.0));
+            let b = camera.transform(Vec3::new(0.12, -0.34, -900.0));
+            assert_eq!((a.x, a.y), (b.x, b.y));
+            assert_ne!(a.depth, b.depth);
+        }
+
+        #[test]
+        fn world_z_maps_to_view_space_depth_on_default_pose() {
+            let camera = Camera::for_viewport(101, 51);
+
+            assert_eq!(camera.transform(Vec3::new(0.0, 0.0, 0.0)).depth, 1.0);
+            assert_eq!(camera.transform(Vec3::new(0.0, 0.0, 3.5)).depth, 4.5);
         }
     }
 
@@ -240,7 +251,8 @@ mod tests {
             let camera = Camera::for_viewport(101, 101).move_to(camera_pos);
 
             let camera_pt = camera.transform(camera_pos);
-            assert_eq!(UVec2::new(50, 50), camera_pt);
+            assert_eq!((camera_pt.x, camera_pt.y), (50, 50));
+            assert_relative_eq!(camera_pt.depth, 0.0, epsilon = 1e-5);
         }
 
         #[test]
@@ -249,7 +261,8 @@ mod tests {
             let camera = Camera::for_viewport(101, 101).move_to(camera_pos);
 
             let camera_pt = camera.transform(Vec3::ZERO);
-            assert_eq!(UVec2::new(50, 50), camera_pt);
+            assert_eq!((camera_pt.x, camera_pt.y), (50, 50));
+            assert_relative_eq!(camera_pt.depth, 3.0f32.sqrt(), epsilon = 1e-5);
         }
 
         #[test]
@@ -258,7 +271,7 @@ mod tests {
             let camera = Camera::for_viewport(101, 101).move_to(camera_pos);
 
             let camera_pt = camera.transform(Vec3::new(1.0, 1.0, 0.0));
-            assert_eq!(UVec2::new(100, 0), camera_pt);
+            assert_eq!(FbPoint::new(100, 0, 1.0), camera_pt);
         }
 
         #[test]
@@ -267,7 +280,12 @@ mod tests {
             let camera = Camera::for_viewport(101, 101).move_to(camera_pos);
 
             let camera_pt = camera.transform(Vec3::new(1.0, 1.0, 0.0));
-            assert_eq!(UVec2::new(85, 30), camera_pt);
+            assert_eq!((camera_pt.x, camera_pt.y), (85, 30));
+            assert_relative_eq!(
+                camera_pt.depth,
+                1.0f32.sqrt() / 3.0f32.sqrt(),
+                epsilon = 1e-5
+            );
         }
     }
 
