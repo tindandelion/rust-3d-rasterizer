@@ -1,4 +1,4 @@
-//! Two **`meshes::sphere(4)`** instances (**radius 0.3** at **`(±0.5, 0, 0)`**, distinct colors),
+//! Two **`meshes::sphere(4)`** instances at **`(±0.5, 0, 0)`** (**left radius 0.4**, **right 0.3**), distinct colors,
 //! **Phong** **`BlinnLightModel`**, back-face culled — **`ANIMATED_SCENE_FRAME_COUNT`**-frame lossless WebP.
 //!
 //! **Camera orbit:** **eye** on **`xz`** radius **`CAMERA_ORBIT_RADIUS`**, **`y = CAMERA_EYE_Y`**, one eased
@@ -21,7 +21,8 @@ use thorus_forge::{
 const CAMERA_ORBIT_RADIUS: f32 = 1.0;
 const CAMERA_EYE_Y: f32 = 0.2;
 
-const SPHERE_RADIUS: f32 = 0.3;
+const LEFT_SPHERE_RADIUS: f32 = 0.4;
+const RIGHT_SPHERE_RADIUS: f32 = 0.3;
 const SPHERE_SPLITS: usize = 4;
 
 const LEFT_SPHERE_CENTER: Vec3 = Vec3::new(-0.5, 0.0, 0.0);
@@ -62,9 +63,8 @@ fn camera_eye_orbit(angle: f32) -> Vec3 {
     )
 }
 
-fn sphere_at(center: Vec3) -> Mesh {
-    let pose =
-        Mat4::from_scale_rotation_translation(Vec3::splat(SPHERE_RADIUS), Quat::IDENTITY, center);
+fn sphere_at(center: Vec3, radius: f32) -> Mesh {
+    let pose = Mat4::from_scale_rotation_translation(Vec3::splat(radius), Quat::IDENTITY, center);
     sphere(SPHERE_SPLITS).transform(pose)
 }
 
@@ -83,8 +83,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let shapes = [
-        Shape::new(sphere_at(LEFT_SPHERE_CENTER), LEFT_SPHERE_COLOR),
-        Shape::new(sphere_at(RIGHT_SPHERE_CENTER), RIGHT_SPHERE_COLOR),
+        Shape::new(
+            sphere_at(LEFT_SPHERE_CENTER, LEFT_SPHERE_RADIUS),
+            LEFT_SPHERE_COLOR,
+        ),
+        Shape::new(
+            sphere_at(RIGHT_SPHERE_CENTER, RIGHT_SPHERE_RADIUS),
+            RIGHT_SPHERE_COLOR,
+        ),
     ];
 
     let frame_production_start = std::time::Instant::now();
