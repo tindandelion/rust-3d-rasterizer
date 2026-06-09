@@ -1,6 +1,6 @@
 //! Filled triangle with per-pixel Phong shading: interpolate normals, evaluate lighting per fragment.
 
-use glam::{UVec2, Vec2, Vec3};
+use glam::{Vec2, Vec3};
 
 use crate::{
     framebuffer::{FbPoint, interpolator::Interpolator},
@@ -11,7 +11,7 @@ use super::{FrameBuffer, Rgb};
 
 #[derive(Clone, Copy, Debug)]
 pub struct PhongCorner {
-    pub pos: UVec2,
+    pub point: FbPoint,
     pub normal: UnitVec3,
 }
 
@@ -39,7 +39,7 @@ impl NormalInterpolator {
 
 impl PhongShadedTriangle {
     pub fn new(mut corners: [PhongCorner; 3], color: Rgb) -> Self {
-        corners.sort_by_key(|v| v.pos.y);
+        corners.sort_by_key(|v| v.point.y);
         Self { corners, color }
     }
 
@@ -61,8 +61,8 @@ impl PhongShadedTriangle {
     }
 
     fn scan_lines(&self) -> impl Iterator<Item = ((u32, UnitVec3), (u32, UnitVec3), u32)> {
-        let y_range = self.corners[0].pos.y..=self.corners[2].pos.y;
-        let midpoint = self.corners[1].pos;
+        let y_range = self.corners[0].point.y..=self.corners[2].point.y;
+        let midpoint = self.corners[1].point;
 
         let ac_edge = EdgeWalker::from_corners(self.corners[0], self.corners[2]);
         let ab_edge = EdgeWalker::from_corners(self.corners[0], self.corners[1]);
@@ -100,8 +100,8 @@ struct EdgeWalker {
 
 impl EdgeWalker {
     fn from_corners(a: PhongCorner, b: PhongCorner) -> Self {
-        let pos_a = a.pos.as_vec2();
-        let pos_b = b.pos.as_vec2();
+        let pos_a = Vec2::new(a.point.x as f32, a.point.y as f32);
+        let pos_b = Vec2::new(b.point.x as f32, b.point.y as f32);
 
         Self {
             start_pt: pos_a,
@@ -348,7 +348,7 @@ mod tests {
 
         fn pts(corners: [(u32, u32); 3]) -> [PhongCorner; 3] {
             std::array::from_fn(|i| PhongCorner {
-                pos: UVec2::new(corners[i].0, corners[i].1),
+                point: FbPoint::new(corners[i].0, corners[i].1, 0.0),
                 normal: UnitVec3::Z,
             })
         }
@@ -460,7 +460,7 @@ mod tests {
 
         fn pts(corners: [((u32, u32), UnitVec3); 3]) -> [PhongCorner; 3] {
             std::array::from_fn(|i| PhongCorner {
-                pos: UVec2::new(corners[i].0.0, corners[i].0.1),
+                point: FbPoint::new(corners[i].0.0, corners[i].0.1, 0.0),
                 normal: corners[i].1,
             })
         }

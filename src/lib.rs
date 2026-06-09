@@ -16,7 +16,7 @@ pub use lighting::{BlinnLightModel, Material};
 pub use ortho_camera::Camera;
 pub use webp_encoder::WebpEncoder;
 
-use crate::framebuffer::{PhongCorner, PhongShadedTriangle};
+use crate::framebuffer::{FbPoint, PhongCorner, PhongShadedTriangle};
 use crate::geometry::{Mesh, UnitVec3};
 
 /// Raster width in pixels (golden stills / integration tests must agree).
@@ -49,9 +49,13 @@ impl Shape {
         let forward = camera.direction();
         let toward_eye: UnitVec3 = -camera.direction();
         for triangle in self.mesh.visible_triangles(forward) {
-            let corners: [PhongCorner; 3] = array::from_fn(|i| PhongCorner {
-                pos: camera.transform(triangle.corners[i]),
-                normal: triangle.normals[i],
+            let corners: [PhongCorner; 3] = array::from_fn(|i| {
+                let point = camera.transform(triangle.corners[i]);
+                let fb_point = FbPoint::new(point.x, point.y, 0.0);
+                PhongCorner {
+                    point: fb_point,
+                    normal: triangle.normals[i],
+                }
             });
             PhongShadedTriangle::new(corners, self.color)
                 .draw(fb, |normal| light_model.calc_intensity(normal, toward_eye));
