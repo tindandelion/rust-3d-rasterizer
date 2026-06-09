@@ -1,5 +1,5 @@
-//! Two **`meshes::sphere(4)`** instances at **`(±0.5, 0, 0)`** (**left radius 0.4**, **right 0.3**), distinct colors,
-//! **Phong** **`BlinnLightModel`**, back-face culled — **`ANIMATED_SCENE_FRAME_COUNT`**-frame lossless WebP.
+//! **`meshes::torus(24, 16)`** at the origin, **Phong** **`BlinnLightModel`**, back-face culled —
+//! **`ANIMATED_SCENE_FRAME_COUNT`**-frame lossless WebP.
 //!
 //! **Camera orbit:** **eye** on **`xz`** radius **`CAMERA_ORBIT_RADIUS`**, **`y = CAMERA_EYE_Y`**, one eased
 //! **`360°`** lap around **`Vec3::ZERO`** over the full clip (**`ease_in_out_cubic`** on frame index).
@@ -8,11 +8,10 @@ use std::env;
 use std::ffi::OsString;
 use std::path::Path;
 
-use glam::{Mat4, Quat, Vec3};
+use glam::{Mat4, Vec3};
 
 use thorus_forge::Material;
-use thorus_forge::geometry::Mesh;
-use thorus_forge::meshes::sphere;
+use thorus_forge::meshes::torus;
 use thorus_forge::{
     ANIMATED_SCENE_FRAME_COUNT, ANIMATED_SCENE_FRAME_SPACING_MS, BlinnLightModel, Camera,
     FrameBuffer, Rgb, SCENE_HEIGHT, SCENE_WIDTH, Shape, WebpEncoder,
@@ -21,15 +20,11 @@ use thorus_forge::{
 const CAMERA_ORBIT_RADIUS: f32 = 1.0;
 const CAMERA_EYE_Y: f32 = 0.2;
 
-const LEFT_SPHERE_RADIUS: f32 = 0.4;
-const RIGHT_SPHERE_RADIUS: f32 = 0.3;
-const SPHERE_SPLITS: usize = 4;
+const TORUS_RING_SEGMENTS: usize = 24;
+const TORUS_TUBE_SEGMENTS: usize = 16;
+const TORUS_SCALE: f32 = 1.0;
 
-const LEFT_SPHERE_CENTER: Vec3 = Vec3::new(-0.5, 0.0, 0.0);
-const RIGHT_SPHERE_CENTER: Vec3 = Vec3::new(0.5, 0.0, 0.0);
-
-const LEFT_SPHERE_COLOR: Rgb = Rgb(52, 110, 210);
-const RIGHT_SPHERE_COLOR: Rgb = Rgb(210, 90, 52);
+const TORUS_COLOR: Rgb = Rgb(52, 110, 210);
 
 const DEFAULT_OUT_PATH: &str = "scene.webp";
 
@@ -63,11 +58,6 @@ fn camera_eye_orbit(angle: f32) -> Vec3 {
     )
 }
 
-fn sphere_at(center: Vec3, radius: f32) -> Mesh {
-    let pose = Mat4::from_scale_rotation_translation(Vec3::splat(radius), Quat::IDENTITY, center);
-    sphere(SPHERE_SPLITS).transform(pose)
-}
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let out_path = output_webp_path_from_args();
 
@@ -82,16 +72,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Material::shiny(0.15, 100.0),
     );
 
-    let shapes = [
-        Shape::new(
-            sphere_at(LEFT_SPHERE_CENTER, LEFT_SPHERE_RADIUS),
-            LEFT_SPHERE_COLOR,
-        ),
-        Shape::new(
-            sphere_at(RIGHT_SPHERE_CENTER, RIGHT_SPHERE_RADIUS),
-            RIGHT_SPHERE_COLOR,
-        ),
-    ];
+    let torus = Shape::new(
+        torus(TORUS_RING_SEGMENTS, TORUS_TUBE_SEGMENTS)
+            .transform(Mat4::from_scale(Vec3::splat(TORUS_SCALE))),
+        TORUS_COLOR,
+    );
+
+    println!(
+        "Mesh: {} vertices, {} facets",
+        torus.mesh.vertices().len(),
+        torus.mesh.facets().len(),
+    );
 
     let frame_production_start = std::time::Instant::now();
     let lap_frames = ANIMATED_SCENE_FRAME_COUNT.max(1) as f32;
@@ -103,9 +94,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let camera =
             Camera::for_viewport(SCENE_WIDTH, SCENE_HEIGHT).move_to(camera_eye_orbit(angle));
 
-        for shape in &shapes {
-            shape.render(&mut framebuffer, &camera, &light);
-        }
+        torus.render(&mut framebuffer, &camera, &light);
 
         encoder.add_frame(&framebuffer)?;
     }
