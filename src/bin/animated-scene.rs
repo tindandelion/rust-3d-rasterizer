@@ -1,35 +1,30 @@
-//! Two **`meshes::sphere(4)`** instances at **`(±0.5, 0, 0)`** (**left radius 0.4**, **right 0.3**), distinct colors,
-//! **Phong** **`BlinnLightModel`**, back-face culled — **`ANIMATED_SCENE_FRAME_COUNT`**-frame lossless WebP.
+//! **`meshes::torus(48, 32)`** at the origin, **Phong** **`BlinnLightModel`**, back-face culled —
+//! **`ANIMATED_SCENE_FRAME_COUNT`**-frame lossless WebP.
 //!
-//! **Camera orbit:** **eye** on **`xz`** radius **`CAMERA_ORBIT_RADIUS`**, **`y = CAMERA_EYE_Y`**, one eased
-//! **`360°`** lap around **`Vec3::ZERO`** over the full clip (**`ease_in_out_cubic`** on frame index).
+//! **Fixed camera** (same eye as **`still-scene`**). **Model:** world-fixed **`R_z R_y R_x`** tumble with
+//! **`α = β = γ = t`**, **`t`** sweeping **`0 … τ`** over the clip (**seamless loop**).
 
 use std::env;
 use std::ffi::OsString;
+use std::f32::consts::TAU;
 use std::path::Path;
 
-use glam::{Mat4, Quat, Vec3};
+use glam::{Mat4, Vec3};
 
 use thorus_forge::Material;
-use thorus_forge::geometry::Mesh;
-use thorus_forge::meshes::sphere;
+use thorus_forge::meshes::torus;
 use thorus_forge::{
     ANIMATED_SCENE_FRAME_COUNT, ANIMATED_SCENE_FRAME_SPACING_MS, BlinnLightModel, Camera,
     FrameBuffer, Rgb, SCENE_HEIGHT, SCENE_WIDTH, Shape, WebpEncoder,
 };
 
-const CAMERA_ORBIT_RADIUS: f32 = 1.0;
-const CAMERA_EYE_Y: f32 = 0.2;
+const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.5, -1.0);
 
-const LEFT_SPHERE_RADIUS: f32 = 0.4;
-const RIGHT_SPHERE_RADIUS: f32 = 0.3;
-const SPHERE_SPLITS: usize = 4;
+const TORUS_RING_SEGMENTS: usize = 48;
+const TORUS_TUBE_SEGMENTS: usize = 32;
+const TORUS_SCALE: f32 = 0.8;
 
-const LEFT_SPHERE_CENTER: Vec3 = Vec3::new(-0.5, 0.0, 0.0);
-const RIGHT_SPHERE_CENTER: Vec3 = Vec3::new(0.5, 0.0, 0.0);
-
-const LEFT_SPHERE_COLOR: Rgb = Rgb(52, 110, 210);
-const RIGHT_SPHERE_COLOR: Rgb = Rgb(210, 90, 52);
+const TORUS_COLOR: Rgb = Rgb(52, 110, 210);
 
 const DEFAULT_OUT_PATH: &str = "scene.webp";
 
@@ -40,32 +35,11 @@ fn output_webp_path_from_args() -> OsString {
         .unwrap_or_else(|| DEFAULT_OUT_PATH.into())
 }
 
-/// **Ease‑in‑out (cubic):** slow at the ends, faster in the middle.
-///
-/// **`u`** is linear progress in **`[0, 1]`**; **`0 → 1`** and **`d/du`** zero at **`u ∈ {0, 1}`**.
-fn ease_in_out_cubic(u: f32) -> f32 {
-    let u = u.clamp(0.0, 1.0);
-    if u < 0.5 {
-        4.0 * u * u * u
-    } else {
-        let v = -2.0 * u + 2.0;
-        1.0 - v * v * v / 2.0
-    }
-}
-
-/// **Eye** position on the **`xz`** circle (**`CAMERA_ORBIT_RADIUS`**) framing **`Vec3::ZERO`**, **`+Y`** up.
-/// **`angle = 0`** yields **`(0, CAMERA_EYE_Y, −CAMERA_ORBIT_RADIUS)`**; angle increases toward **world +X**.
-fn camera_eye_orbit(angle: f32) -> Vec3 {
-    Vec3::new(
-        angle.sin() * CAMERA_ORBIT_RADIUS,
-        CAMERA_EYE_Y,
-        -angle.cos() * CAMERA_ORBIT_RADIUS,
-    )
-}
-
-fn sphere_at(center: Vec3, radius: f32) -> Mesh {
-    let pose = Mat4::from_scale_rotation_translation(Vec3::splat(radius), Quat::IDENTITY, center);
-    sphere(SPHERE_SPLITS).transform(pose)
+/// Uniform scale plus world-fixed **`R_z R_y R_x`** at angle **`t`** (radians).
+fn model_matrix_tumble(t: f32) -> Mat4 {
+    let rotation =
+        Mat4::from_rotation_z(t) * Mat4::from_rotation_y(t) * Mat4::from_rotation_x(t);
+    Mat4::from_scale(Vec3::splat(TORUS_SCALE)) * rotation
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -77,35 +51,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         SCENE_HEIGHT,
         ANIMATED_SCENE_FRAME_SPACING_MS,
     )?;
+    let camera = Camera::for_viewport(SCENE_WIDTH, SCENE_HEIGHT).move_to(CAMERA_POS);
     let light = BlinnLightModel::new(
         glam::Vec3::new(1.0, 0.5, -1.0).into(),
         Material::shiny(0.15, 100.0),
     );
 
-    let shapes = [
-        Shape::new(
-            sphere_at(LEFT_SPHERE_CENTER, LEFT_SPHERE_RADIUS),
-            LEFT_SPHERE_COLOR,
-        ),
-        Shape::new(
-            sphere_at(RIGHT_SPHERE_CENTER, RIGHT_SPHERE_RADIUS),
-            RIGHT_SPHERE_COLOR,
-        ),
-    ];
+    let base_mesh = torus(TORUS_RING_SEGMENTS, TORUS_TUBE_SEGMENTS);
+
+    println!(
+        "Mesh: {} vertices, {} facets",
+        base_mesh.vertices().len(),
+        base_mesh.facets().len(),
+    );
 
     let frame_production_start = std::time::Instant::now();
     let lap_frames = ANIMATED_SCENE_FRAME_COUNT.max(1) as f32;
     for frame_index in 0..ANIMATED_SCENE_FRAME_COUNT {
         framebuffer.clear();
 
-        let u = frame_index as f32 / lap_frames;
-        let angle = ease_in_out_cubic(u) * std::f32::consts::TAU;
-        let camera =
-            Camera::for_viewport(SCENE_WIDTH, SCENE_HEIGHT).move_to(camera_eye_orbit(angle));
-
-        for shape in &shapes {
-            shape.render(&mut framebuffer, &camera, &light);
-        }
+        let t = frame_index as f32 / lap_frames * TAU;
+        let torus = Shape::new(base_mesh.transform(model_matrix_tumble(t)), TORUS_COLOR);
+        torus.render(&mut framebuffer, &camera, &light);
 
         encoder.add_frame(&framebuffer)?;
     }
