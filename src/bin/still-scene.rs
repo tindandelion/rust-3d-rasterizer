@@ -1,4 +1,4 @@
-//! **`meshes::torus(24, 16)`** still: **Phong** **`BlinnLightModel`** (**`Material::shiny(0.15, 100.0)`**).
+//! **`meshes::torus(48, 32)`** still: **Phong** **`BlinnLightModel`** (**`Material::shiny(0.15, 100.0)`**).
 
 use std::path::Path;
 
