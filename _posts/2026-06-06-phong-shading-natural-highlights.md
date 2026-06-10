@@ -53,7 +53,7 @@ We've done a bit of refactoring around this area, though, when it comes to the l
 
 Phong shading concludes our journey through lighting models and shading algorithms. 
 
-Next we're going to look at a completely different topic: how to draw a scene where several objects occlude each other — in particular, two spheres where one sits partially behind the other. We walk through that in [Introducing Depth Buffer][post-introducing-depth-buffer].
+Next we're going to look at a completely different topic: how to draw a scene where several objects occlude each other — in particular, two spheres where one sits partially behind the other. We walk through that in [Solving Occlusion with Depth Buffer][post-introducing-depth-buffer].
 
 [post-first-shot-at-glossy-shapes]: {{site.baseurl}}/{% post_url 2026-06-03-first-shot-at-glossy-shapes %}
 [post-the-sphere-gets-smooth]: {{site.baseurl}}/{% post_url 2026-05-29-the-sphere-gets-smooth %}
