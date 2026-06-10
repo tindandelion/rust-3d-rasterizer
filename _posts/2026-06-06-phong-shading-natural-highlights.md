@@ -53,7 +53,7 @@ We've done a bit of refactoring around this area, though, when it comes to the l
 
 Phong shading concludes our journey through lighting models and shading algorithms. 
 
-Next we're going to look at a completely different topic: how to draw a scene where several objects occlude each other — in particular, two spheres where one sits partially behind the other. We walk through that in [The Depth Buffer Knows What's in Front][post-depth-buffer-knows-whats-in-front].
+Next we're going to look at a completely different topic: how to draw a scene where several objects occlude each other — in particular, two spheres where one sits partially behind the other. We walk through that in [Introducing Depth Buffer][post-introducing-depth-buffer].
 
 [post-first-shot-at-glossy-shapes]: {{site.baseurl}}/{% post_url 2026-06-03-first-shot-at-glossy-shapes %}
 [post-the-sphere-gets-smooth]: {{site.baseurl}}/{% post_url 2026-05-29-the-sphere-gets-smooth %}
@@ -66,4 +66,4 @@ Next we're going to look at a completely different topic: how to draw a scene wh
 [source-phong-shaded-triangle]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.15/src/framebuffer/phong_shaded_triangle.rs#L15
 [source-interpolator]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.15/src/framebuffer/interpolator.rs#L3
 [source-gouraud-shaded-triangle]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.15/src/framebuffer/gouraud_shaded_triangle.rs#L13
-[post-depth-buffer-knows-whats-in-front]: {{site.baseurl}}/{% post_url 2026-06-10-the-depth-buffer-knows-whats-in-front %}
+[post-introducing-depth-buffer]: {{site.baseurl}}/{% post_url 2026-06-10-introducing-depth-buffer %}

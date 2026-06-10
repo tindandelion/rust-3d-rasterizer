@@ -1,17 +1,19 @@
 ---
 layout: post
-title: "The Depth Buffer Knows What's in Front"
+title: "Introducing Depth Buffer"
 date: 2026-06-10 10:00:00 +0200
 authors: Sergey and Cursor
 ---
 
-With [Phong Shading implemented][post-phong-shading-natural-highlights], we're almost ready to complete our goal of the phase 1: rendering a torus shape. One last piece of the puzzle is missing, though. You see, torus is a more complicated shape than what we've dealt before. In particular, it is _self-occluding_: [todo: explain what it means]. To make the torus look realistic, we need to solve the occlusion problem first. 
+With [Phong shading][post-phong-shading-natural-highlights], we're almost ready to complete our goal of the phase 1: rendering a torus shape. One last piece of the puzzle is missing, though: a torus is a more complicated shape than what we've dealt before. In particular, it is _self-occluding_: [todo: explain what it means]. To make the torus look realistic, we need to solve the occlusion problem first. 
 
 [Version 0.0.16 on GitHub][version-0-0-16]{: .no-github-icon}
 
 ## What you will see
 
-To demonstrate our new ability, we've changed the animated scene. You'll see now two spheres sitting next to each other. As the camera makes a circle around the scene, one of the spheres gets hidden behind another. As this demp resents, we can now render the shapes that overlap each other, thanks to the technique called [_depth buffer_][depth-buffer]. 
+The new ability of our rasterizer is that it can now render objects that occlude each other. To demonstrate this, we've changed the animated scene. 
+
+You'll see now two spheres sitting next to each other. As the camera makes a circle around the scene, one of the spheres gets hidden behind another. As this demo presents, we can now render the shapes that overlap each other, thanks to the technique called [_depth buffer_][depth-buffer]. 
 
 ![Two Phong-shaded spheres with correct occlusion as the camera orbits](https://raw.githubusercontent.com/tindandelion/rust-3d-rasterizer/0.0.16/doc/output/current.webp)
 
@@ -38,19 +40,10 @@ As simple as a depth buffer idea is, there's a bunch of implementation-specific 
 
 The only challenge we had was to calculate $z$ value for each pixel. To do that, we use our familiar tool: linear interpolation. Just as we interpolate `(x, y)` coordinates of the facet interior pixels using vertex coordinates, in the same manner we can interpolate `z` coordinate. Our adjusted implementation of [`PhongShadedTriangle`][source-phong-shaded-triangle], that already does all interpolation work, is now charged with inerpolating one more value, and that's it. 
 
-## This is to be revisited 
+## This is still work in progress
 
 As we've mentioned above, our implementation of the depth buffer is deliberately simple. We're going to keep an eye on it and will get back to it later, when the progression of our project starts demanding the change in that area. Specifically, it seems that introducing [perspective projection][perspective-projection] will require revisiting the implementation of the depth buffer, because of the way this projection transforms coordinates. 
 
-
-
-## Interpolating depth across a triangle
-
-A triangle corner knows its depth from the camera transform. Interior pixels do not — we have to **interpolate**.
-
-Fortunately, the same scanline machinery that already interpolates normals for Phong shading also interpolates depth. Along each triangle edge we linearly blend the corner depths as we walk in $y$; along each horizontal span we blend again in $x$. The resulting per-pixel $z$ feeds into [`FrameBuffer::write_pixel`][source-write-pixel], which runs the depth test before touching RGB.
-
-This is the orthographic case: linear interpolation of view-space $z$ across the triangle is consistent with our projection model. (Perspective rendering would need a perspective-correct interpolation path — another reason we defer that milestone.)
 
 ## What's next
 
