@@ -26,7 +26,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         SPHERE_COLOR,
     );
     let body = Shape::new(
-        sphere(4).transform(Mat4::from_scale(Vec3::new(0.9, 0.2, 0.9))),
+        sphere(4).transform(Mat4::from_scale(Vec3::new(0.9, 0.15, 0.9))),
         PLANE_COLOR,
     );
 
