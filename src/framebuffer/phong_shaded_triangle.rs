@@ -3,7 +3,7 @@
 use glam::{Vec2, Vec3};
 
 use crate::{
-    framebuffer::{FbPoint, interpolator::Interpolator},
+    framebuffer::{FbPixel, interpolator::Interpolator},
     geometry::UnitVec3,
 };
 
@@ -11,7 +11,7 @@ use super::{FrameBuffer, Rgb};
 
 #[derive(Clone, Copy, Debug)]
 pub struct PhongCorner {
-    pub point: FbPoint,
+    pub point: FbPixel,
     pub normal: UnitVec3,
 }
 
@@ -37,7 +37,7 @@ impl PhongShadedTriangle {
                 let depth = z_interp.get(x as f32);
                 let normal = horz_normal.get(x as f32);
                 let intensity = intensity_fn(normal);
-                fb.write_pixel(FbPoint::new(x, y, depth), self.color.scale(intensity));
+                fb.write_pixel(FbPixel::new(x, y, depth), self.color.scale(intensity));
             }
         }
     }
@@ -355,7 +355,7 @@ mod tests {
 
         fn pts(corners: [(u32, u32); 3]) -> [PhongCorner; 3] {
             std::array::from_fn(|i| PhongCorner {
-                point: FbPoint::new(corners[i].0, corners[i].1, 0.0),
+                point: FbPixel::new(corners[i].0, corners[i].1, 0.0),
                 normal: UnitVec3::Z,
             })
         }
@@ -467,7 +467,7 @@ mod tests {
 
         fn pts(corners: [((u32, u32), UnitVec3); 3]) -> [PhongCorner; 3] {
             std::array::from_fn(|i| PhongCorner {
-                point: FbPoint::new(corners[i].0.0, corners[i].0.1, 0.0),
+                point: FbPixel::new(corners[i].0.0, corners[i].0.1, 0.0),
                 normal: corners[i].1,
             })
         }
@@ -546,7 +546,7 @@ mod tests {
 
         fn corner(x: u32, y: u32, depth: f32) -> PhongCorner {
             PhongCorner {
-                point: FbPoint::new(x, y, depth),
+                point: FbPixel::new(x, y, depth),
                 normal: UnitVec3::Z,
             }
         }

@@ -10,7 +10,7 @@
 
 use glam::{Mat4, UVec2, Vec3};
 use thorus_forge::{
-    BlinnLightModel, Camera, FrameBuffer, Material, Rgb, Shape, framebuffer::FbPoint, meshes::cube,
+    BlinnLightModel, Camera, FrameBuffer, Material, Rgb, Shape, framebuffer::FbPixel, meshes::cube,
 };
 
 const FB_WIDTH: u32 = 101;
@@ -57,7 +57,7 @@ fn framebuffer_with_rectangle(top_left: UVec2, bottom_right: UVec2, color: Rgb) 
     let mut fb = FrameBuffer::new(FB_WIDTH, FB_HEIGHT);
     for y in top_left.y..=bottom_right.y {
         for x in top_left.x..=bottom_right.x {
-            fb.write_pixel(FbPoint::new(x, y, 0.0), color);
+            fb.write_pixel(FbPixel::new(x, y, 0.0), color);
         }
     }
     fb

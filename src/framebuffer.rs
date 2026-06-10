@@ -10,13 +10,13 @@ pub use phong_shaded_triangle::{PhongCorner, PhongShadedTriangle};
 
 /// Screen pixel location with **view-space depth** for depth testing.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct FbPoint {
+pub struct FbPixel {
     pub x: u32,
     pub y: u32,
     pub depth: f32,
 }
 
-impl FbPoint {
+impl FbPixel {
     pub const fn new(x: u32, y: u32, depth: f32) -> Self {
         Self { x, y, depth }
     }
@@ -47,7 +47,7 @@ impl FrameBuffer {
     }
 
     /// Writes **color** at **point** when **point.depth** is nearer than the stored depth.
-    pub fn write_pixel(&mut self, point: FbPoint, color: Rgb) {
+    pub fn write_pixel(&mut self, point: FbPixel, color: Rgb) {
         let Some(i) = self.pixel_index(point.x, point.y) else {
             return;
         };
@@ -179,42 +179,42 @@ mod tests {
     #[test]
     fn clear_resets_depth_so_farther_write_succeeds() {
         let mut fb = FrameBuffer::new(3, 3);
-        fb.write_pixel(FbPoint::new(1, 1, 0.3), Rgb::WHITE);
-        fb.write_pixel(FbPoint::new(1, 1, 0.8), Rgb(255, 0, 0));
+        fb.write_pixel(FbPixel::new(1, 1, 0.3), Rgb::WHITE);
+        fb.write_pixel(FbPixel::new(1, 1, 0.8), Rgb(255, 0, 0));
         assert_eq!(fb.get_pixel(1, 1), Rgb::WHITE);
 
         fb.clear();
-        fb.write_pixel(FbPoint::new(1, 1, 0.8), Rgb(255, 0, 0));
+        fb.write_pixel(FbPixel::new(1, 1, 0.8), Rgb(255, 0, 0));
         assert_eq!(fb.get_pixel(1, 1), Rgb(255, 0, 0));
     }
 
     #[test]
     fn write_pixel_out_of_bounds_is_ignored() {
         let mut fb = FrameBuffer::new(2, 2);
-        fb.write_pixel(FbPoint::new(100, 0, 0.0), Rgb::WHITE);
+        fb.write_pixel(FbPixel::new(100, 0, 0.0), Rgb::WHITE);
         assert!(fb.as_ref().iter().all(|&b| b == 0));
     }
 
     #[test]
     fn write_pixel_accepts_nearer_depth() {
         let mut fb = FrameBuffer::new(3, 3);
-        fb.write_pixel(FbPoint::new(1, 1, 0.8), Rgb::WHITE);
-        fb.write_pixel(FbPoint::new(1, 1, 0.3), Rgb(255, 0, 0));
+        fb.write_pixel(FbPixel::new(1, 1, 0.8), Rgb::WHITE);
+        fb.write_pixel(FbPixel::new(1, 1, 0.3), Rgb(255, 0, 0));
         assert_eq!(fb.get_pixel(1, 1), Rgb(255, 0, 0));
     }
 
     #[test]
     fn write_pixel_rejects_farther_depth() {
         let mut fb = FrameBuffer::new(3, 3);
-        fb.write_pixel(FbPoint::new(1, 1, 0.3), Rgb::WHITE);
-        fb.write_pixel(FbPoint::new(1, 1, 0.8), Rgb(255, 0, 0));
+        fb.write_pixel(FbPixel::new(1, 1, 0.3), Rgb::WHITE);
+        fb.write_pixel(FbPixel::new(1, 1, 0.8), Rgb(255, 0, 0));
         assert_eq!(fb.get_pixel(1, 1), Rgb::WHITE);
     }
 
     #[test]
     fn write_pixel_stores_color_on_cleared_depth() {
         let mut fb = FrameBuffer::new(3, 3);
-        fb.write_pixel(FbPoint::new(1, 1, 0.5), Rgb::WHITE);
+        fb.write_pixel(FbPixel::new(1, 1, 0.5), Rgb::WHITE);
         assert_eq!(fb.get_pixel(1, 1), Rgb::WHITE);
     }
 
@@ -241,8 +241,8 @@ mod tests {
     #[test]
     fn to_ascii_art_maps_black_to_space_and_white_to_full_block() {
         let mut fb = FrameBuffer::new(2, 1);
-        fb.write_pixel(FbPoint::new(0, 0, 0.0), Rgb::BLACK);
-        fb.write_pixel(FbPoint::new(1, 0, 0.0), Rgb::WHITE);
+        fb.write_pixel(FbPixel::new(0, 0, 0.0), Rgb::BLACK);
+        fb.write_pixel(FbPixel::new(1, 0, 0.0), Rgb::WHITE);
         assert_ascii_art_eq(&fb.to_ascii_art(), &to_ascii_art(&[" █"]), "");
     }
 

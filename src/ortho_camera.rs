@@ -59,7 +59,7 @@
 
 use glam::{Mat3, Mat4, Vec3};
 
-use crate::framebuffer::FbPoint;
+use crate::framebuffer::FbPixel;
 use crate::geometry::UnitVec3;
 
 /// Orthographic **world `Vec3` → framebuffer pixel** mapping for one **`width × height`** raster target.
@@ -99,9 +99,9 @@ impl Camera {
     /// For the **default** **`for_viewport`** pose, **in-bounds demo `xy`** are **NDC-like `[-1, 1]`**; changing
     /// **only** **`world_point.z`** does **not** change **`xy`** (see **`world_z_shift_does_not_change_screen_xy`**).
     /// After **`move_to`**, **world `z`** may change **`xy`** when **view** is rotated.
-    pub fn transform(&self, world_point: Vec3) -> FbPoint {
+    pub fn transform(&self, world_point: Vec3) -> FbPixel {
         let p = self.transform_matrix.transform_point3(world_point);
-        FbPoint::new(p.x.round() as u32, p.y.round() as u32, p.z)
+        FbPixel::new(p.x.round() as u32, p.y.round() as u32, p.z)
     }
 
     fn with_viewport_transform(position: Vec3, viewport_transform: Mat4) -> Self {
@@ -176,7 +176,7 @@ mod tests {
             let camera = Camera::for_viewport(101, 51);
             assert_eq!(
                 camera.transform(Vec3::new(0.0, 0.0, 0.0)),
-                FbPoint::new(50, 25, 1.0),
+                FbPixel::new(50, 25, 1.0),
             );
         }
 
@@ -186,19 +186,19 @@ mod tests {
 
             assert_eq!(
                 camera.transform(Vec3::new(-1.0, -1.0, 0.0)),
-                FbPoint::new(25, 50, 1.0),
+                FbPixel::new(25, 50, 1.0),
             );
             assert_eq!(
                 camera.transform(Vec3::new(1.0, 1.0, 0.0)),
-                FbPoint::new(75, 0, 1.0),
+                FbPixel::new(75, 0, 1.0),
             );
             assert_eq!(
                 camera.transform(Vec3::new(-1.0, 1.0, 0.0)),
-                FbPoint::new(25, 0, 1.0),
+                FbPixel::new(25, 0, 1.0),
             );
             assert_eq!(
                 camera.transform(Vec3::new(1.0, -1.0, 0.0)),
-                FbPoint::new(75, 50, 1.0),
+                FbPixel::new(75, 50, 1.0),
             );
         }
 
@@ -276,7 +276,7 @@ mod tests {
             let camera = Camera::for_viewport(101, 101).move_to(camera_pos);
 
             let camera_pt = camera.transform(Vec3::new(1.0, 1.0, 0.0));
-            assert_eq!(FbPoint::new(100, 0, 1.0), camera_pt);
+            assert_eq!(FbPixel::new(100, 0, 1.0), camera_pt);
         }
 
         #[test]
