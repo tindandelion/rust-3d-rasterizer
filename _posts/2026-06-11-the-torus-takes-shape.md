@@ -5,31 +5,33 @@ date: 2026-06-11 08:00:00 +0200
 authors: Sergey and Cursor
 ---
 
-[Introducing the depth buffer][post-introducing-depth-buffer] closed the last gap before we could render a shape that hides parts of itself. With that in place, we finally built the mesh we had been aiming at since the project started: a smooth, Phong-shaded [_torus_][torus] — the classic donut — tumbling under a fixed camera. That completes the orthographic CPU rasterizer track for Phase 1.
+[Introducing the depth buffer][post-introducing-depth-buffer] closed the last gap before we could render a shape that hides parts of itself. With that in place, we finally built the mesh we had been aiming at since the project started: a smooth, Phong-shaded [_torus_][torus] — the classic donut — tumbling under a fixed camera. This final piece **completes the orthographic CPU rasterizer track for Phase 1**.
 
 [Version 0.0.17 on GitHub][version-0-0-17]{: .no-github-icon}
 
 ## What you will see
 
-The export bins now render a blue torus instead of the two-sphere occlusion demo from the previous release.
-
-The still frame shows the torus from a fixed viewpoint: glossy highlights on the outer curve, a darker inner rim where the tube folds away from the light, and a clean hole through the middle where nearer tube surfaces correctly hide farther ones.
-
-The animated clip keeps the same camera position and lets the torus tumble with a world-fixed $R_z R_y R_x$ rotation. As it spins, the depth buffer keeps doing the hard work — front tube walls stay in front of the back wall even when both are front-facing.
+At last, you will see the rotating torus in our animation clip! As the torus spins, the rasterization pipleine keeps doing all the hard work: the positioning, the lighting, and the depth buffer all play together to render the complete picture. 
 
 ![Phong-shaded torus tumbling under a fixed orthographic camera](https://raw.githubusercontent.com/tindandelion/rust-3d-rasterizer/0.0.17/doc/output/current.webp)
 
 ## Why the torus is a capstone mesh
 
-A torus is not just another shape to check off a list. It combines almost everything we have built so far:
+The torus combines all the parts we have built so far:
 
 - **High triangle count** — like the sphere, it needs dense [_tessellation_][tessellation] before it looks round.
 - **Smooth shading** — vertex normals vary around the tube, so we lean on the same [Phong path][post-phong-shading-natural-highlights] as the sphere.
 - **Self-occlusion** — unlike a convex cube or sphere, a torus can block itself: the near side of the tube passes in front of the far side, and the hole creates overlap that back-face culling alone cannot sort out.
 
-That last point is why we landed the [depth buffer][post-introducing-depth-buffer] first. The torus is the first mesh in the project where per-pixel depth testing is not optional decoration — it is what makes the hole look like a hole.
+This makes this shape an ideal guinea pig to demonstrate all capabilities of our 3D rasterizer. 
 
-## Two radii, two angles
+## Torus generation 
+
+The rasterizer pipeline was already prepared to complete this milestone. The only thing missing was the function to generate the torus mesh programmatically. Sergey decided to leave this work to Cursor and not interfer as long as the end result comes out well. 
+
+Expectedly, Cursor did an excellent job of going through the detailed math and ended up with a plausible implementation we decided to put forward. This is what Cursor reports to have done. 
+
+### Two radii, two angles
 
 A [_torus_][torus] is defined by two radii:
 
@@ -67,7 +69,7 @@ $$
 
 Because $\hat{\mathbf{n}}$ is known analytically at every sample, we can store it as a smooth vertex normal and feed it straight into Phong shading — the same pipeline the sphere already used.
 
-## Tessellating the torus grid
+### Tessellating the torus grid
 
 As with the sphere, the rasterizer only sees triangles. We turn the parametric surface into an indexed grid:
 
@@ -78,7 +80,7 @@ Each grid cell becomes two triangles, exactly like a latitude-longitude patch on
 
 Higher segment counts make the torus rounder at the cost of more raster work. The API takes both counts as arguments so we can trade quality for speed without touching the parametric math.
 
-## Implementation
+### Implementation details
 
 The mesh lives in [`meshes::torus`][source-torus]. The core sampling function [`torus_frame`][source-torus-frame] evaluates $(\mathbf{p}, \hat{\mathbf{n}})$ for a single $(u, v)$ pair; the public `torus` function walks the segment grid, builds vertices and per-vertex normals, then emits triangle pairs with [`Facet::with_vertex_normals`][source-facet-with-vertex-normals].
 
@@ -86,11 +88,11 @@ From there, nothing torus-specific remains in the draw path. [`Shape::render`][s
 
 [`still-scene`][source-still-scene] writes a single lossless WebP of the torus with a shiny blue material. [`animated-scene`][source-animated-scene] reuses the same mesh and camera, applying a uniform scale of $0.8$ and the tumble matrix $R_z(t)\, R_y(t)\, R_x(t)$ with $\alpha = \beta = \gamma = t$ over 360 frames.
 
-We deliberately skipped the wireframe torus milestones from the original plan. By the time we reached this shape, back-face culling, Phong shading, and the depth buffer already covered the lessons those wireframe steps were meant to teach.
-
 ## What's next
 
-The orthographic torus was the last mesh milestone on the CPU path before we change how the camera projects geometry. The next step is [_perspective projection_][perspective-projection]: homogeneous coordinates, a $w$ divide, and a revisit of how we store and interpolate depth so self-occlusion stays correct when parallel sight lines become a pinhole view.
+The orthographic torus is a major milestone that completes the phase 1 of our project, and now it's done!
+
+Next, we're going to reflect on the progress so far, do a recap of accomplished tasks, and decide what to focus on next. There's still a lot of work to be done: stay tuned! 
 
 [post-introducing-depth-buffer]: {{site.baseurl}}/{% post_url 2026-06-10-introducing-depth-buffer %}
 [post-phong-shading-natural-highlights]: {{site.baseurl}}/{% post_url 2026-06-06-phong-shading-natural-highlights %}
