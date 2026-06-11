@@ -17,8 +17,8 @@ Optional stretch beyond the original two phases is allowed (e.g. deeper CPU topi
 
 ## Language & project layout
 
-- **Rust** for both phases.
-- **Single Cargo crate** initially (modules like `raster`, `mesh`, `webp_io`, …). Split into a workspace only when pain appears (e.g. separate binaries for export vs live window).
+- **Rust** for both phases. Package name **`thorus-forge`** (see **`Cargo.toml`**).
+- **Single Cargo crate** (modules: **`framebuffer`**, **`geometry`**, **`lighting`**, **`meshes`**, **`ortho_camera`**, **`webp_encoder`**; scene **`Shape`** and scene constants in **`lib.rs`**; export bins in **`src/bin/`**). Split into a workspace only when pain appears (e.g. separate binaries for export vs live window).
 
 ---
 
@@ -46,22 +46,23 @@ Optional stretch beyond the original two phases is allowed (e.g. deeper CPU topi
 ## Scene scope & content progression
 
 - **Restricted scenes:** no general frustum clipping homework in phase 1; geometry stays inside the volume by construction.
-- **Long-term visual target:** fixed viewpoint, single shape — a **torus**.
-- **Mesh progression:**
-  1. **Cube (interim)** — **quad faces** only for the **first** filled-cube milestone (**six** convex quads; **4-vertex** faces). Wireframe can stay edge-based. This is a **deliberate shortcut**: **one** simple **bbox + inner test** raster path before general **triangle** fill.
-  2. **Dodecahedron + cube triangles** — **shipped:** **`shapes::cube()`** seeds **twelve **`Facet`** wedges** (two per hull quad); **`shapes::dodecahedron()`** adds a **regular dodecahedron** (**`three.js`** detail 0 tri list). Both return **`geometry::Shape`** for **`TriMesh::visible_facets`** → **`draw_facets`** (**`ScanlineFillTriangle`**).
-  3. **Sphere** — **shipped:** **`shapes::sphere(splits)`** (octahedron seed + edge midpoint subdivision); **`GouraudShadedTriangle`** then **`PhongShadedTriangle`** via **`draw_facets`** (**`still-scene`**, **`animated-scene`** export bins; **Blinn–Phong specular**).
-  4. **Torus** — capstone CPU mesh complexity before/at GPU transition (**triangle** soup or indexed tris).
+- **Long-term visual target:** fixed viewpoint, single shape — a **torus** (**shipped** in export bins).
+- **Mesh progression (current code):**
+  1. **Cube** — **`meshes::cube()`**: eight verts, twelve **`Facet`** wedges (two per hull quad), faceted normals.
+  2. **Dodecahedron** — **`meshes::dodecahedron()`**: regular dodecahedron (**`three.js`** detail 0 tri list).
+  3. **Sphere** — **`meshes::sphere(splits)`**: octahedron seed + edge-midpoint subdivision; **radial vertex normals** for smooth shading.
+  4. **Torus** — **`meshes::torus(ring_segments, tube_segments)`**: indexed mesh with parametric smooth normals; **`still-scene`** and **`animated-scene`** export bins render **`torus(48, 32)`**.
 - **Generation:** **procedural** meshes (no asset pipeline required early).
+- **Historical note:** earlier milestones exercised **wireframe**, **quad fill**, **`draw_facets`**, and **Gouraud** shading; those code paths were retired. Completed milestone wording in **`project-breakdown.md`** preserves that history.
 
 ---
 
 ## Shading progression
 
-- **Cube:** faceted first.
-- **Dodecahedron:** faceted (**pentagonal** faces shaded as planar facets; triangulation is a **submission** detail).
-- **Sphere:** **shipped:** faceted → **Gouraud** (**`GouraudShadedTriangle`**, tests) → **Phong** (**`draw_facets`**, **`PhongShadedTriangle`**, **Blinn–Phong specular**). **Do not mix** Gouraud / Phong / specular with faceted work on the same milestone.
-- **Torus (filled):** reuse the **Phong** lighting path from the sphere milestones.
+- **Cube / dodecahedron:** faceted (**`Facet::with_facet_normal`** duplicates the facet normal at each corner).
+- **Sphere / torus:** smooth vertex normals (**`Facet::with_vertex_normals`**); **Phong** raster (**`PhongShadedTriangle`**: interpolate normals per pixel, renormalize, shade).
+- **Lighting (current):** **`BlinnLightModel`** with **`Material::matte`** / **`Material::shiny`** (Blinn–Phong specular). **`Shape::render`** passes constant **`toward_eye = −Camera::direction()`** under orthographic projection (revisit for perspective).
+- **Historical note:** **Gouraud** intensity interpolation was an intermediate milestone; only **Phong** remains in code.
 
 Phase 1 milestone ambition (from earlier discussion): interpolated vertex attributes (**level 3**) before treating phase 1 as complete; **perspective-correct texturing (**level 4**)** remains optional stretch (“phase 4” feeling).
 
@@ -69,30 +70,23 @@ Phase 1 milestone ambition (from earlier discussion): interpolated vertex attrib
 
 ## Geometry ↔ rasterizer boundary
 
-- **Phase 1 order (shipped):** **`geometry::Shape`** stores indexed **`Facet`**s; **`draw_facets`** rasterizes **`Triangle`** corners from **`TriMesh::visible_facets`**. **`shapes::cube()`**, **`shapes::dodecahedron()`**, and **`shapes::sphere(splits)`** are procedural builders on that stack. Internal storage stays indexed; **unfold** at the raster boundary.
-- **`Vertex` evolution:** start with **position only**; add normals, colors, UVs, etc., **only when a milestone requires them**.
+- **Current pipeline:** **`geometry::Mesh`** stores indexed **`Facet`**s + **`Vec3`** positions. **`Mesh::visible_triangles(view_direction)`** culls back faces and yields world-space **`Triangle`** records (corners + per-vertex **`UnitVec3`** normals). Scene-level **`Shape`** (**`mesh` + `color`**, **`src/lib.rs`**) projects each **`Triangle`** via **`Camera::transform`** → **`FbPixel`** (pixel **`xy`** + view-space **`depth`**) and draws with **`PhongShadedTriangle`**. **`meshes::{cube,dodecahedron,sphere,torus}`** are procedural builders on that stack.
+- **Depth:** **`FrameBuffer::write_pixel`** keeps the nearer fragment (**smaller view-space **`z`**).
+- **No separate `Vertex` type:** positions live in **`Mesh`**; normals live on **`Facet`**; surface tint is **`Shape::color`** scaled by lighting intensity.
 
 ---
 
 ## Rasterization strategy (phase 1)
 
-### Order of milestones
+### Current filled path
 
-1. **Wireframe** before filled surfaces.
-2. **Lines:** simplest practical approach — **DDA-style** stepping (float increments acceptable).
-3. **Out-of-bounds:** **skip-only** (`set_pixel` guarded); no full line clipping initially.
-4. **Filled hull facets (`cube`, interim geometry — shipped):** each front **`Facet`** is one filled-triangle pass via **`draw_facets`**. Legacy quad-stream fill was retired when **`Dodecahedron: triangular mesh`** landed.
-5. **Filled triangles (steady state — shipped):** **`draw_facets`** uses **`ScanlineFillTriangle`** (y-sorted scanlines + horizontal spans); **`HalfSpaceFillTriangle`** (bbox + half-space **`perp_dot`**) remains as an alternate implementation. **`shapes::cube()`**, **`shapes::dodecahedron()`**, and **`shapes::sphere(splits)`** all submit through **`draw_facets`**.
+- **`PhongShadedTriangle`** (**`src/framebuffer/phong_shaded_triangle.rs`**): y-sorted scanlines, edge walking with **`Interpolator`**, per-pixel normal interpolation (**`NormalInterpolator`**), depth interpolation, and **`FrameBuffer::write_pixel`** (depth test + RGB write).
+- **`Shape::render`**: one **`PhongShadedTriangle::draw`** per visible **`Triangle`**; lighting via **`BlinnLightModel::calc_intensity`** (closure passed into **`draw`**).
+- **Out-of-bounds:** **`write_pixel`** ignores coordinates outside the framebuffer; **`Camera::transform`** does not clip — negative projected **`xy`** may wrap when cast to **`u32`** (documented in **`ortho_camera`** module docs).
 
-6. **Sphere (shipped):** **`shapes::sphere(splits)`** — octahedron subdivision with shared edge midpoints on the existing triangle stack.
+### Historical milestones (retired code paths)
 
-7. Early fills may use **flat colors per face**; fancier per-primitive/debug coloring was explicitly **not** required early.
-
-**Breakdown alignment:** Hull **edges + lines + back-face classification** were exercised in earlier wireframe milestones (`doc/planning/project-breakdown.md`). **Filled triangle** rendering is **shipped** via **`geometry::Shape`**, **`draw_facets`**, and **`shapes::{cube,dodecahedron,sphere}`**.
-
-### Parallel raster approaches
-
-- **Half-space / scanline** filled rasterization: **`draw_facets`** ships **`ScanlineFillTriangle`**; **`HalfSpaceFillTriangle`** stays as a second implementation for comparison. Avoid maintaining two full pipelines forever—prefer **one path to export parity** (RGB framebuffer → WebP), optionally second raster behind a trait later.
+Earlier phase-1 work exercised **wireframe**, **DDA lines**, **quad fill**, **`draw_facets`**, **`ScanlineFillTriangle`**, **`GouraudShadedTriangle`**, and a **half-space** alternate. None of those remain in **`src/`**; see **`project-breakdown.md`** completed items for the iteration history.
 
 ### Threading
 
@@ -102,17 +96,18 @@ Phase 1 milestone ambition (from earlier discussion): interpolated vertex attrib
 
 ## Projection & camera
 
-- **Orthographic first** for the first stable **cube wireframe**.
-- Switch to **perspective immediately after orthographic cube wireframe is stable** (before leaning on sphere/torus complexity for projection debugging).
+- **Orthographic (shipped):** **`ortho_camera::Camera`** — **`for_viewport`** / **`move_to`**, look-at toward **`Vec3::ZERO`**, world **+Y** up, **`transform`** → **`FbPixel`** with view-space **`depth`**. Export bins and integration tests use this path.
+- **Perspective (next open milestone):** homogeneous **`w`**, divide, near/far guardrails, perspective-correct depth interpolation, per-fragment **`toward_eye`**. See **`Perspective projection (CPU)`** in **`project-breakdown.md`**.
 
 ---
 
 ## Output & debugging
 
-- **Framebuffer:** fixed **`800×600`**, **RGB** only (three `u8` channels per pixel); **no alpha**.
-- **WebP-first (lossless), browser-friendly:** **still `.webp`** milestones until animation scaffolding lands, then **animated `.webp`** for motion (single file per clip).
-- **Golden image regression tests:** intentionally **deferred**; rely on **eyes-only** review **for a while**. When added, compare decoded RGB or raw framebuffer bytes **before** encode—animated tests are heavier than stills.
-- **Live window** (`winit` + `pixels` / `softbuffer` or similar): **possible later**; same framebuffer, different presentation.
+- **Framebuffer:** **`SCENE_WIDTH` × `SCENE_HEIGHT`** (**800×600**), **RGB** only (three `u8` channels per pixel); **no alpha**; per-pixel depth buffer.
+- **WebP-first (lossless), browser-friendly:** **`still-scene`** (single-frame **`still-scene.webp`**) and **`animated-scene`** (**`ANIMATED_SCENE_FRAME_COUNT`** frames, **`ANIMATED_SCENE_FRAME_SPACING_MS`** spacing, default **`scene.webp`**, argv-overridable path).
+- **Tests:** in-crate unit tests (ASCII-art raster regressions, camera, lighting, meshes); integration **`tests/draw_unit_cube.rs`** (cube occlusion via **`Shape::render`**); **`tests/animated_scene_writes_frames.rs`** (spawn **`animated-scene`** binary).
+- **Golden image regression tests:** intentionally **deferred** for WebP pixel diffs; when added, compare decoded RGB or raw framebuffer bytes **before** encode—animated tests are heavier than stills.
+- **Live window** (`winit` + framebuffer blit): **possible later**; same framebuffer, different presentation.
 
 ---
 
@@ -124,9 +119,9 @@ Phase 1 milestone ambition (from earlier discussion): interpolated vertex attrib
 
 ## Deferred checkpoints (do not lose track)
 
-1. **wgpu convention alignment pass** — depth range, front-face winding, NDC handedness, relationship to framebuffer row order vs Unity/world intuition.
-2. **Golden image / pixel-diff tests** — adopt when eyeballing saturates (WebP decode path or pre-encode buffer compare).
-3. **Filled-triangle algorithm choice** — **landed:** **`draw_facets`** uses **`ScanlineFillTriangle`**; **`HalfSpaceFillTriangle`** kept as alternate. Interim cube quads used **bbox + inner test** until **`Dodecahedron: triangular mesh`** retired them.
+1. **Perspective projection (CPU)** — **`w`** divide, clip guardrails, depth model migration, per-fragment eye vector for specular.
+2. **wgpu convention alignment pass** — depth range, front-face winding, NDC handedness, relationship to framebuffer row order vs Unity/world intuition.
+3. **Golden image / pixel-diff tests** — adopt when eyeballing saturates (WebP decode path or pre-encode buffer compare).
 4. **Cross-platform** — revisit when/if portability becomes a goal.
 
 ---

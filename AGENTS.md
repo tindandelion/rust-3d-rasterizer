@@ -22,8 +22,7 @@ When behavior or scope is unclear, **prefer the planning docs** over guessing.
 ## Conventions to preserve
 
 - **World/camera intuition:** Unity-style **left-handed**, **+Y up**, **+Z forward** (see spec for clip/screen mapping details).
-- **Geometry API:** **`geometry::Mesh`** (**`Vec<Vec3>`** + **`Vec<Facet>`** behind **`vertices()`** / **`facets()`** **`&`** slice accessors, plus **`visible_triangles`**); **`geometry::Facet`**, **`geometry::Triangle`**, and **`geometry::UnitVec3`** are re-exported alongside **`Mesh`** (implementation lives in private **`geometry/{mesh,facet,unit_vec3}.rs`**). Procedural **`meshes::cube()`**, **`meshes::dodecahedron()`**, and **`meshes::sphere(splits)`** return **`[-½, ½]³`‑boxed **`Mesh`**es** where noted (Plato dodeca: same axis bounds as **`cube()`**, not Plato “edge = 1” circumradius sizing; **`sphere`** is unit-radius before world scale). **`Mesh::visible_triangles`** yields **`Triangle`** (corners **`[Vec3; 3]`**, per-vertex **`[UnitVec3; 3]`** normals) per front **`Facet`**; scene-level **`Shape`** (**`mesh` + `color`**) renders via **`Shape::render`** — one **`PhongShadedTriangle`** draw per **`Triangle`** (**Phong** normal interpolation + per-pixel **`BlinnLightModel::calc_intensity`**). **`GouraudShadedTriangle`** and **`Line`** remain for raster tests. **Torus** adds geometry on this stack only; evolve **`Vertex`** only when a milestone needs new attributes.
-- **Scope:** Restricted scenes in early phases; procedural meshes; long-term visual target includes a **torus**—follow milestone order in the breakdown doc.
+- **Scope:** Restricted scenes in early phases; procedural meshes; **torus** is the current export-bin mesh — follow milestone order in the breakdown doc for what comes next (**perspective projection**).
 
 ## How to work in this repo
 
