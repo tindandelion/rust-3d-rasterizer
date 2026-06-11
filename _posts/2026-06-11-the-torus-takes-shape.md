@@ -5,17 +5,17 @@ date: 2026-06-11 08:00:00 +0200
 authors: Sergey and Cursor
 ---
 
-[Introducing the depth buffer][post-introducing-depth-buffer] closed the last gap before we could render a shape that hides parts of itself. With that in place, we finally built the mesh we had been aiming at since the project started: a smooth, [Phong-shaded][post-phong-shading-natural-highlights] [_torus_][torus] — the classic donut — tumbling under a fixed camera. This final piece **completes the orthographic CPU rasterizer track for Phase 1**.
+[Introducing the depth buffer][post-introducing-depth-buffer] closed the last gap before we could render a shape that hides parts of itself. With that in place, we finally built the mesh we had been aiming at since the project started: a smooth-looking [_torus_][torus] — the classic donut — tumbling under a fixed camera while the near side of the tube passes in front of the far side. **This milestone completes the orthographic CPU rasterizer track for Phase 1.**
 
 [Version 0.0.17 on GitHub][version-0-0-17]{: .no-github-icon}
 
 ## What you will see
 
-At last, you will see the rotating torus in our animation clip! As the torus spins, the rasterization pipeline keeps doing all the hard work: the positioning, the lighting, and the [depth buffer][depth-buffer] all play together to render the complete picture.
+At last, you will see the rotating torus in our animation clip! As the torus spins, the rasterization pipeline keeps doing all the hard work: the positioning, the lighting, and the depth buffer all play together to render the complete picture.
 
 ![Phong-shaded torus tumbling under a fixed orthographic camera](https://raw.githubusercontent.com/tindandelion/rust-3d-rasterizer/0.0.17/doc/output/current.webp)
 
-## Why the torus is a capstone mesh
+## Why the torus is a capstone shape
 
 The torus combines all the parts we have built so far:
 
@@ -23,9 +23,9 @@ The torus combines all the parts we have built so far:
 - **Smooth shading** — vertex normals vary around the tube, so we lean on the same [Phong shading algorithm][post-phong-shading-natural-highlights] as the sphere.
 - **Self-occlusion** — unlike a convex cube or sphere, a torus can block itself: the near side of the tube passes in front of the far side, and the hole creates overlap that [back-face culling][post-cube-sheds-hidden-edges] alone cannot sort out.
 
-That makes the torus an ideal guinea pig to demonstrate all capabilities of our 3D rasterizer.
+That makes the torus a natural capstone mesh: every major piece of the rasterizer has to work at once.
 
-## Torus generation
+## Building the torus mesh
 
 The rasterizer pipeline was already prepared to complete this milestone. The only thing missing was the function to generate the torus mesh programmatically. Sergey decided to leave this work to Cursor and not interfere, as long as the end result came out well.
 
@@ -33,7 +33,7 @@ As expected, Cursor did an excellent job of going through the detailed math and 
 
 ### Two radii, two angles
 
-A _torus_ is defined by two radii:
+The surface is defined by two radii:
 
 - **Major radius** $R$ — distance from the origin to the center of the tube as it travels around the ring.
 - **Minor radius** $r$ — radius of the tube cross-section itself.
@@ -100,7 +100,6 @@ Next, we're going to reflect on the progress so far, do a recap of accomplished 
 [version-0-0-17]: https://github.com/tindandelion/rust-3d-rasterizer/tree/0.0.17
 [torus]: https://en.wikipedia.org/wiki/Torus
 [tessellation]: https://en.wikipedia.org/wiki/Tessellation_(computer_graphics)
-[depth-buffer]: https://en.wikipedia.org/wiki/Z-buffering
 [source-torus]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.17/src/meshes/torus.rs#L20
 [source-torus-frame]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.17/src/meshes/torus.rs#L67
 [source-facet-with-vertex-normals]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.17/src/geometry/facet.rs#L27
