@@ -66,7 +66,7 @@ As noted above, our depth-buffer implementation is deliberately simple. We'll re
 
 ## What's next
 
-It seems that with the occlusion problem solved, we're finally ready to render and see the **torus** shape in all its splendor!
+It seems that with the occlusion problem solved, we're finally ready to render and [see the **torus** shape][post-torus-takes-shape] in all its splendor!
 
 [post-phong-shading-natural-highlights]: {{site.baseurl}}/{% post_url 2026-06-06-phong-shading-natural-highlights %}
 [post-cube-sheds-hidden-edges]: {{site.baseurl}}/{% post_url 2026-05-17-the-cube-sheds-its-hidden-edges %}
@@ -74,6 +74,7 @@ It seems that with the occlusion problem solved, we're finally ready to render a
 [depth-buffer]: https://en.wikipedia.org/wiki/Z-buffering
 [perspective-projection]: https://en.wikipedia.org/wiki/3D_projection#Perspective_projection
 [torus]: https://en.wikipedia.org/wiki/Torus
+[post-torus-takes-shape]: {{site.baseurl}}/{% post_url 2026-06-11-the-torus-takes-shape %}
 [source-phong-shaded-triangle]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.16/src/framebuffer/phong_shaded_triangle.rs#L18
 [source-framebuffer]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.16/src/framebuffer.rs#L26
 [source-fb-pixel]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.0.16/src/framebuffer.rs#L13
