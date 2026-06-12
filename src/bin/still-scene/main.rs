@@ -22,7 +22,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (width, height) = terminal.pixel_dimensions()?;
     let mut framebuffer = FrameBuffer::new(width, height);
     let camera = Camera::for_viewport(width, height).move_to(CAMERA_POS);
-    let light = BlinnLightModel::new(LIGHT_DIRECTION.into(), Material::shiny(0.15, 100.0));
+    let light = BlinnLightModel::new(LIGHT_DIRECTION.into(), Material::shiny(0.15, 100));
 
     let torus = Shape::new(torus(48, 32), TORUS_COLOR);
     println!("Rendering torus...");

@@ -81,7 +81,7 @@ fn run_render(model: &Mesh, scene_width: u32, scene_height: u32) -> f64 {
     let camera = Camera::for_viewport(scene_width, scene_height).move_to(CAMERA_POS);
     let light = BlinnLightModel::new(
         glam::Vec3::new(1.0, 0.5, -1.0).into(),
-        Material::shiny(0.15, 100.0),
+        Material::shiny(0.15, 100),
     );
 
     let frame_production_start = std::time::Instant::now();

@@ -5,7 +5,7 @@ use crate::geometry::UnitVec3;
 pub struct Material {
     ambient_factor: f32,
     diffuse_factor: f32,
-    shininess: Option<f32>,
+    shininess: Option<i32>,
 }
 
 impl Material {
@@ -14,11 +14,11 @@ impl Material {
         Self::new(ambient_factor, 1.0 - ambient_factor, None)
     }
 
-    pub const fn shiny(ambient_factor: f32, shininess: f32) -> Self {
+    pub const fn shiny(ambient_factor: f32, shininess: i32) -> Self {
         Self::new(ambient_factor, 1.0 - ambient_factor, Some(shininess))
     }
 
-    const fn new(ambient_factor: f32, diffuse_factor: f32, shininess: Option<f32>) -> Self {
+    const fn new(ambient_factor: f32, diffuse_factor: f32, shininess: Option<i32>) -> Self {
         Self {
             ambient_factor: ambient_factor.max(0.0),
             diffuse_factor: diffuse_factor.max(0.0),
@@ -47,7 +47,7 @@ impl BlinnLightModel {
             .shininess
             .map(|shininess| {
                 let half_vector = (self.toward_light + toward_eye).normalize();
-                normal.dot(half_vector).max(0.0).powf(shininess)
+                normal.dot(half_vector).max(0.0).powi(shininess)
             })
             .unwrap_or(0.0);
         self.material.ambient_factor + self.material.diffuse_factor * (diffuse + specular)
@@ -121,7 +121,7 @@ mod tests {
     #[test]
     fn shiny_material_brightens_tangent_view_over_matte() {
         let matte = BlinnLightModel::new(TOWARD_LIGHT, PURE_DIFFUSE);
-        let shiny = BlinnLightModel::new(TOWARD_LIGHT, Material::shiny(0.0, 1.0));
+        let shiny = BlinnLightModel::new(TOWARD_LIGHT, Material::shiny(0.0, 1));
         let normal = UnitVec3::Z;
         let toward_eye = UnitVec3::Y;
         assert_relative_eq!(matte.calc_intensity(normal, toward_eye), 1.0);
@@ -133,7 +133,7 @@ mod tests {
 
     #[test]
     fn specular_adds_to_diffuse_when_view_aligns_with_light() {
-        let light = BlinnLightModel::new(TOWARD_LIGHT, Material::shiny(0.0, 1.0));
+        let light = BlinnLightModel::new(TOWARD_LIGHT, Material::shiny(0.0, 1));
 
         let normal = UnitVec3::Z;
         let toward_eye = UnitVec3::Z;
@@ -142,7 +142,7 @@ mod tests {
 
     #[test]
     fn specular_is_weaker_when_view_is_tangent_to_surface() {
-        let light = BlinnLightModel::new(TOWARD_LIGHT, Material::shiny(0.0, 1.0));
+        let light = BlinnLightModel::new(TOWARD_LIGHT, Material::shiny(0.0, 1));
         let aligned = light.calc_intensity(UnitVec3::Z, UnitVec3::Z);
         let tangent = light.calc_intensity(UnitVec3::Z, UnitVec3::Y);
         assert_relative_eq!(tangent, 1.0 + 2.0_f32.sqrt().recip());
@@ -151,19 +151,19 @@ mod tests {
 
     #[test]
     fn half_ambient_scales_specular_on_aligned_view() {
-        let light = BlinnLightModel::new(TOWARD_LIGHT, Material::shiny(0.5, 1.0));
+        let light = BlinnLightModel::new(TOWARD_LIGHT, Material::shiny(0.5, 1));
         assert_relative_eq!(light.calc_intensity(UnitVec3::Z, UnitVec3::Z), 1.5);
     }
 
     #[test]
     fn shiny_material_falls_back_to_ambient_on_unlit_surface() {
-        let light = BlinnLightModel::new(TOWARD_LIGHT, Material::shiny(0.5, 1.0));
+        let light = BlinnLightModel::new(TOWARD_LIGHT, Material::shiny(0.5, 1));
         assert_relative_eq!(light.calc_intensity(UnitVec3::NEG_Z, UnitVec3::Z), 0.5);
     }
 
     #[test]
     fn specular_is_skipped_when_light_and_view_cancel() {
-        let light = BlinnLightModel::new(TOWARD_LIGHT, Material::shiny(0.0, 1.0));
+        let light = BlinnLightModel::new(TOWARD_LIGHT, Material::shiny(0.0, 1));
 
         let normal = UnitVec3::Z;
         let toward_eye = -TOWARD_LIGHT;
@@ -172,19 +172,19 @@ mod tests {
 
     #[test]
     fn higher_shininess_tightens_specular_highlight() {
-        let light = BlinnLightModel::new(TOWARD_LIGHT, Material::shiny(0.0, 2.0));
+        let light = BlinnLightModel::new(TOWARD_LIGHT, Material::shiny(0.0, 2));
         assert_relative_eq!(light.calc_intensity(UnitVec3::Z, UnitVec3::Y), 1.5);
     }
 
     #[test]
     fn high_shininess_approaches_diffuse_only_off_axis() {
-        let light = BlinnLightModel::new(TOWARD_LIGHT, Material::shiny(0.0, 128.0));
+        let light = BlinnLightModel::new(TOWARD_LIGHT, Material::shiny(0.0, 128));
         assert_relative_eq!(light.calc_intensity(UnitVec3::Z, UnitVec3::Y), 1.0);
     }
 
     #[test]
     fn zero_shininess_yields_broad_specular_highlight() {
-        let light = BlinnLightModel::new(TOWARD_LIGHT, Material::shiny(0.0, 0.0));
+        let light = BlinnLightModel::new(TOWARD_LIGHT, Material::shiny(0.0, 0));
         assert_relative_eq!(light.calc_intensity(UnitVec3::Z, UnitVec3::Z), 2.0);
         assert_relative_eq!(light.calc_intensity(UnitVec3::Z, UnitVec3::Y), 2.0);
     }
@@ -193,7 +193,7 @@ mod tests {
     fn specular_is_zero_when_half_vector_faces_away_from_normal() {
         let toward_light: UnitVec3 = Vec3::new(1.0, 0.0, -1.0).into();
         let toward_eye: UnitVec3 = Vec3::new(-1.0, 0.0, -1.0).into();
-        let light = BlinnLightModel::new(toward_light, Material::shiny(0.0, 2.0));
+        let light = BlinnLightModel::new(toward_light, Material::shiny(0.0, 2));
         assert_relative_eq!(light.calc_intensity(UnitVec3::Z, toward_eye), 0.0);
     }
 
@@ -201,7 +201,7 @@ mod tests {
     fn oblique_light_and_view_produce_known_intensity() {
         let toward_light: UnitVec3 = Vec3::new(1.0, 0.0, 1.0).into();
         let toward_eye: UnitVec3 = Vec3::new(-1.0, 0.0, 1.0).into();
-        let light = BlinnLightModel::new(toward_light, Material::shiny(0.0, 1.0));
+        let light = BlinnLightModel::new(toward_light, Material::shiny(0.0, 1));
         assert_relative_eq!(
             light.calc_intensity(UnitVec3::Z, toward_eye),
             1.0 + 2.0_f32.sqrt().recip()

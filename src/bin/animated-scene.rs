@@ -5,8 +5,8 @@
 //! **`α = β = γ = t`**, **`t`** sweeping **`0 … τ`** over the clip (**seamless loop**).
 
 use std::env;
-use std::ffi::OsString;
 use std::f32::consts::TAU;
+use std::ffi::OsString;
 use std::path::Path;
 
 use glam::{Mat4, Vec3};
@@ -37,8 +37,7 @@ fn output_webp_path_from_args() -> OsString {
 
 /// Uniform scale plus world-fixed **`R_z R_y R_x`** at angle **`t`** (radians).
 fn model_matrix_tumble(t: f32) -> Mat4 {
-    let rotation =
-        Mat4::from_rotation_z(t) * Mat4::from_rotation_y(t) * Mat4::from_rotation_x(t);
+    let rotation = Mat4::from_rotation_z(t) * Mat4::from_rotation_y(t) * Mat4::from_rotation_x(t);
     Mat4::from_scale(Vec3::splat(TORUS_SCALE)) * rotation
 }
 
@@ -54,7 +53,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let camera = Camera::for_viewport(SCENE_WIDTH, SCENE_HEIGHT).move_to(CAMERA_POS);
     let light = BlinnLightModel::new(
         glam::Vec3::new(1.0, 0.5, -1.0).into(),
-        Material::shiny(0.15, 100.0),
+        Material::shiny(0.15, 100),
     );
 
     let base_mesh = torus(TORUS_RING_SEGMENTS, TORUS_TUBE_SEGMENTS);
