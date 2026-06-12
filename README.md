@@ -6,6 +6,11 @@
 
 ![Current render output](doc/output/current.webp)
 
+## Running
+
+- `cargo run --bin still-scene` — Phong torus at terminal pixel size; displays centered in a Kitty-compatible terminal (any key to dismiss) and writes `still-scene.webp` in parallel.
+- `cargo run` (default `animated-scene`) — lossless animated WebP at 800×600 (`scene.webp` by default).
+
 ## Project plans
 
 - [`doc/planning/project-spec.md`](doc/planning/project-spec.md) — goals, math, dependencies, coordinate conventions, raster strategy

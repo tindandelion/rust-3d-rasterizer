@@ -63,6 +63,14 @@ impl FrameBuffer {
         self.rgb[rgb + 2] = color.2;
     }
 
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+
     fn pixel_index(&self, x: u32, y: u32) -> Option<usize> {
         if x >= self.width || y >= self.height {
             None

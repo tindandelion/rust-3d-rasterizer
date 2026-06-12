@@ -31,6 +31,8 @@ Optional stretch beyond the original two phases is allowed (e.g. deeper CPU topi
 
 - **`glam`** — linear algebra.
 - **`webp-animation`** — **lossless WebP** output: **still** (single-frame) first, then **animated** (same crate, `EncodingType::Lossless`). Depends on **libwebp** via sys crates (native toolchain required).
+- **`crossterm`** — terminal window size, raw mode, alternate screen (**`still-scene`** Kitty presentation).
+- **`base64`** — Kitty graphics protocol payload encoding (**`still-scene`**).
 - Optional: **`image`** with WebP decode feature **only if** you want convenience decoding in tests or tooling—not required for encoding if you compare pre-encode buffers.
 
 ---
@@ -103,11 +105,12 @@ Earlier phase-1 work exercised **wireframe**, **DDA lines**, **quad fill**, **`d
 
 ## Output & debugging
 
-- **Framebuffer:** **`SCENE_WIDTH` × `SCENE_HEIGHT`** (**800×600**), **RGB** only (three `u8` channels per pixel); **no alpha**; per-pixel depth buffer.
-- **WebP-first (lossless), browser-friendly:** **`still-scene`** (single-frame **`still-scene.webp`**) and **`animated-scene`** (**`ANIMATED_SCENE_FRAME_COUNT`** frames, **`ANIMATED_SCENE_FRAME_SPACING_MS`** spacing, default **`scene.webp`**, argv-overridable path).
+- **Framebuffer:** **RGB** only (three `u8` channels per pixel); **no alpha**; per-pixel depth buffer. Default export size **`SCENE_WIDTH` × `SCENE_HEIGHT`** (**800×600**) — used by **`animated-scene`** and library constants in **`lib.rs`**. **`still-scene`** sizes the framebuffer to **terminal pixel dimensions** (see below).
+- **WebP-first (lossless), browser-friendly:** **`animated-scene`** — **`ANIMATED_SCENE_FRAME_COUNT`** frames at **`ANIMATED_SCENE_FRAME_SPACING_MS`** spacing (default **`scene.webp`**, argv-overridable path). **`still-scene`** — writes **`still-scene.webp`** on a background thread at the same resolution as the terminal render (lossless single frame).
+- **Terminal display (`still-scene`):** after rasterizing, blit the framebuffer to a **Kitty-compatible** terminal via the **graphics protocol** (**24-bit RGB**, centered, alternate screen + raw mode); dismiss on any keypress. Implementation: **`src/bin/still-scene/kitty_terminal.rs`** (**`crossterm`** + **`base64`**). Requires a terminal that reports pixel dimensions and supports Kitty graphics (e.g. **Kitty**, **Ghostty**, **iTerm2** with graphics enabled).
 - **Tests:** in-crate unit tests (ASCII-art raster regressions, camera, lighting, meshes); integration **`tests/draw_unit_cube.rs`** (cube occlusion via **`Shape::render`**); **`tests/animated_scene_writes_frames.rs`** (spawn **`animated-scene`** binary).
 - **Golden image regression tests:** intentionally **deferred** for WebP pixel diffs; when added, compare decoded RGB or raw framebuffer bytes **before** encode—animated tests are heavier than stills.
-- **Live window** (`winit` + framebuffer blit): **possible later**; same framebuffer, different presentation.
+- **Live window** (`winit` + framebuffer blit): **possible later** for real-time **`animated-scene`** playback; **`still-scene`** already covers static terminal presentation.
 
 ---
 
