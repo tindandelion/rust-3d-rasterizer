@@ -23,43 +23,52 @@ Phase 1, in the [project plan][project-spec], is the **CPU software rasterizer t
 
 Here is the progression at a glance:
 
-**WebP + lines** → **Wireframe cube** → **Filled + lit cube** → **More shapes + camera** → **Smooth sphere** → **Depth + torus**
+```mermaid
+flowchart LR
+  A["WebP + lines"] --> B["Wireframe cube"]
+  B --> C["Filled + lit cube"]
+  C --> D["More shapes + camera"]
+  D --> E["Smooth sphere"]
+  E --> F["Depth + torus"]
+```
 
 The diary posts tell the story milestone by milestone; below is the same journey grouped by theme.
 
 ### Laying the output foundation
 
-Before any 3D math, we needed a reliable way to *see* results. [One white pixel][post-one-white-pixel] (0.0.1) proved the framebuffer → lossless WebP encode → disk path. [Lines without guesswork][post-lines-without-guesswork] (0.0.2) added a DDA-style line rasterizer on top of the same buffer.
+Before any 3D math, we needed a reliable way to *see* results. [One white pixel][post-one-white-pixel] proved the framebuffer → lossless WebP encode → disk path. [Lines without guesswork][post-lines-without-guesswork] added a line rasterizer on top of the same buffer.
 
 That ordering was deliberate. A rasterizer without a visual export loop is painful to debug; we wanted browser-openable images from day one.
 
+The capability to draw lines served us well for a while; later we replaced it with polygon drawinf primitives. 
+
 ### Entering 3D: projection, motion, and culling
 
-[A cube takes shape][post-a-cube-takes-shape] (0.0.3) was the first geometry in world space, projected with an [_orthographic_][orthographic-projection] camera and drawn as twelve wireframe edges. [The cube starts spinning][post-cube-starts-spinning] (0.0.4) introduced the animation scaffold — 360 frames, fixed timing, reusable for every later demo.
+[A cube takes shape][post-a-cube-takes-shape] was the first geometry in world space, projected with an [_orthographic camera_][orthographic-projection]  and drawn as twelve wireframe edges. [The cube starts spinning][post-cube-starts-spinning] introduced the animation demo scaffold — 360 frames, fixed timing, reusable for every later demo.
 
-[The cube sheds its hidden edges][post-cube-sheds-hidden-edges] (0.0.5) added [_back-face culling_][back-face-culling]: stop drawing hull edges that belong only to faces pointing away from the camera. The cube stopped looking like a see-through cage.
+[The cube sheds its hidden edges][post-cube-sheds-hidden-edges] added [_back-face culling_][back-face-culling]: stop drawing hull edges that belong only to faces pointing away from the camera. The cube stopped looking like a see-through cage.
 
 ### Solid surfaces and light
 
-[The cube paints its six faces][post-cube-paints-its-six-faces] (0.0.6) swapped wireframe strokes for filled quads — flat color per face, no lighting yet. Along the way we hit a real bug: [the near face was classified as back][post-near-face-was-classified-as-back] (0.0.7), a sign error in the facing test that only surfaced once fills made the mistake obvious.
+[The cube paints its six faces][post-cube-paints-its-six-faces] swapped wireframe strokes for filled quads — flat color per face, no lighting yet. Along the way we hit a real bug: [the near face was classified as back][post-near-face-was-classified-as-back], a sign error in the facing test that only surfaced once filled quads made the mistake obvious.
 
-[The cube gets light][post-cube-gets-light] (0.0.8) brought [_directional light_][directional-light] and [_Lambertian diffuse_][lambertian] shading. Facets turned toward the light read brighter; facets in shadow fell darker. The cube finally looked like an object under the sun rather than a rainbow block.
+[The cube gets light][post-cube-gets-light] brought [_directional light_][directional-light] and [_Lambertian diffuse_][lambertian] shading. Facets turned toward the light read brighter; facets in shadow fell darker. The cube finally looked like an object under the sun rather than a rainbow block.
 
 ### Richer geometry and a movable camera
 
-[Meet the dodecahedron][post-dodecahedron] (0.0.9) showed the pipeline was not cube-specific: a denser procedural mesh, same draw path. [We can move the camera now][post-we-can-move-the-camera] (0.0.10) replaced the baked-in viewpoint with a proper look-at transform — eye position, scene target, world up — so orbit-style motion became possible without rewriting the rasterizer.
+[Meet the dodecahedron][post-dodecahedron] showed the pipeline was not cube-specific: we started to draw a different shape - a dodecahedron - using the same rendering piplene. [We can move the camera now][post-we-can-move-the-camera] replaced the baked-in viewpoint with a proper look-at transform — eye position, scene target, world up. Controlling the camera position enabled us to enhance the animation demo: the orbit-style motion became possible, and we made use of it.
 
 ### Smooth shapes and better highlights
 
-[Yet another shape: the sphere][post-yet-another-shape-the-sphere] (0.0.11) added [_tessellation_][tessellation] via subdivision of an octahedron seed. [The sphere gets smooth][post-sphere-gets-smooth] (0.0.12) introduced [_Gouraud shading_][gouraud]: interpolate lighting intensity across each triangle so the faceted mesh reads as a smooth surface.
+[Yet another shape: the sphere][post-yet-another-shape-the-sphere] added [_tessellation_][tessellation] via subdivision of an octahedron seed. [The sphere gets smooth][post-sphere-gets-smooth] introduced [_Gouraud shading_][gouraud]: interpolate lighting intensity across each triangle so the faceted mesh reads as a smooth surface.
 
-Glossy materials followed in [first shot at glossy shapes][post-first-shot-at-glossy-shapes] (0.0.13), but the specular highlight still looked faceted — and a non-uniform scale exposed a normal-transform bug, fixed in [transforming surface normals][post-bugfix-transforming-surface-normals] (0.0.14). [Phong shading: natural highlights][post-phong-shading-natural-highlights] (0.0.15) moved the lighting calculation to each pixel instead of each vertex, which finally produced convincing specular spots on the sphere.
+Glossy materials followed in [first shot at glossy shapes][post-first-shot-at-glossy-shapes], but the specular highlight still looked faceted. [Phong shading: natural highlights][post-phong-shading-natural-highlights] moved the lighting calculation to each pixel instead of each vertex, which finally produced convincing specular spots on the sphere.
 
-### Occlusion and the capstone torus
+### Occlusion tests and the capstone torus
 
-[Introducing the depth buffer][post-introducing-depth-buffer] (0.0.16) added per-pixel depth testing so draw order no longer decides visibility. That unlocked overlap between separate objects and, critically, [_self-occlusion_][self-occlusion] on a single mesh — exactly what a torus needs.
+[Introducing the depth buffer][post-introducing-depth-buffer] added per-pixel depth testing. That unlocked drawing overlapped objects and, critically, [_self-occlusion_][self-occlusion] on a single mesh — exactly what a torus needs.
 
-[The torus takes shape][post-torus-takes-shape] (0.0.17) landed the shape we had named as the long-term visual target back in the [project breakdown][project-breakdown]: a parametric torus with smooth vertex normals, Phong shading, and the depth buffer handling tube-over-tube overlap. Phase 1's orthographic CPU track was complete.
+[The torus takes shape][post-torus-takes-shape] landed the shape we had named as the long-term visual target back in the [project breakdown][project-breakdown]: a parametric torus with smooth vertex normals, Phong shading, and the depth buffer handling tube-over-tube overlap. Phase 1's orthographic CPU track was complete.
 
 ## What the rasterizer can do now
 
@@ -72,7 +81,7 @@ Stepping back from individual milestones, Phase 1 left us with a coherent pipeli
 | **Transform** | World → view → screen mapping with view-space depth |
 | **Visibility** | Back-face culling before raster; depth test at write time |
 | **Shading** | Blinn–Phong lighting with matte and shiny materials; per-pixel Phong raster |
-| **Output** | Lossless WebP stills and animations at 800×600; terminal preview via Kitty graphics for stills |
+| **Output** | Lossless WebP still images and animations at 800×600; terminal preview via Kitty graphics for still images |
 
 The retired paths — wireframe-only exporters, quad fill, Gouraud raster — served their teaching purpose and were removed once Phong and the unified triangle path took over. The [current module layout][project-breakdown] on `main` reflects that consolidation.
 
@@ -102,7 +111,7 @@ We will keep the same rhythm: one idea per release, a visible artifact, a diary 
 [post-cube-sheds-hidden-edges]: {{site.baseurl}}/{% post_url 2026-05-17-the-cube-sheds-its-hidden-edges %}
 [post-cube-paints-its-six-faces]: {{site.baseurl}}/{% post_url 2026-05-18-the-cube-paints-its-six-faces %}
 [post-near-face-was-classified-as-back]: {{site.baseurl}}/{% post_url 2026-05-19-the-near-face-was-classified-as-back %}
-[post-the-cube-gets-light]: {{site.baseurl}}/{% post_url 2026-05-22-the-cube-gets-light %}
+[post-cube-gets-light]: {{site.baseurl}}/{% post_url 2026-05-22-the-cube-gets-light %}
 [post-dodecahedron]: {{site.baseurl}}/{% post_url 2026-05-23-meet-new-shape-dodecahedron %}
 [post-we-can-move-the-camera]: {{site.baseurl}}/{% post_url 2026-05-26-we-can-move-the-camera-now %}
 [post-yet-another-shape-the-sphere]: {{site.baseurl}}/{% post_url 2026-05-27-yet-another-shape-the-sphere %}

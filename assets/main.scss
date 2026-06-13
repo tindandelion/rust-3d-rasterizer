@@ -98,3 +98,10 @@ div.language-console pre.highlight {
   word-break: break-all !important;
   text-align: left !important;
 }
+
+.post-content .mermaid {
+  display: flex;
+  justify-content: center;
+  margin: 1.5rem 0;
+  overflow-x: auto;
+}
