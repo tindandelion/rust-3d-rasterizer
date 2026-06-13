@@ -11,6 +11,7 @@ This is yet another learning project of mine, again in Rust. This time, I'm buil
 
 ![Current render output](https://raw.githubusercontent.com/tindandelion/rust-3d-rasterizer/main/doc/output/current.webp)
 
+
 ### Motivations
 
 There are two things I want to learn with this project, running side by side.
@@ -52,6 +53,12 @@ We are going to be working in intentionally [small steps][breakdown], so that th
 * [Milestone breakdown][breakdown] — iterative milestones and expected artifacts
 * [Source code on GitHub][repo] — the Rust implementation lives on the `main` branch
 
+### Accomplished milestones
+
+* [Phase 1: From a Pixel to a Torus][phase-1-recap] — a journey from a single white pixel to a Phong-shaded torus: procedural meshes, orthographic look-at camera, back-face culling, per-pixel depth testing, and lossless WebP still images and animations on the CPU.
+
+
+[phase-1-recap]: {{site.baseurl}}/{% post_url 2026-06-13-from-pixel-to-torus %}
 [spec]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/doc/planning/project-spec.md
 [breakdown]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/doc/planning/project-breakdown.md
 [repo]: https://github.com/tindandelion/rust-3d-rasterizer
