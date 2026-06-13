@@ -4,10 +4,10 @@ Instructions for AI assistants and contributors working on this repository.
 
 ## What this project is
 
-Personal learning project: a **3D software rasterizer** in **Rust**, developed primarily on **macOS**. Work proceeds in two broad phases: **CPU rasterization** first, then optional **GPU (`wgpu`)** acceleration. Authoritative planning lives under:
+Personal learning project: a **3D software rasterizer** in **Rust**, developed primarily on **macOS**. Work proceeds in three phases: **Phase 1** CPU rasterization (**shipped** — orthographic, Phong, depth, export bins), **Phase 2** rendering pipeline on CPU (**materials, lights, colors**; export-first), **Phase 3** **`wgpu`** (Metal on Mac). Authoritative planning lives under:
 
 - `doc/planning/project-spec.md` — goals, math, dependencies, coordinate conventions, raster strategy.
-- `doc/planning/project-breakdown.md` — iterative milestones and expected artifacts (WebP stills/animations).
+- `doc/planning/project-breakdown.md` — phased milestones and expected artifacts (WebP stills/animations).
 
 When editing **`doc/planning/project-breakdown.md`**, **do not change completed milestones** (items marked **`[x]`**) unless the **user explicitly asks** to revise that finished task. Prefer updating **open** milestones (`[ ]`) and the **Notes / deferred** section when the plan or shipped reality needs clarification.
 
@@ -22,7 +22,7 @@ When behavior or scope is unclear, **prefer the planning docs** over guessing.
 ## Conventions to preserve
 
 - **World/camera intuition:** Unity-style **left-handed**, **+Y up**, **+Z forward** (see spec for clip/screen mapping details).
-- **Scope:** Restricted scenes in early phases; procedural meshes; **torus** is the current export-bin mesh — follow milestone order in the breakdown doc for what comes next (**perspective projection**).
+- **Scope:** Restricted scenes in early phases; procedural meshes; **torus** is the current export-bin mesh — follow open milestones in the breakdown doc (**Phase 2:** decoupled materials/lights, multi-light, optional CPU perspective stretch; **Phase 3:** **`wgpu`**).
 
 ## How to work in this repo
 

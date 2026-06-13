@@ -8,10 +8,11 @@ Personal learning project: a simple **3D renderer** using **rasterization**, imp
 
 | Phase | Focus |
 |-------|--------|
-| **1** | Math and algorithms on the CPU (software rasterization path). |
-| **2** | Hardware acceleration using **`wgpu`** (Metal backend on Mac). |
+| **1** | Math and algorithms on the CPU (software rasterization path). **Shipped:** orthographic camera, indexed meshes, Phong shading, depth buffer, export bins. |
+| **2** | **Rendering pipeline** on CPU — decoupled **materials**, **lights**, and **scene clear color**; smooth Phong retained; current **`meshes::torus`** API unchanged. Export-first (**WebP** / Kitty); live **`winit`** viewer deferred. |
+| **3** | Hardware acceleration using **`wgpu`** (Metal backend on Mac). **Perspective** lands in the GPU pipeline; **no** CPU-perspective prerequisite. |
 
-Optional stretch beyond the original two phases is allowed (e.g. deeper CPU topics or richer GPU work) if motivation persists.
+Optional stretch beyond these phases is allowed (e.g. CPU perspective in Phase 2, richer GPU work, live viewer) if motivation persists.
 
 ---
 
@@ -40,8 +41,8 @@ Optional stretch beyond the original two phases is allowed (e.g. deeper CPU topi
 ## Coordinate conventions
 
 - **Unity-style world/camera intuition:** left-handed, **+Y up**, **+Z forward** (camera/object relationships aligned with Unity thinking).
-- **Clip space / framebuffer mapping:** **simplest pragmatic mapping first** on the CPU rasterizer. A deliberate **“wgpu alignment checkpoint”** is deferred until phase 2 prep (depth range, winding, NDC vs row-major Y, etc.).
-- Keep **wgpu/Vulkan-style conventions** in mind for later so phase 2 is mostly “same ideas, different executor,” but **do not front-load** full parity in phase 1.
+- **Clip space / framebuffer mapping:** **simplest pragmatic mapping first** on the CPU rasterizer. A deliberate **“wgpu alignment checkpoint”** is deferred until **Phase 3** prep (depth range, winding, NDC vs row-major Y, etc.).
+- Keep **wgpu/Vulkan-style conventions** in mind for later so **Phase 3** is mostly “same ideas, different executor,” but **do not front-load** full parity in phase 1.
 
 ---
 
@@ -63,10 +64,11 @@ Optional stretch beyond the original two phases is allowed (e.g. deeper CPU topi
 
 - **Cube / dodecahedron:** faceted (**`Facet::with_facet_normal`** duplicates the facet normal at each corner).
 - **Sphere / torus:** smooth vertex normals (**`Facet::with_vertex_normals`**); **Phong** raster (**`PhongShadedTriangle`**: interpolate normals per pixel, renormalize, shade).
-- **Lighting (current):** **`BlinnLightModel`** with **`Material::matte`** / **`Material::shiny`** (Blinn–Phong specular). **`Shape::render`** passes constant **`toward_eye = −Camera::direction()`** under orthographic projection (revisit for perspective).
+- **Lighting (current, Phase 1):** **`BlinnLightModel`** bundles one directional light with **`Material::matte`** / **`Material::shiny`** (ambient/diffuse factors + optional shininess). **`Shape::render`** passes constant **`toward_eye = −Camera::direction()`** under orthographic projection.
+- **Lighting (Phase 2 target):** decouple **lights** from **materials**. Per-shape **`Material`**: explicit **`diffuse`**, **`emissive`**, **`specular`** (**`Rgb`**) + **`shininess`**. Scene **`Light`**: **`direction`** + **`intensity`** (white only for now). Sum light contributions per fragment; add **emissive** once. **`Scene`** type deferred until multi-shape / multi-light wiring earns it — refactor **`Shape::render`** to accept **`&[Light]`** first.
 - **Historical note:** **Gouraud** intensity interpolation was an intermediate milestone; only **Phong** remains in code.
 
-Phase 1 milestone ambition (from earlier discussion): interpolated vertex attributes (**level 3**) before treating phase 1 as complete; **perspective-correct texturing (**level 4**)** remains optional stretch (“phase 4” feeling).
+Phase 1 milestone ambition (from earlier discussion): interpolated vertex attributes (**level 3**) before treating phase 1 as complete. **Phase 2** adds explicit material/light colors; **perspective-correct texturing (**level 4**)** remains optional stretch.
 
 ---
 
@@ -74,7 +76,8 @@ Phase 1 milestone ambition (from earlier discussion): interpolated vertex attrib
 
 - **Current pipeline:** **`geometry::Mesh`** stores indexed **`Facet`**s + **`Vec3`** positions. **`Mesh::visible_triangles(view_direction)`** culls back faces and yields world-space **`Triangle`** records (corners + per-vertex **`UnitVec3`** normals). Scene-level **`Shape`** (**`mesh` + `color`**, **`src/lib.rs`**) projects each **`Triangle`** via **`Camera::transform`** → **`FbPixel`** (pixel **`xy`** + view-space **`depth`**) and draws with **`PhongShadedTriangle`**. **`meshes::{cube,dodecahedron,sphere,torus}`** are procedural builders on that stack.
 - **Depth:** **`FrameBuffer::write_pixel`** keeps the nearer fragment (**smaller view-space **`z`**).
-- **No separate `Vertex` type:** positions live in **`Mesh`**; normals live on **`Facet`**; surface tint is **`Shape::color`** scaled by lighting intensity.
+- **Phase 2 gaps (vs [Three.js TorusGeometry browser](https://threejs.org/docs/scenes/geometry-browser.html#TorusGeometry) reference):** bundled light/material model; factor-based **`Material`** instead of explicit diffuse/emissive/specular colors; single light; black clear only; no multi-light summation. **Out of Phase 2 scope (by choice):** wireframe overlay, flat shading, extended torus API (**`radius`**, **`tube`**, **`arc`**), live **`winit`** viewer / GUI.
+- **No separate `Vertex` type:** positions live in **`Mesh`**; normals live on **`Facet`**; surface tint is **`Shape::color`** scaled by lighting intensity (Phase 2 moves full **`Material`** onto **`Shape`**).
 
 ---
 
@@ -98,34 +101,36 @@ Earlier phase-1 work exercised **wireframe**, **DDA lines**, **quad fill**, **`d
 
 ## Projection & camera
 
-- **Orthographic (shipped):** **`ortho_camera::Camera`** — **`for_viewport`** / **`move_to`**, look-at toward **`Vec3::ZERO`**, world **+Y** up, **`transform`** → **`FbPixel`** with view-space **`depth`**. Export bins and integration tests use this path.
-- **Perspective (next open milestone):** homogeneous **`w`**, divide, near/far guardrails, perspective-correct depth interpolation, per-fragment **`toward_eye`**. See **`Perspective projection (CPU)`** in **`project-breakdown.md`**.
+- **Orthographic (shipped):** **`ortho_camera::Camera`** — **`for_viewport`** / **`move_to`**, look-at toward **`Vec3::ZERO`**, world **+Y** up, **`transform`** → **`FbPixel`** with view-space **`depth`**. Export bins and integration tests use this path through **Phase 2**.
+- **Perspective (optional Phase 2 stretch):** homogeneous **`w`**, divide, near/far guardrails, perspective-correct depth interpolation, per-fragment **`toward_eye`**. **Not** a Phase 3 prerequisite — if skipped on CPU, perspective lands in **`wgpu`** (**Phase 3**). See **`Perspective projection (CPU)`** in **`project-breakdown.md`**.
 
 ---
 
 ## Output & debugging
 
-- **Framebuffer:** **RGB** only (three `u8` channels per pixel); **no alpha**; per-pixel depth buffer. Default export size **`SCENE_WIDTH` × `SCENE_HEIGHT`** (**800×600**) — used by **`animated-scene`** and library constants in **`lib.rs`**. **`still-scene`** sizes the framebuffer to **terminal pixel dimensions** (see below).
+- **Framebuffer:** **RGB** only (three `u8` channels per pixel); **no alpha**; per-pixel depth buffer. **`clear`** currently zeroes to black — **Phase 2** adds explicit **`clear(Rgb)`** for scene background. Default export size **`SCENE_WIDTH` × `SCENE_HEIGHT`** (**800×600**) — used by **`animated-scene`** and library constants in **`lib.rs`**. **`still-scene`** sizes the framebuffer to **terminal pixel dimensions** (see below).
 - **WebP-first (lossless), browser-friendly:** **`animated-scene`** — **`ANIMATED_SCENE_FRAME_COUNT`** frames at **`ANIMATED_SCENE_FRAME_SPACING_MS`** spacing (default **`scene.webp`**, argv-overridable path). **`still-scene`** — writes **`still-scene.webp`** on a background thread at the same resolution as the terminal render (lossless single frame).
 - **Terminal display (`still-scene`):** after rasterizing, blit the framebuffer to a **Kitty-compatible** terminal via the **graphics protocol** (**24-bit RGB**, centered, alternate screen + raw mode); dismiss on any keypress. Implementation: **`src/bin/still-scene/kitty_terminal.rs`** (**`crossterm`** + **`base64`**). Requires a terminal that reports pixel dimensions and supports Kitty graphics (e.g. **Kitty**, **Ghostty**, **iTerm2** with graphics enabled).
 - **Tests:** in-crate unit tests (ASCII-art raster regressions, camera, lighting, meshes); integration **`tests/draw_unit_cube.rs`** (cube occlusion via **`Shape::render`**); **`tests/animated_scene_writes_frames.rs`** (spawn **`animated-scene`** binary).
 - **Golden image regression tests:** intentionally **deferred** for WebP pixel diffs; when added, compare decoded RGB or raw framebuffer bytes **before** encode—animated tests are heavier than stills.
-- **Live window** (`winit` + framebuffer blit): **possible later** for real-time **`animated-scene`** playback; **`still-scene`** already covers static terminal presentation.
+- **Live window** (`winit` + framebuffer blit): **deferred past Phase 2** — export bins remain the primary presentation path; a real-time viewer pairs naturally with **`animated-scene`** timing when appetite returns.
 
 ---
 
-## Platform (phase 2)
+## Platform (phase 3)
 
-- **Mac-only** explicit requirement for now; cross-platform can wait until the renderer core is boring.
+- **Mac-only** explicit requirement for **`wgpu`** phase; cross-platform can wait until the renderer core is boring.
 
 ---
 
 ## Deferred checkpoints (do not lose track)
 
-1. **Perspective projection (CPU)** — **`w`** divide, clip guardrails, depth model migration, per-fragment eye vector for specular.
-2. **wgpu convention alignment pass** — depth range, front-face winding, NDC handedness, relationship to framebuffer row order vs Unity/world intuition.
-3. **Golden image / pixel-diff tests** — adopt when eyeballing saturates (WebP decode path or pre-encode buffer compare).
-4. **Cross-platform** — revisit when/if portability becomes a goal.
+1. **Phase 2 — materials & lights** — decouple **`Material`** (diffuse/emissive/specular/shininess) from scene lights; **`Light`** (direction + intensity, white only); multi-light summation; explicit clear color; Three.js torus demo palette in export bins.
+2. **Phase 2 stretch — perspective projection (CPU)** — optional; only if appetite after materials/lights.
+3. **Phase 3 — wgpu** — swapchain/surface, buffers, pipeline state, shaders, depth test, culling; **wgpu convention alignment** (depth range, winding, NDC vs framebuffer); **perspective in GPU** if not done on CPU.
+4. **Golden image / pixel-diff tests** — adopt when eyeballing saturates (WebP decode path or pre-encode buffer compare).
+5. **Cross-platform** — revisit when/if portability becomes a goal.
+6. **Live `winit` viewer** — interactive geometry-browser-style presentation; deferred past Phase 2.
 
 ---
 
