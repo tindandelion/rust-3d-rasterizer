@@ -5,7 +5,7 @@ date: 2026-06-13 08:00:00 +0200
 authors: Sergey and Cursor
 ---
 
-As we're closing the phase 1 of our project, we'd like to look back and see what we've achieved. Seventeen GitHub tags later, the CPU rasterizer can draw procedural meshes with Phong shading, resolve overlap with a depth buffer, and export still images and animations. 
+As we're closing phase 1 of our project, we'd like to look back and see what we've achieved. Seventeen GitHub tags later, the CPU rasterizer can draw procedural meshes with Phong shading, resolve overlap with a depth buffer, and export still images and animations. 
 
 [Version 0.0.17 on GitHub][version-0-0-17]{: .no-github-icon}
 
@@ -15,7 +15,7 @@ The current demo showcases all capabilities of our rendering pipeline: a shiny b
 
 ![Phong-shaded torus — the Phase 1 capstone render](https://raw.githubusercontent.com/tindandelion/rust-3d-rasterizer/0.0.17/doc/output/current.webp)
 
-Compare that to where we started on [May 10][post-one-white-pixel]: an **800×600** black frame with a single white dot in the center. Not a bad progress!
+Compare that to where we started on [May 10][post-one-white-pixel]: an **800×600** black frame with a single white dot in the center. Not bad progress!
 
 ## How we got here
 
@@ -40,11 +40,11 @@ Before any 3D math, we needed a reliable way to *see* results. [One white pixel]
 
 That ordering was deliberate. A rasterizer without a visual export loop is painful to debug; we wanted browser-openable images from day one.
 
-The capability to draw lines served us well for a while; later we replaced it with polygon drawinf primitives. 
+The capability to draw lines served us well for a while; later we replaced it with polygon drawing primitives. 
 
 ### Entering 3D: projection, motion, and culling
 
-[A cube takes shape][post-a-cube-takes-shape] was the first geometry in world space, projected with an [_orthographic camera_][orthographic-projection]  and drawn as twelve wireframe edges. [The cube starts spinning][post-cube-starts-spinning] introduced the animation demo scaffold — 360 frames, fixed timing, reusable for every later demo.
+[A cube takes shape][post-a-cube-takes-shape] was the first geometry in world space, projected with an [_orthographic camera_][orthographic-projection] and drawn as twelve wireframe edges. [The cube starts spinning][post-cube-starts-spinning] introduced the animation demo scaffold — 360 frames, fixed timing, reusable for every later demo.
 
 [The cube sheds its hidden edges][post-cube-sheds-hidden-edges] added [_back-face culling_][back-face-culling]: stop drawing hull edges that belong only to faces pointing away from the camera. The cube stopped looking like a see-through cage.
 
@@ -56,7 +56,7 @@ The capability to draw lines served us well for a while; later we replaced it wi
 
 ### Richer geometry and a movable camera
 
-[Meet the dodecahedron][post-dodecahedron] showed the pipeline was not cube-specific: we started to draw a different shape - a dodecahedron - using the same rendering piplene. [We can move the camera now][post-we-can-move-the-camera] replaced the baked-in viewpoint with a proper look-at transform — eye position, scene target, world up. Controlling the camera position enabled us to enhance the animation demo: the orbit-style motion became possible, and we made use of it.
+[Meet the dodecahedron][post-dodecahedron] showed the pipeline was not cube-specific: we started to draw a different shape — a dodecahedron — using the same rendering pipeline. [We can move the camera now][post-we-can-move-the-camera] replaced the baked-in viewpoint with a proper look-at transform — eye position, scene target, world up. Controlling the camera position enabled us to enhance the animation demo: the orbit-style motion became possible, and we made use of it.
 
 ### Smooth shapes and better highlights
 
