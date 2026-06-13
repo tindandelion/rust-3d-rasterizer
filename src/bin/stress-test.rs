@@ -21,29 +21,15 @@ const TORUS_SCALE: f32 = 0.8;
 
 const TORUS_COLOR: Rgb = Rgb(52, 110, 210);
 
-/// Raster width in pixels (golden stills / integration tests must agree).
-pub const SCENE_WIDTH: u32 = 800;
-/// Raster height in pixels (golden stills / integration tests must agree).
-pub const SCENE_HEIGHT: u32 = 600;
-
 /// Uniform scale plus world-fixed **`R_z R_y R_x`** at angle **`t`** (radians).
 fn model_matrix_tumble(t: f32) -> Mat4 {
     let rotation = Mat4::from_rotation_z(t) * Mat4::from_rotation_y(t) * Mat4::from_rotation_x(t);
     Mat4::from_scale(Vec3::splat(TORUS_SCALE)) * rotation
 }
 
-pub const MODEL_DETAILS_FACTORS: [usize; 5] = [1, 2, 4, 8, 16];
-pub const SCENE_DIMS: [(u32, u32); 5] = [
-    (800, 600),
-    (1280, 720),
-    (1920, 1080),
-    (3840, 2160),
-    (7680, 4320),
-];
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let base_mesh = torus(TORUS_RING_SEGMENTS, TORUS_TUBE_SEGMENTS);
-    let (width, height) = (7680, 4320);
+    let (width, height) = (3456, 2234);
     let fps = run_render(&base_mesh, width, height);
     println!(
         "Dimensions: {}x{} ({} px), FPS :{:.2}",
