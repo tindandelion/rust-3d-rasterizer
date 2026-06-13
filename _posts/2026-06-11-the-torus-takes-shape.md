@@ -92,8 +92,9 @@ From there, nothing torus-specific remains in the draw path. [`Shape::render`][s
 
 The orthographic torus completes Phase 1 of our project.
 
-Next, we're going to reflect on the progress so far, do a recap of accomplished tasks, and decide what to focus on next. There's still a lot of work to be done: stay tuned!
+We'll follow up with [a recap of our journey so far][post-from-pixel-to-torus] — from the first white pixel through to this torus — and then start planning phase 2. There's still a lot of work to be done: stay tuned!
 
+[post-from-pixel-to-torus]: {{site.baseurl}}/{% post_url 2026-06-13-from-pixel-to-torus %}
 [post-introducing-depth-buffer]: {{site.baseurl}}/{% post_url 2026-06-10-introducing-depth-buffer %}
 [post-phong-shading-natural-highlights]: {{site.baseurl}}/{% post_url 2026-06-06-phong-shading-natural-highlights %}
 [post-cube-sheds-hidden-edges]: {{site.baseurl}}/{% post_url 2026-05-17-the-cube-sheds-its-hidden-edges %}
