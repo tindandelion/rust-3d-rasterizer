@@ -65,7 +65,7 @@ Optional stretch beyond these phases is allowed (e.g. CPU perspective in Phase 2
 - **Cube / dodecahedron:** faceted (**`Facet::with_facet_normal`** duplicates the facet normal at each corner).
 - **Sphere / torus:** smooth vertex normals (**`Facet::with_vertex_normals`**); **Phong** raster (**`PhongShadedTriangle`**: interpolate normals per pixel, renormalize, shade).
 - **Lighting (current, Phase 1):** **`BlinnLightModel`** bundles one directional light with **`Material::matte`** / **`Material::shiny`** (ambient/diffuse factors + optional shininess). **`Shape::render`** passes constant **`toward_eye = −Camera::direction()`** under orthographic projection.
-- **Lighting (Phase 2 target):** decouple **lights** from **materials**. Per-shape **`Material`**: explicit **`diffuse`**, **`emissive`**, **`specular`** (**`Rgb`**) + **`shininess`**. Scene **`Light`**: **`direction`** + **`intensity`** (white only for now). Sum light contributions per fragment; add **emissive** once. **`Scene`** type deferred until multi-shape / multi-light wiring earns it — refactor **`Shape::render`** to accept **`&[Light]`** first.
+- **Lighting (Phase 2 target):** decouple **lights** from **materials** in two steps. **First milestone:** per-shape **`Material`** (**`diffuse`**, **`emissive`**, **`specular`**, **`shininess`**) on **`Shape`**; scene **`Light`** (**`direction`** + **`intensity`**, white only); **`Shape::render(fb, camera, &light)`** with single-light Phong. **Second milestone:** **`Shape::render`** takes **`&[Light]`** and sums contributions; export bins add 2–3 directionals. **Optional stretch (after perspective):** **positional** lights (point lights with per-fragment **`toward_light`**). **Emissive** added once per fragment throughout. **`Scene`** type deferred until multi-light bin wiring earns it.
 - **Historical note:** **Gouraud** intensity interpolation was an intermediate milestone; only **Phong** remains in code.
 
 Phase 1 milestone ambition (from earlier discussion): interpolated vertex attributes (**level 3**) before treating phase 1 as complete. **Phase 2** adds explicit material/light colors; **perspective-correct texturing (**level 4**)** remains optional stretch.
@@ -125,12 +125,14 @@ Earlier phase-1 work exercised **wireframe**, **DDA lines**, **quad fill**, **`d
 
 ## Deferred checkpoints (do not lose track)
 
-1. **Phase 2 — materials & lights** — decouple **`Material`** (diffuse/emissive/specular/shininess) from scene lights; **`Light`** (direction + intensity, white only); multi-light summation; explicit clear color; Three.js torus demo palette in export bins.
-2. **Phase 2 stretch — perspective projection (CPU)** — optional; only if appetite after materials/lights.
-3. **Phase 3 — wgpu** — swapchain/surface, buffers, pipeline state, shaders, depth test, culling; **wgpu convention alignment** (depth range, winding, NDC vs framebuffer); **perspective in GPU** if not done on CPU.
-4. **Golden image / pixel-diff tests** — adopt when eyeballing saturates (WebP decode path or pre-encode buffer compare).
-5. **Cross-platform** — revisit when/if portability becomes a goal.
-6. **Live `winit` viewer** — interactive geometry-browser-style presentation; deferred past Phase 2.
+1. **Phase 2 — material (single light)** — explicit **`Material`** on **`Shape`** (diffuse/emissive/specular/shininess); **`Light`** (direction + intensity, white only); retire **`BlinnLightModel`**; **`FrameBuffer::clear(Rgb)`**; Three.js torus demo palette in export bins with **one** light.
+2. **Phase 2 — multi-light** — **`Shape::render(&[Light])`** summation; three white directionals in export bins (full geometry-browser lighting).
+3. **Phase 2 stretch — perspective projection (CPU)** — optional; only if appetite after materials/lights.
+4. **Phase 2 stretch — positional lights** — optional; point lights with per-fragment **`toward_light`**; after perspective stretch (or after multi-light if perspective skipped).
+5. **Phase 3 — wgpu** — swapchain/surface, buffers, pipeline state, shaders, depth test, culling; **wgpu convention alignment** (depth range, winding, NDC vs framebuffer); **perspective in GPU** if not done on CPU.
+6. **Golden image / pixel-diff tests** — adopt when eyeballing saturates (WebP decode path or pre-encode buffer compare).
+7. **Cross-platform** — revisit when/if portability becomes a goal.
+8. **Live `winit` viewer** — interactive geometry-browser-style presentation; deferred past Phase 2.
 
 ---
 
