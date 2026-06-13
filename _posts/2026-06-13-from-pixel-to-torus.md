@@ -11,11 +11,11 @@ As we're closing the phase 1 of our project, we'd like to look back and see what
 
 ## What you will see today
 
-The current export is the same clip that landed with the torus: a shiny blue donut tumbling under a fixed orthographic camera, with the near side of the tube correctly hiding the far side.
+The current demo showcases all capabilities of our rendering pipeline: a shiny blue donut tumbling under a fixed orthographic camera, with the near side of the tube correctly hiding the far side.
 
 ![Phong-shaded torus — the Phase 1 capstone render](https://raw.githubusercontent.com/tindandelion/rust-3d-rasterizer/0.0.17/doc/output/current.webp)
 
-Compare that to where we started on [May 10][post-one-white-pixel]: an **800×600** black frame with a single white dot in the center. Same resolution, same lossless WebP path — a very different picture.
+Compare that to where we started on [May 10][post-one-white-pixel]: an **800×600** black frame with a single white dot in the center. Not a bad progress!
 
 ## How we got here
 
