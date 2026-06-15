@@ -19,8 +19,12 @@ const TORUS_RING_SEGMENTS: usize = 24;
 const TORUS_TUBE_SEGMENTS: usize = 16;
 const TORUS_SCALE: f32 = 0.8;
 
-const TORUS_MATERIAL: Material =
-    Material::new(Rgb(8, 17, 32), Rgb(44, 94, 179), Some(100));
+const TORUS_MATERIAL: Material = Material::new(
+    Rgb(8, 17, 32),
+    Rgb(44, 94, 179),
+    Rgb(44, 94, 179),
+    Some(100),
+);
 
 /// Raster width in pixels (golden stills / integration tests must agree).
 pub const SCENE_WIDTH: u32 = 800;

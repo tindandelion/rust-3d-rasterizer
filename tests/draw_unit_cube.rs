@@ -49,7 +49,7 @@ fn draw_occluded_cubes_hides_far_cube() {
 fn positioned_cube(z_position: f32, color: Rgb) -> Shape {
     Shape::new(
         cube().transform(Mat4::from_translation(Vec3::new(0.0, 0.0, z_position))),
-        Material::new(color, Rgb::BLACK, None),
+        Material::new(color, Rgb::BLACK, Rgb::BLACK, None),
     )
 }
 

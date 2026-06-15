@@ -15,8 +15,12 @@ use crate::kitty_terminal::KittyTerminal;
 const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.5, -1.0);
 const LIGHT_DIRECTION: Vec3 = Vec3::new(-10.0, 10.0, -10.0);
 const OUT_PATH: &str = "still-scene.webp";
-const TORUS_MATERIAL: Material =
-    Material::new(Rgb(8, 17, 32), Rgb(44, 94, 179), Some(100));
+const TORUS_MATERIAL: Material = Material::new(
+    Rgb(8, 17, 32),
+    Rgb(44, 94, 179),
+    Rgb(44, 94, 179),
+    Some(100),
+);
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut terminal = KittyTerminal::new();
