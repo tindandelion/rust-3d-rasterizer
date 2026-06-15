@@ -13,14 +13,12 @@ use thorus_forge::{Camera, FrameBuffer, Shape, WebpEncoder};
 use crate::kitty_terminal::KittyTerminal;
 
 const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.5, -1.0);
-const LIGHT_DIRECTION: Vec3 = Vec3::new(-10.0, 10.0, -10.0);
+const LIGHT_DIRECTION: Vec3 = Vec3::new(-100.0, -200.0, 100.0);
 const OUT_PATH: &str = "still-scene.webp";
-const TORUS_MATERIAL: Material = Material::new(
-    Rgb(8, 17, 32),
-    Rgb(44, 94, 179),
-    Rgb(44, 94, 179),
-    Some(100),
-);
+// Geometry-browser MeshPhongMaterial: color 0x156289, emissive 0x072534,
+// specular 0x111111, shininess 30.
+const TORUS_MATERIAL: Material =
+    Material::new(Rgb(7, 37, 52), Rgb(21, 98, 137), Rgb(17, 17, 17), Some(30));
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut terminal = KittyTerminal::new();
@@ -93,6 +91,23 @@ mod tests {
             "rendered scene does not match {} (L2 distance: {l2_distance})",
             expected_path.display()
         );
+    }
+
+    /// Regenerate **`test-data/still-scene.webp`** after intentional render changes:
+    /// `cargo test --bin still-scene refresh_still_scene_golden_webp -- --ignored`
+    #[test]
+    #[ignore = "manual golden refresh"]
+    fn refresh_still_scene_golden_webp() {
+        use thorus_forge::WebpEncoder;
+
+        let golden_path = Path::new(env!("CARGO_MANIFEST_DIR")).join(EXPECTED_WEBP);
+        let (width, height, _) = decode_webp_rgb(&golden_path);
+        let framebuffer = render_scene(width, height);
+        let mut encoder = WebpEncoder::new(width, height).expect("webp encoder");
+        encoder
+            .add_frame(&framebuffer)
+            .expect("encode still-scene frame");
+        encoder.write(&golden_path).expect("write golden webp");
     }
 
     fn rgb_l2_distance(actual: &[u8], expected: &[u8]) -> f64 {
