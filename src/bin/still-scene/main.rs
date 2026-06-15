@@ -13,7 +13,7 @@ use thorus_forge::{Camera, FrameBuffer, Shape, WebpEncoder};
 use crate::kitty_terminal::KittyTerminal;
 
 const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.5, -1.0);
-const LIGHT_DIRECTION: Vec3 = Vec3::new(-100.0, -200.0, 100.0);
+const LIGHT_DIRECTION: Vec3 = Vec3::new(1.0, 0.5, -1.0);
 const OUT_PATH: &str = "still-scene.webp";
 // Geometry-browser MeshPhongMaterial: color 0x156289, emissive 0x072534,
 // specular 0x111111, shininess 30.
