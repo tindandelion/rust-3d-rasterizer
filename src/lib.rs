@@ -53,8 +53,10 @@ impl Shape {
                 point: camera.transform(triangle.corners[i]),
                 normal: triangle.normals[i],
             });
-            PhongShadedTriangle::new(corners, self.color)
-                .draw(fb, |normal| light_model.calc_intensity(normal, toward_eye));
+            let color = self.color;
+            PhongShadedTriangle::new(corners).draw(fb, |normal| {
+                color.scale(light_model.calc_intensity(normal, toward_eye))
+            });
         }
     }
 }
