@@ -19,6 +19,11 @@ img {
   margin-right: auto;
 }
 
+.post-content img.chart-full-width {
+  width: 100%;
+  height: auto;
+}
+
 .still-compare {
   display: flex;
   flex-wrap: nowrap;
