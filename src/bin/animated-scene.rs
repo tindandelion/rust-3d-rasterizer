@@ -24,7 +24,7 @@ const TORUS_RING_SEGMENTS: usize = 48;
 const TORUS_TUBE_SEGMENTS: usize = 32;
 const TORUS_SCALE: f32 = 0.8;
 
-const TORUS_COLOR: Rgb = Rgb(52, 110, 210);
+const TORUS_MATERIAL: Material = Material::shiny(Rgb(52, 110, 210), 0.15, 100);
 
 const DEFAULT_OUT_PATH: &str = "scene.webp";
 
@@ -51,10 +51,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ANIMATED_SCENE_FRAME_SPACING_MS,
     )?;
     let camera = Camera::for_viewport(SCENE_WIDTH, SCENE_HEIGHT).move_to(CAMERA_POS);
-    let light = BlinnLightModel::new(
-        glam::Vec3::new(1.0, 0.5, -1.0).into(),
-        Material::shiny(0.15, 100),
-    );
+    let light = BlinnLightModel::new(glam::Vec3::new(1.0, 0.5, -1.0).into());
 
     let base_mesh = torus(TORUS_RING_SEGMENTS, TORUS_TUBE_SEGMENTS);
 
@@ -70,7 +67,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         framebuffer.clear();
 
         let t = frame_index as f32 / lap_frames * TAU;
-        let torus = Shape::new(base_mesh.transform(model_matrix_tumble(t)), TORUS_COLOR);
+        let torus = Shape::new(base_mesh.transform(model_matrix_tumble(t)), TORUS_MATERIAL);
         torus.render(&mut framebuffer, &camera, &light);
 
         encoder.add_frame(&framebuffer)?;

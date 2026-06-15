@@ -33,29 +33,29 @@ pub const ANIMATED_SCENE_FRAME_COUNT: u32 = 360;
 /// of frame durations) still matches **`ANIMATED_SCENE_FRAME_COUNT ×` this value**.
 pub const ANIMATED_SCENE_FRAME_SPACING_MS: i32 = 20;
 
-/// A posed **[`Mesh`]** plus surface **[`Rgb`]** for filled rendering.
+/// A posed **[`Mesh`]** plus surface **[`Material`]** for filled rendering.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Shape {
     pub mesh: Mesh,
-    pub color: Rgb,
+    pub material: Material,
 }
 
 impl Shape {
-    pub fn new(mesh: Mesh, color: Rgb) -> Self {
-        Self { mesh, color }
+    pub fn new(mesh: Mesh, material: Material) -> Self {
+        Self { mesh, material }
     }
 
     pub fn render(&self, fb: &mut FrameBuffer, camera: &Camera, light_model: &BlinnLightModel) {
         let forward = camera.direction();
         let toward_eye: UnitVec3 = -camera.direction();
+        let material = self.material;
         for triangle in self.mesh.visible_triangles(forward) {
             let corners: [PhongCorner; 3] = array::from_fn(|i| PhongCorner {
                 point: camera.transform(triangle.corners[i]),
                 normal: triangle.normals[i],
             });
-            let color = self.color;
             PhongShadedTriangle::new(corners).draw(fb, |normal| {
-                color.scale(light_model.calc_intensity(normal, toward_eye))
+                material.color.scale(light_model.calc_intensity(material, normal, toward_eye))
             });
         }
     }

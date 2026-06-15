@@ -15,7 +15,7 @@ use crate::kitty_terminal::KittyTerminal;
 const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.5, -1.0);
 const LIGHT_DIRECTION: Vec3 = Vec3::new(-10.0, 10.0, -10.0);
 const OUT_PATH: &str = "still-scene.webp";
-const TORUS_COLOR: Rgb = Rgb(52, 110, 210);
+const TORUS_MATERIAL: Material = Material::shiny(Rgb(52, 110, 210), 0.15, 100);
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut terminal = KittyTerminal::new();
@@ -33,9 +33,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn render_scene(width: u32, height: u32) -> FrameBuffer {
     let mut framebuffer = FrameBuffer::new(width, height);
     let camera = Camera::for_viewport(width, height).move_to(CAMERA_POS);
-    let light = BlinnLightModel::new(LIGHT_DIRECTION.into(), Material::shiny(0.15, 100));
+    let light = BlinnLightModel::new(LIGHT_DIRECTION.into());
 
-    let torus = Shape::new(torus(48, 32), TORUS_COLOR);
+    let torus = Shape::new(torus(48, 32), TORUS_MATERIAL);
     torus.render(&mut framebuffer, &camera, &light);
 
     framebuffer

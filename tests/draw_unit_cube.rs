@@ -4,7 +4,7 @@
 //! intensity, so the shaded square matches a flat fill). With **`Camera::direction` = +Z**, the strictly
 //! front-facing hull facet is the **−Z** cap (outward normal **`NEG_Z`**). **`BlinnLightModel`** toward **`NEG_Z`**
 //! with a high-ambient matte yields uniform intensity, so
-//! the shape **`color`** is unchanged after **`Rgb::scale`**. On this **`FB_WIDTH`×`FB_HEIGHT`** canvas,
+//! the material **`color`** is unchanged after **`Rgb::scale`**. On this **`FB_WIDTH`×`FB_HEIGHT`** canvas,
 //! **`scale = (min(w,h) − 1) / 2`** is an integer, so unit-cube **`±0.5`** corners land exactly on
 //! **`FILLED_MIN…FILLED_LAST`** (**no** intermediate **`f32::round`**).
 
@@ -21,7 +21,7 @@ const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.0, -1.0);
 fn draw_single_unit_cube_produces_rectangle() {
     let mut fb = FrameBuffer::new(FB_WIDTH, FB_HEIGHT);
     let camera = Camera::for_viewport(FB_WIDTH, FB_HEIGHT).move_to(CAMERA_POS);
-    let light = BlinnLightModel::new(-camera.direction(), Material::matte(0.9));
+    let light = BlinnLightModel::new(-camera.direction());
 
     let shape = positioned_cube(0.0, Rgb::BLUE);
     shape.render(&mut fb, &camera, &light);
@@ -34,7 +34,7 @@ fn draw_single_unit_cube_produces_rectangle() {
 fn draw_occluded_cubes_hides_far_cube() {
     let mut fb = FrameBuffer::new(FB_WIDTH, FB_HEIGHT);
     let camera = Camera::for_viewport(FB_WIDTH, FB_HEIGHT).move_to(CAMERA_POS);
-    let light = BlinnLightModel::new(-camera.direction(), Material::matte(0.9));
+    let light = BlinnLightModel::new(-camera.direction());
 
     let near_shape = positioned_cube(0.0, Rgb::BLUE);
     let far_shape = positioned_cube(2.0, Rgb::RED);
@@ -49,7 +49,7 @@ fn draw_occluded_cubes_hides_far_cube() {
 fn positioned_cube(z_position: f32, color: Rgb) -> Shape {
     Shape::new(
         cube().transform(Mat4::from_translation(Vec3::new(0.0, 0.0, z_position))),
-        color,
+        Material::matte(color, 0.9),
     )
 }
 
