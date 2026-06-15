@@ -160,18 +160,16 @@
       })
 
       const torus = new Mesh(geometry, meshMaterial)
+      torus.rotation.x = Math.PI / 2
       scene.add(torus)
 
-      // --- Animation (geometry-browser.html render loop) ----------------------
+      // --- Render --------------------------------------------------------------
 
       function render() {
-        requestAnimationFrame(render)
-
-        // torus.rotation.x += 0.005
-        // torus.rotation.y += 0.005
-
         renderer.render(scene, camera)
       }
+
+      orbit.addEventListener('change', render)
 
       window.addEventListener('resize', () => {
         aspect = window.innerWidth / window.innerHeight
@@ -181,6 +179,7 @@
         camera.bottom = -FRUSTUM_SIZE / 2
         camera.updateProjectionMatrix()
         renderer.setSize(window.innerWidth, window.innerHeight)
+        render()
       })
 
       render()
