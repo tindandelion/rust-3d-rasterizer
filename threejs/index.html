@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TorusGeometry reference — Three.js geometry browser</title>
+    <!--
+      Reference scene for thorus-forge Phase 2 export targets.
+      Values mirror docs/scenes/geometry-browser.html (TorusGeometry) on three.js dev.
+
+      Serve locally (import maps need HTTP):
+        cd threejs && python3 -m http.server 8080
+      Then open http://localhost:8080/
+    -->
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #444444;
+        font-family: system-ui, sans-serif;
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      #hud {
+        position: fixed;
+        left: 0.75rem;
+        bottom: 0.75rem;
+        max-width: 28rem;
+        padding: 0.6rem 0.75rem;
+        color: #e8e8e8;
+        font-size: 0.75rem;
+        line-height: 1.45;
+        background: rgba(0, 0, 0, 0.45);
+        border-radius: 0.35rem;
+        pointer-events: none;
+        user-select: none;
+      }
+
+      #hud strong {
+        display: block;
+        margin-bottom: 0.25rem;
+        font-size: 0.8rem;
+      }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.173.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.173.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="hud">
+      <strong>TorusGeometry — geometry browser reference</strong>
+      Material: color 0x156289, emissive 0x072534, specular 0x111111, shininess
+      30 (smooth Phong)
+      <br />
+      Lights: 3× DirectionalLight(0xffffff, 3) · background 0x444444 ·
+      OrthographicCamera
+      <br />
+      Drag to orbit · scroll disabled
+    </div>
+
+    <script type="module">
+      import {
+        Color,
+        DirectionalLight,
+        DoubleSide,
+        Mesh,
+        MeshPhongMaterial,
+        OrthographicCamera,
+        Scene,
+        TorusGeometry,
+        Vector3,
+        WebGLRenderer,
+      } from 'three'
+      import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+
+      // --- Scene --------------------------------------------------------------
+
+      const FRUSTUM_SIZE = 40
+
+      const scene = new Scene()
+      scene.background = new Color(0x444444)
+
+      let aspect = window.innerWidth / window.innerHeight
+      const camera = new OrthographicCamera(
+        (-FRUSTUM_SIZE * aspect) / 2,
+        (FRUSTUM_SIZE * aspect) / 2,
+        FRUSTUM_SIZE / 2,
+        -FRUSTUM_SIZE / 2,
+        0.1,
+        200,
+      )
+      camera.position.set(0, 0.5, 30)
+      camera.lookAt(new Vector3(0, 0, 0))
+
+      const renderer = new WebGLRenderer({ antialias: true })
+      renderer.setPixelRatio(window.devicePixelRatio)
+      renderer.setSize(window.innerWidth, window.innerHeight)
+      document.body.appendChild(renderer.domElement)
+
+      const orbit = new OrbitControls(camera, renderer.domElement)
+      orbit.enableZoom = false
+
+      // --- Lights -------------------------------------------------------------
+
+      const lights = [
+        new DirectionalLight(0xffffff, 0),
+        new DirectionalLight(0xffffff, 0),
+        new DirectionalLight(0xffffff, 3),
+      ]
+      lights[0].position.set(0, 200, 0)
+      lights[1].position.set(100, 200, 100)
+      lights[2].position.set(-100, -200, -100)
+      for (const light of lights) {
+        scene.add(light)
+      }
+
+      // --- TorusGeometry (browser defaults for #TorusGeometry) ----------------
+
+      const TORUS = {
+        radius: 10,
+        tube: 3,
+        radialSegments: 16,
+        tubularSegments: 100,
+        arc: Math.PI * 2,
+      }
+
+      const geometry = new TorusGeometry(
+        TORUS.radius,
+        TORUS.tube,
+        TORUS.radialSegments,
+        TORUS.tubularSegments,
+        TORUS.arc,
+      )
+
+      const meshMaterial = new MeshPhongMaterial({
+        color: 0x156289,
+        emissive: 0x072534,
+        specular: 0x111111, // MeshPhongMaterial default; set explicitly for reference
+        shininess: 30, // MeshPhongMaterial default; set explicitly for reference
+        side: DoubleSide,
+        flatShading: false,
+      })
+
+      const torus = new Mesh(geometry, meshMaterial)
+      scene.add(torus)
+
+      // --- Animation (geometry-browser.html render loop) ----------------------
+
+      function render() {
+        requestAnimationFrame(render)
+
+        // torus.rotation.x += 0.005
+        // torus.rotation.y += 0.005
+
+        renderer.render(scene, camera)
+      }
+
+      window.addEventListener('resize', () => {
+        aspect = window.innerWidth / window.innerHeight
+        camera.left = (-FRUSTUM_SIZE * aspect) / 2
+        camera.right = (FRUSTUM_SIZE * aspect) / 2
+        camera.top = FRUSTUM_SIZE / 2
+        camera.bottom = -FRUSTUM_SIZE / 2
+        camera.updateProjectionMatrix()
+        renderer.setSize(window.innerWidth, window.innerHeight)
+      })
+
+      render()
+    </script>
+  </body>
+</html>
