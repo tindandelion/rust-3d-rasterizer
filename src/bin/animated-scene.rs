@@ -24,7 +24,8 @@ const TORUS_RING_SEGMENTS: usize = 48;
 const TORUS_TUBE_SEGMENTS: usize = 32;
 const TORUS_SCALE: f32 = 0.8;
 
-const TORUS_MATERIAL: Material = Material::shiny(Rgb(52, 110, 210), 0.15, 100);
+const TORUS_MATERIAL: Material =
+    Material::new(Rgb(8, 17, 32), Rgb(44, 94, 179), Some(100));
 
 const DEFAULT_OUT_PATH: &str = "scene.webp";
 

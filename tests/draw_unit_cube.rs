@@ -4,7 +4,7 @@
 //! intensity, so the shaded square matches a flat fill). With **`Camera::direction` = +Z**, the strictly
 //! front-facing hull facet is the **−Z** cap (outward normal **`NEG_Z`**). **`BlinnLightModel`** toward **`NEG_Z`**
 //! with a high-ambient matte yields uniform intensity, so
-//! the material **`color`** is unchanged after **`Rgb * f32`**. On this **`FB_WIDTH`×`FB_HEIGHT`** canvas,
+//! the material **`emissive`** is unchanged when **`diffuse`** is black. On this **`FB_WIDTH`×`FB_HEIGHT`** canvas,
 //! **`scale = (min(w,h) − 1) / 2`** is an integer, so unit-cube **`±0.5`** corners land exactly on
 //! **`FILLED_MIN…FILLED_LAST`** (**no** intermediate **`f32::round`**).
 
@@ -49,7 +49,7 @@ fn draw_occluded_cubes_hides_far_cube() {
 fn positioned_cube(z_position: f32, color: Rgb) -> Shape {
     Shape::new(
         cube().transform(Mat4::from_translation(Vec3::new(0.0, 0.0, z_position))),
-        Material::matte(color, 1.0),
+        Material::new(color, Rgb::BLACK, None),
     )
 }
 

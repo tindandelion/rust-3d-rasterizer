@@ -19,7 +19,8 @@ const TORUS_RING_SEGMENTS: usize = 24;
 const TORUS_TUBE_SEGMENTS: usize = 16;
 const TORUS_SCALE: f32 = 0.8;
 
-const TORUS_MATERIAL: Material = Material::shiny(Rgb(52, 110, 210), 0.15, 100);
+const TORUS_MATERIAL: Material =
+    Material::new(Rgb(8, 17, 32), Rgb(44, 94, 179), Some(100));
 
 /// Uniform scale plus world-fixed **`R_z R_y R_x`** at angle **`t`** (radians).
 fn model_matrix_tumble(t: f32) -> Mat4 {

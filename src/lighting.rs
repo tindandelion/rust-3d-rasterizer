@@ -1,35 +1,20 @@
 use crate::framebuffer::Rgb;
 use crate::geometry::UnitVec3;
 
-/// Surface color and shading coefficients: **ambient** floor and **diffuse** scale.
+/// Surface **emissive** and pre-scaled **diffuse** colors for directional shading.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Material {
-    pub color: Rgb,
-    ambient_factor: f32,
-    diffuse_factor: f32,
+    pub emissive: Rgb,
+    pub diffuse: Rgb,
     shininess: Option<i32>,
 }
 
 impl Material {
-    /// **`ambient_factor`** plus **`1.0 − ambient_factor`** diffuse (both clamped in [`new`]).
-    pub const fn matte(color: Rgb, ambient_factor: f32) -> Self {
-        Self::new(color, ambient_factor, 1.0 - ambient_factor, None)
-    }
-
-    pub const fn shiny(color: Rgb, ambient_factor: f32, shininess: i32) -> Self {
-        Self::new(color, ambient_factor, 1.0 - ambient_factor, Some(shininess))
-    }
-
-    const fn new(
-        color: Rgb,
-        ambient_factor: f32,
-        diffuse_factor: f32,
-        shininess: Option<i32>,
-    ) -> Self {
+    /// **`shininess`** enables specular when **`Some`**.
+    pub const fn new(emissive: Rgb, diffuse: Rgb, shininess: Option<i32>) -> Self {
         Self {
-            color,
-            ambient_factor: ambient_factor.max(0.0),
-            diffuse_factor: diffuse_factor.max(0.0),
+            emissive,
+            diffuse,
             shininess,
         }
     }
@@ -40,12 +25,11 @@ impl Material {
         normal: UnitVec3,
         toward_eye: UnitVec3,
     ) -> Rgb {
-        let (diffuse, specular) =
+        let (diffuse_contrib, specular_contrib) =
             light_model.calc_intensity_contrib(self.shininess, normal, toward_eye);
-        let emissive = self.color * self.ambient_factor;
-        let diffuse = self.color * (self.diffuse_factor * diffuse);
-        let specular = self.color * (self.diffuse_factor * specular);
-        emissive + diffuse + specular
+        let diffuse = self.diffuse * diffuse_contrib;
+        let specular = self.diffuse * specular_contrib;
+        self.emissive + diffuse + specular
     }
 }
 
@@ -119,7 +103,7 @@ mod tests {
         }
 
         #[test]
-        fn matte_specular_is_zero_and_view_independent() {
+        fn specular_is_zero_without_shininess() {
             let light = BlinnLightModel::new(TOWARD_LIGHT);
             let from_front = light.calc_intensity_contrib(None, UnitVec3::Z, UnitVec3::Z);
             let from_side = light.calc_intensity_contrib(None, UnitVec3::Z, UnitVec3::Y);
@@ -211,63 +195,69 @@ mod tests {
         use super::*;
 
         #[test]
-        fn full_ambient_ignores_directional_contrib() {
+        fn emissive_only_ignores_light_direction() {
             let light = BlinnLightModel::new(TOWARD_LIGHT);
-            let material = Material::matte(Rgb::WHITE, 1.0);
-            let normal = UnitVec3::NEG_Z;
-            assert_eq!(material.shade(&light, normal, -normal), Rgb::WHITE);
+            let emissive = Rgb(20, 40, 60);
+            let material = Material::new(emissive, Rgb::BLACK, None);
+
+            for normal in [UnitVec3::Z, UnitVec3::X, UnitVec3::NEG_Z] {
+                assert_eq!(material.shade(&light, normal, UnitVec3::Z), emissive);
+            }
         }
 
         #[test]
-        fn half_ambient_blends_directional_contrib() {
+        fn diffuse_scales_with_light_facing() {
             let light = BlinnLightModel::new(TOWARD_LIGHT);
-            let material = Material::matte(Rgb::WHITE, 0.5);
+            let emissive = Rgb(10, 20, 30);
+            let diffuse = Rgb(100, 110, 120);
+            let material = Material::new(emissive, diffuse, None);
+
             assert_eq!(
                 material.shade(&light, UnitVec3::Z, UnitVec3::Z),
-                Rgb::WHITE * 1.0
+                emissive + diffuse
             );
-            assert_eq!(
-                material.shade(&light, UnitVec3::X, UnitVec3::Z),
-                Rgb::WHITE * 0.5
-            );
-            assert_eq!(
-                material.shade(&light, UnitVec3::NEG_Z, UnitVec3::Z),
-                Rgb::WHITE * 0.5
-            );
+            assert_eq!(material.shade(&light, UnitVec3::X, UnitVec3::Z), emissive);
+            assert_eq!(material.shade(&light, UnitVec3::NEG_Z, UnitVec3::Z), emissive);
         }
 
         #[test]
-        fn shiny_brightens_tangent_view_over_matte() {
+        fn specular_adds_on_top_of_diffuse_for_shiny_material() {
             let light = BlinnLightModel::new(TOWARD_LIGHT);
+            let diffuse = Rgb(128, 128, 128);
+            let diffuse_only = Material::new(Rgb::BLACK, diffuse, None);
+            let shiny = Material::new(Rgb::BLACK, diffuse, Some(1));
             let normal = UnitVec3::Z;
             let toward_eye = UnitVec3::Y;
-            let base = Rgb(128, 128, 128);
-            let matte = Material::matte(base, 0.0);
-            let shiny = Material::shiny(base, 0.0, 1);
-            assert_eq!(matte.shade(&light, normal, toward_eye), base);
+
+            assert_eq!(diffuse_only.shade(&light, normal, toward_eye), diffuse);
             assert_eq!(
                 shiny.shade(&light, normal, toward_eye),
-                base * (1.0 + 2.0_f32.sqrt().recip())
+                diffuse + diffuse * 2.0_f32.sqrt().recip()
             );
         }
 
         #[test]
-        fn half_ambient_scales_specular_on_aligned_view() {
+        fn aligned_view_sums_emissive_diffuse_and_specular() {
             let light = BlinnLightModel::new(TOWARD_LIGHT);
-            let material = Material::shiny(Rgb::WHITE, 0.5, 1);
+            let emissive = Rgb(30, 30, 30);
+            let diffuse = Rgb(40, 40, 40);
+            let material = Material::new(emissive, diffuse, Some(1));
+
             assert_eq!(
                 material.shade(&light, UnitVec3::Z, UnitVec3::Z),
-                Rgb::WHITE * 1.5
+                emissive + diffuse + diffuse
             );
         }
 
         #[test]
-        fn shiny_falls_back_to_ambient_on_unlit_surface() {
+        fn unlit_shiny_surface_returns_emissive_only() {
             let light = BlinnLightModel::new(TOWARD_LIGHT);
-            let material = Material::shiny(Rgb::WHITE, 0.5, 1);
+            let emissive = Rgb(128, 128, 128);
+            let material = Material::new(emissive, Rgb(64, 64, 64), Some(1));
+
             assert_eq!(
                 material.shade(&light, UnitVec3::NEG_Z, UnitVec3::Z),
-                Rgb::WHITE * 0.5
+                emissive
             );
         }
     }
