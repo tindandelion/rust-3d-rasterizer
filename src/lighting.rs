@@ -42,8 +42,10 @@ impl Material {
     ) -> Rgb {
         let (diffuse, specular) =
             light_model.calc_intensity_contrib(self.shininess, normal, toward_eye);
-        let intensity = self.ambient_factor + self.diffuse_factor * (diffuse + specular);
-        self.color.scale(intensity)
+        let emissive = self.color * self.ambient_factor;
+        let diffuse = self.color * (self.diffuse_factor * diffuse);
+        let specular = self.color * (self.diffuse_factor * specular);
+        emissive + diffuse + specular
     }
 }
 
@@ -70,18 +72,6 @@ impl BlinnLightModel {
             })
             .unwrap_or(0.0);
         (diffuse, specular)
-    }
-
-    #[deprecated(note = "use calc_intensity_contrib with material shading coefficients")]
-    pub fn calc_intensity(
-        &self,
-        material: Material,
-        normal: UnitVec3,
-        toward_eye: UnitVec3,
-    ) -> f32 {
-        let (diffuse, specular) =
-            self.calc_intensity_contrib(material.shininess, normal, toward_eye);
-        material.ambient_factor + material.diffuse_factor * (diffuse + specular)
     }
 }
 
@@ -234,15 +224,15 @@ mod tests {
             let material = Material::matte(Rgb::WHITE, 0.5);
             assert_eq!(
                 material.shade(&light, UnitVec3::Z, UnitVec3::Z),
-                Rgb::WHITE.scale(1.0)
+                Rgb::WHITE * 1.0
             );
             assert_eq!(
                 material.shade(&light, UnitVec3::X, UnitVec3::Z),
-                Rgb::WHITE.scale(0.5)
+                Rgb::WHITE * 0.5
             );
             assert_eq!(
                 material.shade(&light, UnitVec3::NEG_Z, UnitVec3::Z),
-                Rgb::WHITE.scale(0.5)
+                Rgb::WHITE * 0.5
             );
         }
 
@@ -257,7 +247,7 @@ mod tests {
             assert_eq!(matte.shade(&light, normal, toward_eye), base);
             assert_eq!(
                 shiny.shade(&light, normal, toward_eye),
-                base.scale(1.0 + 2.0_f32.sqrt().recip())
+                base * (1.0 + 2.0_f32.sqrt().recip())
             );
         }
 
@@ -267,7 +257,7 @@ mod tests {
             let material = Material::shiny(Rgb::WHITE, 0.5, 1);
             assert_eq!(
                 material.shade(&light, UnitVec3::Z, UnitVec3::Z),
-                Rgb::WHITE.scale(1.5)
+                Rgb::WHITE * 1.5
             );
         }
 
@@ -277,7 +267,7 @@ mod tests {
             let material = Material::shiny(Rgb::WHITE, 0.5, 1);
             assert_eq!(
                 material.shade(&light, UnitVec3::NEG_Z, UnitVec3::Z),
-                Rgb::WHITE.scale(0.5)
+                Rgb::WHITE * 0.5
             );
         }
     }

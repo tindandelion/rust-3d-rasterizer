@@ -366,7 +366,7 @@ mod tests {
 
         const TOWARD_LIGHT: UnitVec3 = UnitVec3::Z;
         const DIFFUSE_SHADER: fn(UnitVec3) -> Rgb =
-            |normal| Rgb::WHITE.scale(TOWARD_LIGHT.dot(normal).max(0.0));
+            |normal| Rgb::WHITE * TOWARD_LIGHT.dot(normal).max(0.0);
 
         #[test]
         fn uniform_normal_scales_color_on_horizontal_segment() {
@@ -504,7 +504,7 @@ mod tests {
             PhongShadedTriangle::new(
                 [corner(7, 7, 0.0), corner(19, 0, 0.0), corner(19, 14, 0.0)],
             )
-            .draw(&mut fb, |_| Rgb::WHITE.scale(0.25));
+            .draw(&mut fb, |_| Rgb::WHITE * 0.25);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected, "");
         }
 
@@ -535,7 +535,7 @@ mod tests {
             PhongShadedTriangle::new(
                 [corner(19, 0, 2.0), corner(0, 19, 0.0), corner(19, 19, 2.0)],
             )
-            .draw(&mut fb, |_| Rgb::WHITE.scale(0.25));
+            .draw(&mut fb, |_| Rgb::WHITE * 0.25);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected, "");
         }
 

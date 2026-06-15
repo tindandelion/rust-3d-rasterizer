@@ -81,11 +81,30 @@ mod tests {
         let (width, height, expected_rgb) = decode_webp_rgb(&expected_path);
 
         let actual = render_scene(width, height);
+        let actual_rgb = actual.as_ref();
+        let l2_distance = rgb_l2_distance(actual_rgb, &expected_rgb);
         assert!(
-            actual.as_ref() == expected_rgb.as_slice(),
-            "rendered scene does not match {}",
+            actual_rgb == expected_rgb.as_slice(),
+            "rendered scene does not match {} (L2 distance: {l2_distance})",
             expected_path.display()
         );
+    }
+
+    fn rgb_l2_distance(actual: &[u8], expected: &[u8]) -> f64 {
+        assert_eq!(
+            actual.len(),
+            expected.len(),
+            "RGB buffers differ in length"
+        );
+        actual
+            .iter()
+            .zip(expected)
+            .map(|(a, e)| {
+                let delta = i32::from(*a) - i32::from(*e);
+                f64::from(delta * delta)
+            })
+            .sum::<f64>()
+            .sqrt()
     }
 
     fn decode_webp_rgb(path: &Path) -> (u32, u32, Vec<u8>) {
