@@ -20,13 +20,7 @@ const TORUS_COLOR: Rgb = Rgb(52, 110, 210);
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut terminal = KittyTerminal::new();
     let (width, height) = terminal.pixel_dimensions()?;
-    let mut framebuffer = FrameBuffer::new(width, height);
-    let camera = Camera::for_viewport(width, height).move_to(CAMERA_POS);
-    let light = BlinnLightModel::new(LIGHT_DIRECTION.into(), Material::shiny(0.15, 100));
-
-    let torus = Shape::new(torus(48, 32), TORUS_COLOR);
-    println!("Rendering torus...");
-    torus.render(&mut framebuffer, &camera, &light);
+    let framebuffer = render_scene(width, height);
 
     let fb_clone = framebuffer.clone();
     let handle = thread::spawn(move || save_webp(&fb_clone).unwrap());
@@ -34,6 +28,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     handle.join().unwrap();
 
     Ok(())
+}
+
+fn render_scene(width: u32, height: u32) -> FrameBuffer {
+    let mut framebuffer = FrameBuffer::new(width, height);
+    let camera = Camera::for_viewport(width, height).move_to(CAMERA_POS);
+    let light = BlinnLightModel::new(LIGHT_DIRECTION.into(), Material::shiny(0.15, 100));
+
+    let torus = Shape::new(torus(48, 32), TORUS_COLOR);
+    torus.render(&mut framebuffer, &camera, &light);
+
+    framebuffer
 }
 
 fn save_webp(framebuffer: &FrameBuffer) -> Result<(), Box<dyn std::error::Error>> {
@@ -58,4 +63,50 @@ fn display_in_terminal(
     terminal.wait_for_key()?;
     terminal.leave()?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+    use std::path::Path;
+
+    use super::render_scene;
+    use webp_animation::{ColorMode, Decoder};
+
+    const EXPECTED_WEBP: &str = "test-data/still-scene.webp";
+
+    #[test]
+    fn test_render_scene() {
+        let expected_path = Path::new(env!("CARGO_MANIFEST_DIR")).join(EXPECTED_WEBP);
+        let (width, height, expected_rgb) = decode_webp_rgb(&expected_path);
+
+        let actual = render_scene(width, height);
+        assert!(
+            actual.as_ref() == expected_rgb.as_slice(),
+            "rendered scene does not match {}",
+            expected_path.display()
+        );
+    }
+
+    fn decode_webp_rgb(path: &Path) -> (u32, u32, Vec<u8>) {
+        let bytes = fs::read(path).unwrap_or_else(|e| panic!("read webp {}: {e}", path.display()));
+        let decoder = Decoder::new(&bytes).expect("decode webp");
+        let dims = decoder.dimensions();
+        let mut frames = decoder.into_iter();
+        let frame = frames.next().expect("at least one frame in still");
+        assert!(
+            frames.next().is_none(),
+            "expected a single-frame still, got multiple frames"
+        );
+        assert_eq!(frame.dimensions(), dims);
+        assert_eq!(frame.color_mode(), ColorMode::Rgba);
+
+        let rgba = frame.data();
+        let rgb: Vec<u8> = rgba
+            .chunks_exact(4)
+            .flat_map(|pixel| pixel[..3].iter().copied())
+            .collect();
+
+        (dims.0, dims.1, rgb)
+    }
 }
