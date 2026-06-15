@@ -93,17 +93,17 @@ This document describes how I plan to approach the project iteratively.
 
 **North star:** reproduce the **lighting and color feel** of the [Three.js TorusGeometry browser](https://threejs.org/docs/scenes/geometry-browser.html#TorusGeometry) in **export artifacts** — **not** wireframe overlay, flat shading, extended torus API, or a live viewer. **Smooth Phong** and **`meshes::torus(ring, tube)`** stay as-is. **Primary output:** **`still-scene`** / **`animated-scene`** WebPs (Kitty terminal for stills); **`winit`** deferred.
 
-**Phase 2 reference palette (export bins “done” look):** diffuse **`0x156289`**, emissive **`0x072534`**, white specular (high shininess), background **`0x444444`**, three white directional lights (after multi-light milestone).
+**Phase 2 reference palette (export bins “done” look):** matches [Three.js geometry browser TorusGeometry](https://threejs.org/docs/scenes/geometry-browser.html#TorusGeometry) **`MeshPhongMaterial`** — diffuse **`0x156289`** (**`Rgb(21, 98, 137)`**), emissive **`0x072534`** (**`Rgb(7, 37, 52)`**), specular **`0x111111`** (**`Rgb(17, 17, 17)`** — **`MeshPhongMaterial`** default; not overridden in the demo), **`shininess` 30** (default); scene background **`0x444444`** (**`Rgb(68, 68, 68)`**); three white **`DirectionalLight`** at **`intensity` 3** with positions **`(0, 200, 0)`**, **`(100, 200, 100)`**, **`(-100, -200, -100)`** (multi-light milestone).
 
 ### [ ] Material — explicit Phong colors (single light)
 
 - **Goal:** Refactor **`Material`** onto **`Shape`** and decouple it from the light source. **`Material`**: **`diffuse`**, **`emissive`**, **`specular`** (**`Rgb`**) + **`shininess`** (**`i32`**) — retire factor-based **`Material::matte`** / **`Material::shiny`**. Extend **`DirectionalLight`** with **`intensity`** (**white only**; colored lights deferred). Refactor **`Shape::render`** to take **`&DirectionalLight`** (single source) and evaluate diffuse/specular from explicit material colors; add **emissive** once per fragment. **`FrameBuffer::clear(Rgb)`** for explicit scene background. **No `Scene` struct yet** — export bins wire one light + shape directly. **Defer multi-light summation** to the next milestone (**do not** take **`&[DirectionalLight]`** here).
-- **Outcome:** **`still-scene`** / **`animated-scene`** use the **Three.js reference palette** with **one** white directional light and dark-gray clear. Unit tests cover explicit material colors and single-light Phong math.
+- **Outcome:** **`still-scene`** / **`animated-scene`** use the palette above (diffuse **`0x156289`**, emissive **`0x072534`**, specular **`0x111111`**, **`shininess` 30**, clear **`0x444444`**) with **one** white directional light; unit tests cover explicit material colors and single-light Phong math.
 
 ### [ ] Multi-light — summed directional contributions
 
-- **Goal:** Extend **`Shape::render`** to accept **`&[Light]`** and **sum** per-light diffuse/specular contributions per fragment (emissive still added once). Add **2–3** white **`Light`** sources in export bins — approximating the geometry browser’s three **`DirectionalLight`** setup. Introduce **`Scene`** only if bin wiring becomes painful.
-- **Outcome:** Export bins match the **full Three.js torus demo lighting** (palette + three lights) under **orthographic** projection; **`animated-scene`** tumble unchanged.
+- **Goal:** Extend **`Shape::render`** to accept **`&[DirectionalLight]`** and **sum** per-light diffuse/specular contributions per fragment (emissive still added once). Add the geometry browser’s three white **`DirectionalLight`** sources (**`intensity` 3**; positions **`(0, 200, 0)`**, **`(100, 200, 100)`**, **`(-100, -200, -100)`**) in export bins. Introduce **`Scene`** only if bin wiring becomes painful.
+- **Outcome:** Export bins match the **full Three.js torus demo lighting** (palette + three **`DirectionalLight`** at **`intensity` 3**) under **orthographic** projection; **`animated-scene`** tumble unchanged.
 
 ### [ ] Perspective projection (CPU) — optional stretch
 
