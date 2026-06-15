@@ -64,7 +64,7 @@ Optional stretch beyond these phases is allowed (e.g. CPU perspective in Phase 2
 
 - **Cube / dodecahedron:** faceted (**`Facet::with_facet_normal`** duplicates the facet normal at each corner).
 - **Sphere / torus:** smooth vertex normals (**`Facet::with_vertex_normals`**); **Phong** raster (**`PhongShadedTriangle`**: interpolate normals per pixel, renormalize, shade).
-- **Lighting (current, Phase 1):** **`BlinnLightModel`** bundles one directional light with **`Material::matte`** / **`Material::shiny`** (ambient/diffuse factors + optional shininess). **`Shape::render`** passes constant **`toward_eye = −Camera::direction()`** under orthographic projection.
+- **Lighting (current):** **`DirectionalLight`** (**`direction`** only for now) with explicit **`Material`** (**`diffuse`**, **`emissive`**, **`specular`**, **`shininess`**). **`Shape::render`** passes constant **`toward_eye = −Camera::direction()`** under orthographic projection.
 - **Lighting (Phase 2 target):** decouple **lights** from **materials** in two steps. **First milestone:** per-shape **`Material`** (**`diffuse`**, **`emissive`**, **`specular`**, **`shininess`**) on **`Shape`**; scene **`Light`** (**`direction`** + **`intensity`**, white only); **`Shape::render(fb, camera, &light)`** with single-light Phong. **Second milestone:** **`Shape::render`** takes **`&[Light]`** and sums contributions; export bins add 2–3 directionals. **Optional stretch (after perspective):** **positional** lights (point lights with per-fragment **`toward_light`**). **Emissive** added once per fragment throughout. **`Scene`** type deferred until multi-light bin wiring earns it.
 - **Historical note:** **Gouraud** intensity interpolation was an intermediate milestone; only **Phong** remains in code.
 
@@ -86,7 +86,7 @@ Phase 1 milestone ambition (from earlier discussion): interpolated vertex attrib
 ### Current filled path
 
 - **`PhongShadedTriangle`** (**`src/framebuffer/phong_shaded_triangle.rs`**): y-sorted scanlines, edge walking with **`Interpolator`**, per-pixel normal interpolation (**`NormalInterpolator`**), depth interpolation, and **`FrameBuffer::write_pixel`** (depth test + RGB write).
-- **`Shape::render`**: one **`PhongShadedTriangle::draw`** per visible **`Triangle`**; lighting via **`BlinnLightModel::calc_intensity`** (closure passed into **`draw`**).
+- **`Shape::render`**: one **`PhongShadedTriangle::draw`** per visible **`Triangle`**; lighting via **`Material::shade`** with **`DirectionalLight`** (closure passed into **`draw`**).
 - **Out-of-bounds:** **`write_pixel`** ignores coordinates outside the framebuffer; **`Camera::transform`** does not clip — negative projected **`xy`** may wrap when cast to **`u32`** (documented in **`ortho_camera`** module docs).
 
 ### Historical milestones (retired code paths)
@@ -125,7 +125,7 @@ Earlier phase-1 work exercised **wireframe**, **DDA lines**, **quad fill**, **`d
 
 ## Deferred checkpoints (do not lose track)
 
-1. **Phase 2 — material (single light)** — explicit **`Material`** on **`Shape`** (diffuse/emissive/specular/shininess); **`Light`** (direction + intensity, white only); retire **`BlinnLightModel`**; **`FrameBuffer::clear(Rgb)`**; Three.js torus demo palette in export bins with **one** light.
+1. **Phase 2 — material (single light)** — explicit **`Material`** on **`Shape`** (diffuse/emissive/specular/shininess); **`DirectionalLight`** **`intensity`** (white only); **`FrameBuffer::clear(Rgb)`**; Three.js torus demo palette in export bins with **one** light.
 2. **Phase 2 — multi-light** — **`Shape::render(&[Light])`** summation; three white directionals in export bins (full geometry-browser lighting).
 3. **Phase 2 stretch — perspective projection (CPU)** — optional; only if appetite after materials/lights.
 4. **Phase 2 stretch — positional lights** — optional; point lights with per-fragment **`toward_light`**; after perspective stretch (or after multi-light if perspective skipped).

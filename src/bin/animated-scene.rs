@@ -1,4 +1,4 @@
-//! **`meshes::torus(48, 32)`** at the origin, **Phong** **`BlinnLightModel`**, back-face culled —
+//! **`meshes::torus(48, 32)`** at the origin, **Phong** **`DirectionalLight`**, back-face culled —
 //! **`ANIMATED_SCENE_FRAME_COUNT`**-frame lossless WebP.
 //!
 //! **Fixed camera** (same eye as **`still-scene`**). **Model:** world-fixed **`R_z R_y R_x`** tumble with
@@ -14,7 +14,7 @@ use glam::{Mat4, Vec3};
 use thorus_forge::Material;
 use thorus_forge::meshes::torus;
 use thorus_forge::{
-    ANIMATED_SCENE_FRAME_COUNT, ANIMATED_SCENE_FRAME_SPACING_MS, BlinnLightModel, Camera,
+    ANIMATED_SCENE_FRAME_COUNT, ANIMATED_SCENE_FRAME_SPACING_MS, Camera, DirectionalLight,
     FrameBuffer, Rgb, SCENE_HEIGHT, SCENE_WIDTH, Shape, WebpEncoder,
 };
 
@@ -56,7 +56,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ANIMATED_SCENE_FRAME_SPACING_MS,
     )?;
     let camera = Camera::for_viewport(SCENE_WIDTH, SCENE_HEIGHT).move_to(CAMERA_POS);
-    let light = BlinnLightModel::new(glam::Vec3::new(1.0, 0.5, -1.0).into());
+    let light = DirectionalLight::new(glam::Vec3::new(1.0, 0.5, -1.0).into());
 
     let base_mesh = torus(TORUS_RING_SEGMENTS, TORUS_TUBE_SEGMENTS);
 

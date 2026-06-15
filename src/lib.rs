@@ -12,7 +12,7 @@ pub mod ortho_camera;
 pub mod webp_encoder;
 
 pub use framebuffer::{FrameBuffer, Rgb};
-pub use lighting::{BlinnLightModel, Material};
+pub use lighting::{DirectionalLight, Material};
 pub use ortho_camera::Camera;
 pub use webp_encoder::WebpEncoder;
 
@@ -45,7 +45,7 @@ impl Shape {
         Self { mesh, material }
     }
 
-    pub fn render(&self, fb: &mut FrameBuffer, camera: &Camera, light_model: &BlinnLightModel) {
+    pub fn render(&self, fb: &mut FrameBuffer, camera: &Camera, light: &DirectionalLight) {
         let forward = camera.direction();
         let toward_eye: UnitVec3 = -camera.direction();
         let material = self.material;
@@ -55,7 +55,7 @@ impl Shape {
                 normal: triangle.normals[i],
             });
             PhongShadedTriangle::new(corners)
-                .draw(fb, |normal| material.shade(light_model, normal, toward_eye));
+                .draw(fb, |normal| material.shade(light, normal, toward_eye));
         }
     }
 }

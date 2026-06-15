@@ -2,7 +2,7 @@
 //!
 //! The golden fills the projected **−Z** cap with a local **`fill_rect`** helper (duplicated facet normals → uniform
 //! intensity, so the shaded square matches a flat fill). With **`Camera::direction` = +Z**, the strictly
-//! front-facing hull facet is the **−Z** cap (outward normal **`NEG_Z`**). **`BlinnLightModel`** toward **`NEG_Z`**
+//! front-facing hull facet is the **−Z** cap (outward normal **`NEG_Z`**). **`DirectionalLight`** toward **`NEG_Z`**
 //! with a high-ambient matte yields uniform intensity, so
 //! the material **`emissive`** is unchanged when **`diffuse`** is black. On this **`FB_WIDTH`×`FB_HEIGHT`** canvas,
 //! **`scale = (min(w,h) − 1) / 2`** is an integer, so unit-cube **`±0.5`** corners land exactly on
@@ -10,7 +10,7 @@
 
 use glam::{Mat4, UVec2, Vec3};
 use thorus_forge::{
-    BlinnLightModel, Camera, FrameBuffer, Material, Rgb, Shape, framebuffer::FbPixel, meshes::cube,
+    Camera, DirectionalLight, FrameBuffer, Material, Rgb, Shape, framebuffer::FbPixel, meshes::cube,
 };
 
 const FB_WIDTH: u32 = 101;
@@ -21,7 +21,7 @@ const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.0, -1.0);
 fn draw_single_unit_cube_produces_rectangle() {
     let mut fb = FrameBuffer::new(FB_WIDTH, FB_HEIGHT);
     let camera = Camera::for_viewport(FB_WIDTH, FB_HEIGHT).move_to(CAMERA_POS);
-    let light = BlinnLightModel::new(-camera.direction());
+    let light = DirectionalLight::new(-camera.direction());
 
     let shape = positioned_cube(0.0, Rgb::BLUE);
     shape.render(&mut fb, &camera, &light);
@@ -34,7 +34,7 @@ fn draw_single_unit_cube_produces_rectangle() {
 fn draw_occluded_cubes_hides_far_cube() {
     let mut fb = FrameBuffer::new(FB_WIDTH, FB_HEIGHT);
     let camera = Camera::for_viewport(FB_WIDTH, FB_HEIGHT).move_to(CAMERA_POS);
-    let light = BlinnLightModel::new(-camera.direction());
+    let light = DirectionalLight::new(-camera.direction());
 
     let near_shape = positioned_cube(0.0, Rgb::BLUE);
     let far_shape = positioned_cube(2.0, Rgb::RED);

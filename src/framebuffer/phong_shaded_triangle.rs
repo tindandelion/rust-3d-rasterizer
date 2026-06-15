@@ -497,14 +497,10 @@ mod tests {
                 "█                  ▒",
             ]);
             let mut fb = FrameBuffer::new(20, 15);
-            PhongShadedTriangle::new(
-                [corner(13, 7, 1.0), corner(0, 0, 1.0), corner(0, 14, 1.0)],
-            )
-            .draw(&mut fb, |_| Rgb::WHITE);
-            PhongShadedTriangle::new(
-                [corner(7, 7, 0.0), corner(19, 0, 0.0), corner(19, 14, 0.0)],
-            )
-            .draw(&mut fb, |_| Rgb::WHITE * 0.25);
+            PhongShadedTriangle::new([corner(13, 7, 1.0), corner(0, 0, 1.0), corner(0, 14, 1.0)])
+                .draw(&mut fb, |_| Rgb::WHITE);
+            PhongShadedTriangle::new([corner(7, 7, 0.0), corner(19, 0, 0.0), corner(19, 14, 0.0)])
+                .draw(&mut fb, |_| Rgb::WHITE * 0.25);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected, "");
         }
 
@@ -528,14 +524,10 @@ mod tests {
                 "█████▒▒▒▒▒██████████",
             ]);
             let mut fb = FrameBuffer::new(20, 15);
-            PhongShadedTriangle::new(
-                [corner(0, 0, 1.0), corner(19, 14, 1.0), corner(0, 14, 1.0)],
-            )
-            .draw(&mut fb, |_| Rgb::WHITE);
-            PhongShadedTriangle::new(
-                [corner(19, 0, 2.0), corner(0, 19, 0.0), corner(19, 19, 2.0)],
-            )
-            .draw(&mut fb, |_| Rgb::WHITE * 0.25);
+            PhongShadedTriangle::new([corner(0, 0, 1.0), corner(19, 14, 1.0), corner(0, 14, 1.0)])
+                .draw(&mut fb, |_| Rgb::WHITE);
+            PhongShadedTriangle::new([corner(19, 0, 2.0), corner(0, 19, 0.0), corner(19, 19, 2.0)])
+                .draw(&mut fb, |_| Rgb::WHITE * 0.25);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected, "");
         }
 

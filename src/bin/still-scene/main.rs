@@ -4,7 +4,7 @@ use std::thread;
 
 use glam::Vec3;
 
-use thorus_forge::BlinnLightModel;
+use thorus_forge::DirectionalLight;
 use thorus_forge::Material;
 use thorus_forge::Rgb;
 use thorus_forge::meshes::torus;
@@ -38,7 +38,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn render_scene(width: u32, height: u32) -> FrameBuffer {
     let mut framebuffer = FrameBuffer::new(width, height);
     let camera = Camera::for_viewport(width, height).move_to(CAMERA_POS);
-    let light = BlinnLightModel::new(LIGHT_DIRECTION.into());
+    let light = DirectionalLight::new(LIGHT_DIRECTION.into());
 
     let torus = Shape::new(torus(48, 32), TORUS_MATERIAL);
     torus.render(&mut framebuffer, &camera, &light);
@@ -48,7 +48,7 @@ fn render_scene(width: u32, height: u32) -> FrameBuffer {
 
 fn save_webp(framebuffer: &FrameBuffer) -> Result<(), Box<dyn std::error::Error>> {
     let mut encoder = WebpEncoder::new(framebuffer.width(), framebuffer.height())?;
-    encoder.add_frame(&framebuffer)?;
+    encoder.add_frame(framebuffer)?;
     encoder.write(Path::new(OUT_PATH))?;
     println!(
         "Wrote {} ({}×{}, lossless)",
@@ -64,7 +64,7 @@ fn display_in_terminal(
     framebuffer: &FrameBuffer,
 ) -> Result<(), Box<dyn std::error::Error>> {
     terminal.enter()?;
-    terminal.display_rgb(&framebuffer, framebuffer.width(), framebuffer.height())?;
+    terminal.display_rgb(framebuffer, framebuffer.width(), framebuffer.height())?;
     terminal.wait_for_key()?;
     terminal.leave()?;
     Ok(())
@@ -96,11 +96,7 @@ mod tests {
     }
 
     fn rgb_l2_distance(actual: &[u8], expected: &[u8]) -> f64 {
-        assert_eq!(
-            actual.len(),
-            expected.len(),
-            "RGB buffers differ in length"
-        );
+        assert_eq!(actual.len(), expected.len(), "RGB buffers differ in length");
         actual
             .iter()
             .zip(expected)
