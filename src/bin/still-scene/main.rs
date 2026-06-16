@@ -6,7 +6,7 @@ use glam::Vec3;
 
 use thorus_forge::DirectionalLight;
 use thorus_forge::meshes::torus;
-use thorus_forge::{Camera, DEFAULT_MATERIAL, FrameBuffer, SCENE_BACKGROUND, Shape, WebpEncoder};
+use thorus_forge::{Camera, FrameBuffer, SCENE_BACKGROUND, Shape, WebpEncoder, default_material};
 
 use crate::kitty_terminal::KittyTerminal;
 
@@ -33,7 +33,7 @@ fn render_scene(width: u32, height: u32) -> FrameBuffer {
     let camera = Camera::for_viewport(width, height).move_to(CAMERA_POS);
     let light = DirectionalLight::new(LIGHT_DIRECTION.into());
 
-    let torus = Shape::new(torus(48, 32), DEFAULT_MATERIAL);
+    let torus = Shape::new(torus(48, 32), default_material());
     torus.render(&mut framebuffer, &camera, &light);
 
     framebuffer

@@ -13,8 +13,8 @@ use glam::{Mat4, Vec3};
 
 use thorus_forge::meshes::torus;
 use thorus_forge::{
-    ANIMATED_SCENE_FRAME_COUNT, ANIMATED_SCENE_FRAME_SPACING_MS, Camera, DEFAULT_MATERIAL,
-    DirectionalLight, FrameBuffer, SCENE_BACKGROUND, SCENE_HEIGHT, SCENE_WIDTH, Shape, WebpEncoder,
+    ANIMATED_SCENE_FRAME_COUNT, ANIMATED_SCENE_FRAME_SPACING_MS, Camera, DirectionalLight,
+    FrameBuffer, SCENE_BACKGROUND, SCENE_HEIGHT, SCENE_WIDTH, Shape, WebpEncoder, default_material,
 };
 
 const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.5, -1.0);
@@ -67,7 +67,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let t = frame_index as f32 / lap_frames * TAU;
         let torus = Shape::new(
             base_mesh.transform(model_matrix_tumble(t)),
-            DEFAULT_MATERIAL,
+            default_material(),
         );
         torus.render(&mut framebuffer, &camera, &light);
 
