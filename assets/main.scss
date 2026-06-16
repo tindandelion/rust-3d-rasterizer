@@ -24,6 +24,27 @@ img {
   height: auto;
 }
 
+.post-content .demo-embed {
+  margin: 1.5rem 0;
+  text-align: center;
+
+  iframe {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: 28rem;
+    margin: 0 auto;
+    border: 1px solid #ccc;
+    background: #444444;
+  }
+
+  figcaption {
+    margin-top: 0.5rem;
+    font-size: 0.9em;
+    text-align: center;
+  }
+}
+
 .still-compare {
   display: flex;
   flex-wrap: nowrap;

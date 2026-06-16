@@ -17,15 +17,24 @@ The state of the codebase is also going to inform a few areas for improvement. I
 
 ## Picking the north star 
 
-> Good artists borrow, great artists steal -- Pablo Picasso 
+> Good artists copy, great artists steal — Pablo Picasso
 
-There are plenty of existing 3D libraries to steal ideas from, and we would like to use this opportunity to learn how things are implemented by a more knowledgeable developers. Our choice is [`three.js`][link to website] - a JavaScript library for building 3D graphics applications in the browser. 
+There are plenty of existing 3D libraries to steal ideas from, and we would like to use this opportunity to learn how things are implemented by more knowledgeable developers. Our choice is [`three.js`][threejs] — a JavaScript library for building 3D graphics applications in the browser.
 
-Very helpfully, `three.js` includes an interactive [Geometry Browser][geometry-browser]: the demo application that demonstrates its capabilities. Not surprisingly, one of the demos is a [rotating torus][torus-geometry], similar to what we've been building all along. 
+Very helpfully, `three.js` includes an interactive [Geometry Browser][geometry-browser]: the demo application that demonstrates its capabilities. Not surprisingly, one of the demos is a [rotating torus][torus-geometry], similar to what we've been building all along.
+
+<figure class="demo-embed">
+  <iframe
+    src="{{ '/assets/demos/geometry-browser-torus.html' | relative_url }}"
+    title="three.js Geometry Browser torus reference"
+    loading="lazy"
+  ></iframe>
+  <figcaption>Our north-star scene — drag to orbit. Trimmed from the official <a href="https://threejs.org/docs/scenes/geometry-browser.html#TorusGeometry">Geometry Browser</a> torus demo.</figcaption>
+</figure>
 
 This demo is going to be our visual north star: at the end of phase 2 we would like to be able to render something similar, shamelessly stealing ideas for the scene setup and the color palette. We don't aim to replicate it exactly, though: only borrow the parts that seem interesting to explore. 
 
-At first glance, the [following topics][link to project breakdown phase 2] look worth touching: 
+At first glance, the [following topics][project-breakdown] look worth touching:
 
 * **More flexible materials**. Our implementation right now doesn't give us enough flexibility to set the material parameters; we'd like to extend the `Material` struct to make it more flexible; 
 * **Multiple lights per scene**. Torus demo from `three.js` uses three directional lights in the scene. Our pipeline doesn't support multiple lights. 
@@ -39,6 +48,7 @@ We'll start from the most visual part: borrowing the color palette from `three.j
 
 [post-from-pixel-to-torus]: {{site.baseurl}}/{% post_url 2026-06-13-from-pixel-to-torus %}
 [post-baseline-benchmarks]: {{site.baseurl}}/{% post_url 2026-06-15-some-baseline-performance-benchmarks %}
+[threejs]: https://threejs.org/
 [geometry-browser]: https://threejs.org/docs/scenes/geometry-browser.html#TorusGeometry
 [torus-geometry]: https://threejs.org/docs/#api/en/geometries/TorusGeometry
 [perspective-projection]: https://en.wikipedia.org/wiki/3D_projection#Perspective_projection
