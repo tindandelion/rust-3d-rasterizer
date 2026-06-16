@@ -365,8 +365,12 @@ mod tests {
         use super::*;
 
         const TOWARD_LIGHT: UnitVec3 = UnitVec3::Z;
-        const DIFFUSE_SHADER: fn(UnitVec3) -> Rgb =
-            |normal| Rgb::WHITE * TOWARD_LIGHT.dot(normal).max(0.0);
+
+        fn diffuse_lambert_shader(normal: UnitVec3) -> Rgb {
+            let factor = TOWARD_LIGHT.dot(normal).max(0.0);
+            let channel = (255.0 * factor).round().clamp(0.0, 255.0) as u8;
+            Rgb(channel, channel, channel)
+        }
 
         #[test]
         fn uniform_normal_scales_color_on_horizontal_segment() {
@@ -383,7 +387,7 @@ mod tests {
                 "          ",
             ]);
             let mut fb = FrameBuffer::new(10, 5);
-            PhongShadedTriangle::new(corners).draw(&mut fb, DIFFUSE_SHADER);
+            PhongShadedTriangle::new(corners).draw(&mut fb, diffuse_lambert_shader);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected_result, "");
         }
 
@@ -403,7 +407,7 @@ mod tests {
                 "          ",
             ]);
             let mut fb = FrameBuffer::new(10, 5);
-            PhongShadedTriangle::new(corners).draw(&mut fb, DIFFUSE_SHADER);
+            PhongShadedTriangle::new(corners).draw(&mut fb, diffuse_lambert_shader);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected_result, "");
         }
 
@@ -422,7 +426,7 @@ mod tests {
                 "          ",
             ]);
             let mut fb = FrameBuffer::new(10, 5);
-            PhongShadedTriangle::new(corners).draw(&mut fb, DIFFUSE_SHADER);
+            PhongShadedTriangle::new(corners).draw(&mut fb, diffuse_lambert_shader);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected_result, "");
         }
 
@@ -441,7 +445,7 @@ mod tests {
                 "          ",
             ]);
             let mut fb = FrameBuffer::new(10, 5);
-            PhongShadedTriangle::new(corners).draw(&mut fb, DIFFUSE_SHADER);
+            PhongShadedTriangle::new(corners).draw(&mut fb, diffuse_lambert_shader);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected_result, "");
         }
 
@@ -460,7 +464,7 @@ mod tests {
                 "          ",
             ]);
             let mut fb = FrameBuffer::new(10, 5);
-            PhongShadedTriangle::new(corners).draw(&mut fb, DIFFUSE_SHADER);
+            PhongShadedTriangle::new(corners).draw(&mut fb, diffuse_lambert_shader);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected_result, "");
         }
 
@@ -476,6 +480,8 @@ mod tests {
         use crate::framebuffer::test_helpers::{assert_ascii_art_eq, to_ascii_art};
 
         use super::*;
+
+        const DIM_WHITE: Rgb = Rgb(64, 64, 64);
 
         #[test]
         fn nearer_dimmed_triangle_occludes_further_bright_triangle() {
@@ -500,7 +506,7 @@ mod tests {
             PhongShadedTriangle::new([corner(13, 7, 1.0), corner(0, 0, 1.0), corner(0, 14, 1.0)])
                 .draw(&mut fb, |_| Rgb::WHITE);
             PhongShadedTriangle::new([corner(7, 7, 0.0), corner(19, 0, 0.0), corner(19, 14, 0.0)])
-                .draw(&mut fb, |_| Rgb::WHITE * 0.25);
+                .draw(&mut fb, |_| DIM_WHITE);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected, "");
         }
 
@@ -527,7 +533,7 @@ mod tests {
             PhongShadedTriangle::new([corner(0, 0, 1.0), corner(19, 14, 1.0), corner(0, 14, 1.0)])
                 .draw(&mut fb, |_| Rgb::WHITE);
             PhongShadedTriangle::new([corner(19, 0, 2.0), corner(0, 19, 0.0), corner(19, 19, 2.0)])
-                .draw(&mut fb, |_| Rgb::WHITE * 0.25);
+                .draw(&mut fb, |_| DIM_WHITE);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected, "");
         }
 

@@ -31,7 +31,7 @@ fn render_scene(width: u32, height: u32) -> FrameBuffer {
     let mut framebuffer = FrameBuffer::new(width, height);
     framebuffer.clear(SCENE_BACKGROUND);
     let camera = Camera::for_viewport(width, height).move_to(CAMERA_POS);
-    let light = DirectionalLight::new(LIGHT_DIRECTION.into());
+    let light = DirectionalLight::with_intensity(LIGHT_DIRECTION.into(), 1.0);
 
     let torus = Shape::new(torus(48, 32), default_material());
     torus.render(&mut framebuffer, &camera, &light);

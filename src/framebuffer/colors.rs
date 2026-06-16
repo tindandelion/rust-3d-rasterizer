@@ -1,7 +1,5 @@
 //! sRGB-style **RGB888** triple (**`u8`** per channel).
 
-use std::ops::{Add, Mul};
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Rgb(pub u8, pub u8, pub u8);
 
@@ -11,6 +9,15 @@ impl Rgb {
     pub const BLUE: Self = Self(0, 0, 255);
     pub const RED: Self = Self(255, 0, 0);
 
+    /// **sRGB** **`0xRRGGBB`** (e.g. geometry-browser **`0x156289`**) → **`Rgb`** channels.
+    pub const fn from_hex(hex: u32) -> Self {
+        Self(
+            ((hex >> 16) & 0xFF) as u8,
+            ((hex >> 8) & 0xFF) as u8,
+            (hex & 0xFF) as u8,
+        )
+    }
+
     /// **Brightness** in **`[0.0, 1.0]`**: arithmetic mean of **`R`**, **`G`**, and **`B`**
     /// (each channel normalized from **`u8`**).
     pub fn brightness(self) -> f32 {
@@ -18,49 +25,26 @@ impl Rgb {
     }
 }
 
-impl Add for Rgb {
-    type Output = Self;
-
-    /// Per-channel **add**, **saturating** each sum to **`[0, 255]`**.
-    fn add(self, other: Self) -> Self::Output {
-        Self(
-            self.0.saturating_add(other.0),
-            self.1.saturating_add(other.1),
-            self.2.saturating_add(other.2),
-        )
-    }
-}
-
-impl Mul<f32> for Rgb {
-    type Output = Self;
-
-    /// Per-channel **multiply** by **`factor`**, rounded to nearest **`u8`**, then
-    /// **clamped** to **`[0, 255]`** per channel.
-    fn mul(self, factor: f32) -> Self::Output {
-        Self(
-            mul_channel(self.0, factor),
-            mul_channel(self.1, factor),
-            mul_channel(self.2, factor),
-        )
-    }
-}
-
-impl Mul<Rgb> for f32 {
-    type Output = Rgb;
-
-    fn mul(self, color: Rgb) -> Self::Output {
-        color * self
-    }
-}
-
-fn mul_channel(value: u8, factor: f32) -> u8 {
-    (value as f32 * factor).round().clamp(0.0, 255.0) as u8
-}
-
 #[cfg(test)]
 mod tests {
     use super::Rgb;
     use approx::assert_relative_eq;
+
+    #[test]
+    fn from_hex_decodes_rgb_channels() {
+        assert_eq!(Rgb::from_hex(0x156289), Rgb(21, 98, 137));
+        assert_eq!(Rgb::from_hex(0x072534), Rgb(7, 37, 52));
+        assert_eq!(Rgb::from_hex(0x111111), Rgb(17, 17, 17));
+        assert_eq!(Rgb::from_hex(0x444444), Rgb(68, 68, 68));
+    }
+
+    #[test]
+    fn from_hex_extremes_match_named_colors() {
+        assert_eq!(Rgb::from_hex(0x000000), Rgb::BLACK);
+        assert_eq!(Rgb::from_hex(0xFFFFFF), Rgb::WHITE);
+        assert_eq!(Rgb::from_hex(0xFF0000), Rgb::RED);
+        assert_eq!(Rgb::from_hex(0x0000FF), Rgb::BLUE);
+    }
 
     #[test]
     fn brightness_black_is_zero() {
@@ -78,54 +62,5 @@ mod tests {
         assert_relative_eq!(Rgb(0, 255, 0).brightness(), 1.0 / 3.0);
         assert_relative_eq!(Rgb(0, 0, 255).brightness(), 1.0 / 3.0);
         assert_relative_eq!(Rgb(60, 90, 120).brightness(), 90.0 / 255.0);
-    }
-
-    #[test]
-    fn mul_one_is_identity() {
-        assert_eq!(Rgb(10, 20, 200) * 1.0, Rgb(10, 20, 200));
-    }
-
-    #[test]
-    fn mul_zero_is_black() {
-        assert_eq!(Rgb(10, 20, 200) * 0.0, Rgb::BLACK);
-    }
-
-    #[test]
-    fn mul_half_rounds_each_channel() {
-        assert_eq!(Rgb(100, 101, 255) * 0.5, Rgb(50, 51, 128));
-    }
-
-    #[test]
-    fn mul_negative_factor_clamps_channels_to_zero() {
-        assert_eq!(Rgb(200, 0, 0) * -1.0, Rgb::BLACK);
-    }
-
-    #[test]
-    fn mul_above_one_saturates_channels() {
-        assert_eq!(Rgb(128, 128, 255) * 2.0, Rgb::WHITE);
-        assert_eq!(Rgb(200, 0, 0) * 2.0, Rgb(255, 0, 0));
-    }
-
-    #[test]
-    fn scalar_mul_matches_rgb_mul() {
-        assert_eq!(0.25 * Rgb::WHITE, Rgb::WHITE * 0.25);
-    }
-
-    #[test]
-    fn add_is_component_wise() {
-        assert_eq!(Rgb(10, 20, 30) + Rgb(1, 2, 3), Rgb(11, 22, 33));
-    }
-
-    #[test]
-    fn add_black_is_identity() {
-        let color = Rgb(40, 80, 160);
-        assert_eq!(color + Rgb::BLACK, color);
-        assert_eq!(Rgb::BLACK + color, color);
-    }
-
-    #[test]
-    fn add_saturates_channels_at_white() {
-        assert_eq!(Rgb(200, 128, 255) + Rgb(100, 200, 10), Rgb(255, 255, 255));
-        assert_eq!(Rgb(255, 0, 0) + Rgb(0, 255, 0), Rgb(255, 255, 0));
     }
 }

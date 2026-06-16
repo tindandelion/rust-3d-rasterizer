@@ -4,7 +4,7 @@ Findings from comparing **thorus-forge** export renders to the local Three.js re
 
 ## Current policy — export-bin light intensity
 
-**Export bins (`still-scene`, `animated-scene`) use `DirectionalLight::new(...)` — intensity `1.0` — until the multi-light milestone.** Do not raise single-light intensity to match the geometry browser’s per-light **`intensity` 3**; our byte-space Phong path clips much earlier than Three.js linear lighting (see below). Use **`with_intensity`** only in unit tests or deliberate experiments. The browser’s **`intensity` 3** on **three** summed lights is deferred to **Multi-light** in `doc/planning/project-breakdown.md`.
+**Export bins (`still-scene`, `animated-scene`) use `DirectionalLight::new(...)` — intensity `1.0` — until the multi-light milestone.** Do not raise single-light intensity to match the geometry browser’s per-light **`intensity` 3** without parity testing; even with linear color, one light at **`3.0`** is not equivalent to three summed browser lights. Use **`with_intensity`** only in unit tests or deliberate experiments. The browser’s **`intensity` 3** on **three** summed lights is deferred to **Multi-light** in `doc/planning/project-breakdown.md`.
 
 ---
 
@@ -31,19 +31,19 @@ Palette hex values match; **pixel values often do not**, even if export-bin inte
 - **`new(toward_light)`** defaults intensity to **`1.0`**; **`with_intensity(toward_light, intensity)`** for explicit values.
 - **`diffuse_contrib`** and **`specular_contrib`** multiply Lambert / Blinn–Phong terms by **`intensity`** inside the light — not in **`Material::shade`**.
 
-**`Material::shade`** composes:
+**`Material::shade`** composes in **linear** space (`src/lighting/color.rs`), then encodes to sRGB **`Rgb`**:
 
 ```text
-emissive + diffuse × diffuse_contrib + specular × specular_contrib
+linear: emissive + diffuse × diffuse_contrib + specular × specular_contrib  →  Rgb
 ```
 
 **`Rgb`** (`src/framebuffer/colors.rs`):
 
-- **`u8`** channels are used **directly** in lighting math.
-- **`Rgb * f32`** scales each channel, rounds, then clamps to **`[0, 255]`**.
-- **`Rgb + Rgb`** saturates per channel at **`255`**.
+- **`u8`** channels are **sRGB display bytes** (framebuffer storage, **`from_hex`**, ASCII preview).
+- Material inputs are **sRGB**; **`Material::new`** decodes to linear **`Color`** at construction.
+- **No** per-channel **`Rgb + Rgb`** or **`Rgb × f32`** — lighting math lives in **`Color`** only.
 
-There is **no sRGB ↔ linear conversion** and **no tone mapping**. What you encode in **`Material`** is what gets multiplied and added in “display byte” space.
+There is **no tone mapping** beyond sRGB encode on fragment output.
 
 ---
 
@@ -57,21 +57,19 @@ Three.js **`MeshPhongMaterial`** (r173 in our reference):
 4. Sums emissive once per fragment (also handled in linear space).
 5. Converts the result back to **sRGB** for the framebuffer (renderer **`outputColorSpace`**).
 
-So **`intensity: 3`** in Three.js means “3× in **linear** lighting space, then encode for display.” In thorus-forge it means “3× the **raw byte** values, then clamp.” Those are **not equivalent**, especially for mid-tone palette colors.
+So **`intensity: 3`** in Three.js means “3× in **linear** lighting space, then encode for display.” thorus-forge uses the same linear lighting model; remaining gaps vs Three.js are mostly **multi-light**, **tone mapping**, and reference-scene wiring — not byte-space clipping.
 
 ### Worked example (one light, full Lambert, intensity 3)
 
 Material palette diffuse **`Rgb(21, 98, 137)`**, emissive **`Rgb(7, 37, 52)`**, ignore specular for simplicity.
 
-| | **thorus-forge** | **Three.js (approx.)** |
-|--|------------------|------------------------|
-| Emissive | `(7, 37, 52)` | `(7, 37, 52)` after linear → sRGB round-trip (similar) |
-| Diffuse × 3 @ `N·L = 1` | `(63, 294→255, 411→255)` | ~`(59, 293, 411)` in linear → sRGB ~`(59, 158, 219)` |
-| **Diffuse + emissive** | **`(70, 255, 255)`** — G/B **saturated** | **`~(66, 158, 219)`** — no channel pegged at 255 |
+| | **thorus-forge (linear path)** | **Three.js (approx.)** |
+|--|-------------------------------|------------------------|
+| Emissive | `(7, 37, 52)` after linear → sRGB round-trip (similar) | `(7, 37, 52)` after linear → sRGB round-trip (similar) |
+| Diffuse × 3 @ `N·L = 1` | ~`(59, 163, 219)` in sRGB after linear scale + encode | ~`(59, 158, 219)` in sRGB |
+| **Diffuse + emissive** | **~(66, 163, 219)** — no early byte clip | **~(66, 158, 219)** |
 
-At intensity **3**, our pipeline **clips green and blue early** on well-lit fragments; Three.js stays darker and less neon because lighting runs in linear space first.
-
-**Takeaway:** matching Three.js “feel” requires more than copying hex colors and setting **`intensity = 3`**. A linear color path (or deliberate tuning scalars) is needed for numeric parity.
+**Takeaway:** matching Three.js “feel” still requires aligned light count, intensity, and eyeball/golden parity — not just copying hex colors and setting **`intensity = 3`** on one light.
 
 ---
 
@@ -99,7 +97,7 @@ lights[2] = new DirectionalLight(0xffffff, 3)
 
 Positions match our Phase 2 breakdown: **`(0, 200, 0)`**, **`(100, 200, 100)`**, **`(-100, -200, -100)`**.
 
-When comparing **`still-scene`** (one light @ **`intensity` 1.0**) to the local HTML file with only one active Three.js light @ **`intensity` 3**, intensities still do not match — and Rust would look **brighter still** at **`intensity` 3** because of byte-space vs linear color math. That mismatch in the reference file should be fixed when we use it as a golden target for **multi-light**; it does **not** explain Rust looking brighter at equal nominal intensity (fewer active Three.js lights would make Three.js **darker**).
+When comparing **`still-scene`** (one light @ **`intensity` 1.0**) to the local HTML file with only one active Three.js light @ **`intensity` 3**, intensities still do not match one-for-one — and **multi-light** summation differs. That mismatch in the reference file should be fixed when we use it as a golden target for **multi-light**; it does **not** explain Rust looking brighter at equal nominal intensity (fewer active Three.js lights would make Three.js **darker**).
 
 ---
 
@@ -118,7 +116,7 @@ These affect highlight placement and side-by-side viewing; they are secondary to
 
 ## Emissive
 
-Both systems add **emissive once per fragment**, independent of **`N·L`**. In our pipeline emissive is full **`u8`** magnitude before lit terms are added; at high **`intensity`**, lit diffuse/specular saturate on top. Three.js adds emissive in linear space, which keeps the base glow comparatively subdued before display encoding.
+Both systems add **emissive once per fragment**, independent of **`N·L`**, in **linear** space before sRGB encode.
 
 ---
 
@@ -127,23 +125,24 @@ Both systems add **emissive once per fragment**, independent of **`N·L`**. In o
 From `doc/planning/project-breakdown.md`:
 
 1. **Material — explicit Phong colors (single light):** palette and **`DirectionalLight::intensity`** are in place; **export bins stay at `intensity` 1.0** (`DirectionalLight::new`). **`FrameBuffer::clear(Rgb(68, 68, 68))`** still open.
-2. **Multi-light:** sum per-light diffuse/specular in **`Shape::render`**; wire three browser directionals at **`intensity` 3** in export bins (first time **`intensity` 3** ships in bins). Even then, do **not** expect pixel match without a linear color path.
-3. **Parity goal:** reproduce the geometry browser **look** in export artifacts — eyeball + golden WebPs — not bit-identical Three.js output unless we add sRGB/linear handling.
+2. **Multi-light:** sum per-light diffuse/specular in **`Shape::render`**; wire three browser directionals at **`intensity` 3** in export bins (first time **`intensity` 3** ships in bins). Expect approximate — not bit-identical — parity with Three.js until multi-light golden WebPs land.
+3. **Parity goal:** reproduce the geometry browser **look** in export artifacts — eyeball + golden WebPs — not bit-identical Three.js output unless reference wiring and light count match.
 
 ### Practical guidance
 
 - **Export bins:** **`DirectionalLight::new`** only (**`intensity` 1.0**) until multi-light lands.
-- **Do not** raise single-light export-bin intensity to **`3.0`** expecting Three.js parity — Rust clips earlier in byte space (see worked example above).
+- **Do not** raise single-light export-bin intensity to **`3.0`** expecting Three.js parity on one light vs three browser lights.
 - **Tests / experiments:** use **`with_intensity`**; document any non-default values in commit messages or this file.
 - **Fix** `threejs/index.html` so all three lights use intensity **3** when that file is the reference for the multi-light milestone.
-- **Consider** (future): sRGB ↔ linear on material inputs and fragment output; optional tone mapping only if exports need it — out of scope until parity testing demands it.
+- **Consider** (future): optional tone mapping only if exports need HDR headroom — out of scope until parity testing demands it.
 
 ---
 
 ## Related code and docs
 
 - **`src/lighting.rs`** — **`Material`**, **`DirectionalLight`**, unit tests for intensity scaling.
-- **`src/framebuffer/colors.rs`** — **`Rgb`** arithmetic (saturating add, clamped multiply).
+- **`src/lighting/color.rs`** — linear **`Color`**, sRGB ↔ linear conversion, **`Add`** / **`Mul`** in linear space.
+- **`src/framebuffer/colors.rs`** — display **`Rgb`** (**`from_hex`**, **`brightness`**).
 - **`src/bin/still-scene/main.rs`** — export bin wiring and material constants.
 - **`threejs/index.html`** — local orthographic Three.js reference scene.
 - **`doc/planning/project-spec.md`** — Phase 2 lighting target and known gaps vs browser reference.

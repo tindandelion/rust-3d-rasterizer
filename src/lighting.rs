@@ -1,22 +1,27 @@
+mod color;
+
 use crate::framebuffer::Rgb;
 use crate::geometry::UnitVec3;
+
+use color::Color;
 
 /// Surface **emissive**, pre-scaled **diffuse**, and **specular** colors for Phong shading.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Material {
-    pub emissive: Rgb,
-    pub diffuse: Rgb,
-    pub specular: Rgb,
+    emissive: Color,
+    diffuse: Color,
+    specular: Color,
     shininess: Option<i32>,
 }
 
 impl Material {
     /// **`shininess`** enables specular when **`Some`**.
-    pub const fn new(emissive: Rgb, diffuse: Rgb, specular: Rgb, shininess: Option<i32>) -> Self {
+    pub fn new(emissive: Rgb, diffuse: Rgb, specular: Rgb, shininess: Option<i32>) -> Self {
         Self {
-            emissive,
-            diffuse,
-            specular,
+            emissive: emissive.into(),
+            diffuse: diffuse.into(),
+            specular: specular.into(),
+
             shininess,
         }
     }
@@ -25,9 +30,10 @@ impl Material {
         let specular_contrib = self.shininess.map_or(0.0, |shininess| {
             light.specular_contrib(shininess, normal, toward_eye)
         });
-        self.emissive
+        let shaded_color = self.emissive
             + self.diffuse * light.diffuse_contrib(normal)
-            + self.specular * specular_contrib
+            + self.specular * specular_contrib;
+        shaded_color.into()
     }
 }
 
@@ -63,7 +69,7 @@ mod tests {
     use crate::framebuffer::Rgb;
     use crate::geometry::UnitVec3;
 
-    use super::{DirectionalLight, Material};
+    use super::{DirectionalLight, Material, color::Color};
     use approx::assert_relative_eq;
     use glam::Vec3;
 
@@ -193,6 +199,19 @@ mod tests {
     mod material_shade {
         use super::*;
 
+        fn shade_linear(
+            emissive: Rgb,
+            diffuse: Rgb,
+            specular: Rgb,
+            diffuse_contrib: f32,
+            specular_contrib: f32,
+        ) -> Rgb {
+            let emissive: Color = emissive.into();
+            let diffuse: Color = diffuse.into();
+            let specular: Color = specular.into();
+            Rgb::from(emissive + diffuse * diffuse_contrib + specular * specular_contrib)
+        }
+
         #[test]
         fn emissive_only_ignores_light_direction() {
             let light = DirectionalLight::new(TOWARD_LIGHT);
@@ -213,7 +232,7 @@ mod tests {
 
             assert_eq!(
                 material.shade(&light, UnitVec3::Z, UnitVec3::Z),
-                emissive + diffuse
+                shade_linear(emissive, diffuse, Rgb::BLACK, 1.0, 0.0)
             );
             assert_eq!(material.shade(&light, UnitVec3::X, UnitVec3::Z), emissive);
             assert_eq!(
@@ -232,10 +251,13 @@ mod tests {
             let normal = UnitVec3::Z;
             let toward_eye = UnitVec3::Y;
 
-            assert_eq!(diffuse_only.shade(&light, normal, toward_eye), diffuse);
+            assert_eq!(
+                diffuse_only.shade(&light, normal, toward_eye),
+                shade_linear(Rgb::BLACK, diffuse, Rgb::BLACK, 1.0, 0.0)
+            );
             assert_eq!(
                 shiny.shade(&light, normal, toward_eye),
-                diffuse + specular * 2.0_f32.sqrt().recip()
+                shade_linear(Rgb::BLACK, diffuse, specular, 1.0, 2.0_f32.sqrt().recip(),)
             );
         }
 
@@ -249,7 +271,7 @@ mod tests {
 
             assert_eq!(
                 material.shade(&light, UnitVec3::Z, UnitVec3::Z),
-                emissive + diffuse + specular
+                shade_linear(emissive, diffuse, specular, 1.0, 1.0)
             );
         }
 
@@ -278,11 +300,11 @@ mod tests {
 
             assert_eq!(
                 material.shade(&unit, normal, toward_eye),
-                emissive + diffuse + specular
+                shade_linear(emissive, diffuse, specular, 1.0, 1.0)
             );
             assert_eq!(
                 material.shade(&triple, normal, toward_eye),
-                emissive + diffuse * 3.0 + specular * 3.0
+                shade_linear(emissive, diffuse, specular, 3.0, 3.0)
             );
         }
     }
