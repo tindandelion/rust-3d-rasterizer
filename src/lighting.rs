@@ -33,20 +33,28 @@ impl Material {
 
 pub struct DirectionalLight {
     toward_light: UnitVec3,
+    intensity: f32,
 }
 
 impl DirectionalLight {
     pub fn new(toward_light: UnitVec3) -> Self {
-        Self { toward_light }
+        Self::with_intensity(toward_light, 1.0)
+    }
+
+    pub fn with_intensity(toward_light: UnitVec3, intensity: f32) -> Self {
+        Self {
+            toward_light,
+            intensity,
+        }
     }
 
     pub fn diffuse_contrib(&self, normal: UnitVec3) -> f32 {
-        self.toward_light.dot(normal).max(0.0)
+        self.intensity * self.toward_light.dot(normal).max(0.0)
     }
 
     pub fn specular_contrib(&self, shininess: i32, normal: UnitVec3, toward_eye: UnitVec3) -> f32 {
         let half_vector = (self.toward_light + toward_eye).normalize();
-        normal.dot(half_vector).max(0.0).powi(shininess)
+        self.intensity * normal.dot(half_vector).max(0.0).powi(shininess)
     }
 }
 
@@ -87,6 +95,23 @@ mod tests {
             let toward_light: UnitVec3 = Vec3::new(1.0, 0.0, 1.0).into();
             let light = DirectionalLight::new(toward_light);
             assert_relative_eq!(light.diffuse_contrib(UnitVec3::Z), 2.0_f32.sqrt().recip());
+        }
+
+        #[test]
+        fn intensity_scales_diffuse_contrib() {
+            let normal = UnitVec3::Z;
+            let unit = DirectionalLight::new(TOWARD_LIGHT);
+            let triple = DirectionalLight::with_intensity(TOWARD_LIGHT, 3.0);
+            assert_relative_eq!(
+                triple.diffuse_contrib(normal),
+                3.0 * unit.diffuse_contrib(normal)
+            );
+        }
+
+        #[test]
+        fn zero_intensity_suppresses_diffuse_contrib() {
+            let light = DirectionalLight::with_intensity(TOWARD_LIGHT, 0.0);
+            assert_relative_eq!(light.diffuse_contrib(UnitVec3::Z), 0.0);
         }
     }
 
@@ -150,6 +175,18 @@ mod tests {
             let toward_eye: UnitVec3 = Vec3::new(-1.0, 0.0, 1.0).into();
             let light = DirectionalLight::new(toward_light);
             assert_relative_eq!(light.specular_contrib(1, UnitVec3::Z, toward_eye), 1.0);
+        }
+
+        #[test]
+        fn intensity_scales_specular_contrib() {
+            let normal = UnitVec3::Z;
+            let toward_eye = UnitVec3::Y;
+            let unit = DirectionalLight::new(TOWARD_LIGHT);
+            let triple = DirectionalLight::with_intensity(TOWARD_LIGHT, 3.0);
+            assert_relative_eq!(
+                triple.specular_contrib(1, normal, toward_eye),
+                3.0 * unit.specular_contrib(1, normal, toward_eye)
+            );
         }
     }
 
@@ -225,6 +262,27 @@ mod tests {
             assert_eq!(
                 material.shade(&light, UnitVec3::NEG_Z, UnitVec3::Z),
                 emissive
+            );
+        }
+
+        #[test]
+        fn intensity_scales_diffuse_and_specular_but_not_emissive() {
+            let normal = UnitVec3::Z;
+            let toward_eye = UnitVec3::Z;
+            let emissive = Rgb(10, 20, 30);
+            let diffuse = Rgb(40, 40, 40);
+            let specular = Rgb(50, 50, 50);
+            let material = Material::new(emissive, diffuse, specular, Some(1));
+            let unit = DirectionalLight::new(TOWARD_LIGHT);
+            let triple = DirectionalLight::with_intensity(TOWARD_LIGHT, 3.0);
+
+            assert_eq!(
+                material.shade(&unit, normal, toward_eye),
+                emissive + diffuse + specular
+            );
+            assert_eq!(
+                material.shade(&triple, normal, toward_eye),
+                emissive + diffuse * 3.0 + specular * 3.0
             );
         }
     }

@@ -8,6 +8,7 @@ Personal learning project: a **3D software rasterizer** in **Rust**, developed p
 
 - `doc/planning/project-spec.md` — goals, math, dependencies, coordinate conventions, raster strategy.
 - `doc/planning/project-breakdown.md` — phased milestones and expected artifacts (WebP stills/animations).
+- `doc/notes-on-lighting.md` — Three.js parity notes; export bins use **`DirectionalLight::new`** (**`intensity` 1.0**) until multi-light.
 
 When editing **`doc/planning/project-breakdown.md`**, **do not change completed milestones** (items marked **`[x]`**) unless the **user explicitly asks** to revise that finished task. Prefer updating **open** milestones (`[ ]`) and the **Notes / deferred** section when the plan or shipped reality needs clarification.
 

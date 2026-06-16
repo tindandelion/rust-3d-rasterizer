@@ -93,7 +93,7 @@
 
       // --- Scene --------------------------------------------------------------
 
-      const FRUSTUM_SIZE = 40
+      const FRUSTUM_SIZE = 2.0
 
       const scene = new Scene()
       scene.background = new Color(0x444444)
@@ -107,7 +107,7 @@
         0.1,
         200,
       )
-      camera.position.set(0, 0.5, 30)
+      camera.position.set(0, 0.5, 1.0)
       camera.lookAt(new Vector3(0, 0, 0))
 
       const renderer = new WebGLRenderer({ antialias: true })
@@ -122,8 +122,8 @@
 
       const lights = [
         new DirectionalLight(0xffffff, 0),
-        new DirectionalLight(0xffffff, 0),
         new DirectionalLight(0xffffff, 3),
+        new DirectionalLight(0xffffff, 0),
       ]
       lights[0].position.set(0, 200, 0)
       lights[1].position.set(100, 200, 100)
@@ -135,10 +135,10 @@
       // --- TorusGeometry (browser defaults for #TorusGeometry) ----------------
 
       const TORUS = {
-        radius: 10,
-        tube: 3,
-        radialSegments: 16,
-        tubularSegments: 100,
+        radius: 0.7,
+        tube: 0.3,
+        radialSegments: 48,
+        tubularSegments: 32,
         arc: Math.PI * 2,
       }
 
