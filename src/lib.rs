@@ -33,6 +33,14 @@ pub const ANIMATED_SCENE_FRAME_COUNT: u32 = 360;
 /// of frame durations) still matches **`ANIMATED_SCENE_FRAME_COUNT ×` this value**.
 pub const ANIMATED_SCENE_FRAME_SPACING_MS: i32 = 20;
 
+/// Geometry-browser scene background (**`0x444444`**).
+pub const SCENE_BACKGROUND: Rgb = Rgb(68, 68, 68);
+
+/// Default export-bin surface material — geometry-browser **`MeshPhongMaterial`**:
+/// diffuse **`0x156289`**, emissive **`0x072534`**, specular **`0x111111`**, **`shininess` 30**.
+pub const DEFAULT_MATERIAL: Material =
+    Material::new(Rgb(7, 37, 52), Rgb(21, 98, 137), Rgb(17, 17, 17), Some(30));
+
 /// A posed **[`Mesh`]** plus surface **[`Material`]** for filled rendering.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Shape {

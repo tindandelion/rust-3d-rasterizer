@@ -41,8 +41,11 @@ impl FrameBuffer {
         }
     }
 
-    pub fn clear(&mut self) {
-        self.rgb.fill(0);
+    /// Fills every pixel with **color** and resets the depth buffer to **`f32::INFINITY`**.
+    pub fn clear(&mut self, color: Rgb) {
+        for chunk in self.rgb.chunks_exact_mut(3) {
+            chunk.copy_from_slice(&[color.0, color.1, color.2]);
+        }
         self.depth.fill(f32::INFINITY);
     }
 
@@ -185,13 +188,27 @@ mod tests {
     use super::*;
 
     #[test]
+    fn clear_with_color_fills_rgb_and_resets_depth() {
+        let mut fb = FrameBuffer::new(2, 2);
+        fb.write_pixel(FbPixel::new(0, 0, 0.3), Rgb::WHITE);
+        fb.clear(Rgb(68, 68, 68));
+        for y in 0..2 {
+            for x in 0..2 {
+                assert_eq!(fb.get_pixel(x, y), Rgb(68, 68, 68));
+            }
+        }
+        fb.write_pixel(FbPixel::new(0, 0, 0.8), Rgb::RED);
+        assert_eq!(fb.get_pixel(0, 0), Rgb::RED);
+    }
+
+    #[test]
     fn clear_resets_depth_so_farther_write_succeeds() {
         let mut fb = FrameBuffer::new(3, 3);
         fb.write_pixel(FbPixel::new(1, 1, 0.3), Rgb::WHITE);
         fb.write_pixel(FbPixel::new(1, 1, 0.8), Rgb(255, 0, 0));
         assert_eq!(fb.get_pixel(1, 1), Rgb::WHITE);
 
-        fb.clear();
+        fb.clear(Rgb::BLACK);
         fb.write_pixel(FbPixel::new(1, 1, 0.8), Rgb(255, 0, 0));
         assert_eq!(fb.get_pixel(1, 1), Rgb(255, 0, 0));
     }

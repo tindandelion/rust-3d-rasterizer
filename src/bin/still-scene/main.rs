@@ -5,20 +5,14 @@ use std::thread;
 use glam::Vec3;
 
 use thorus_forge::DirectionalLight;
-use thorus_forge::Material;
-use thorus_forge::Rgb;
 use thorus_forge::meshes::torus;
-use thorus_forge::{Camera, FrameBuffer, Shape, WebpEncoder};
+use thorus_forge::{Camera, DEFAULT_MATERIAL, FrameBuffer, SCENE_BACKGROUND, Shape, WebpEncoder};
 
 use crate::kitty_terminal::KittyTerminal;
 
 const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.5, -1.0);
 const LIGHT_DIRECTION: Vec3 = Vec3::new(1.0, 2.0, -1.0);
 const OUT_PATH: &str = "still-scene.webp";
-// Geometry-browser MeshPhongMaterial: color 0x156289, emissive 0x072534,
-// specular 0x111111, shininess 30.
-const TORUS_MATERIAL: Material =
-    Material::new(Rgb(7, 37, 52), Rgb(21, 98, 137), Rgb(17, 17, 17), Some(30));
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut terminal = KittyTerminal::new();
@@ -35,10 +29,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn render_scene(width: u32, height: u32) -> FrameBuffer {
     let mut framebuffer = FrameBuffer::new(width, height);
+    framebuffer.clear(SCENE_BACKGROUND);
     let camera = Camera::for_viewport(width, height).move_to(CAMERA_POS);
     let light = DirectionalLight::new(LIGHT_DIRECTION.into());
 
-    let torus = Shape::new(torus(48, 32), TORUS_MATERIAL);
+    let torus = Shape::new(torus(48, 32), DEFAULT_MATERIAL);
     torus.render(&mut framebuffer, &camera, &light);
 
     framebuffer

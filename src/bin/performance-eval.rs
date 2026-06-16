@@ -8,23 +8,17 @@ use std::f32::consts::TAU;
 
 use glam::{Mat4, Vec3};
 
-use thorus_forge::Material;
 use thorus_forge::geometry::Mesh;
 use thorus_forge::meshes::torus;
-use thorus_forge::{ANIMATED_SCENE_FRAME_COUNT, Camera, DirectionalLight, FrameBuffer, Rgb, Shape};
+use thorus_forge::{
+    ANIMATED_SCENE_FRAME_COUNT, Camera, DEFAULT_MATERIAL, DirectionalLight, FrameBuffer, Rgb, Shape,
+};
 
 const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.5, -1.0);
 
 const TORUS_RING_SEGMENTS: usize = 24;
 const TORUS_TUBE_SEGMENTS: usize = 16;
 const TORUS_SCALE: f32 = 0.8;
-
-const TORUS_MATERIAL: Material = Material::new(
-    Rgb(8, 17, 32),
-    Rgb(44, 94, 179),
-    Rgb(44, 94, 179),
-    Some(100),
-);
 
 /// Raster width in pixels (golden stills / integration tests must agree).
 pub const SCENE_WIDTH: u32 = 800;
@@ -89,10 +83,10 @@ fn run_render(model: &Mesh, scene_width: u32, scene_height: u32) -> f64 {
     let frame_production_start = std::time::Instant::now();
     let lap_frames = ANIMATED_SCENE_FRAME_COUNT.max(1) as f32;
     for frame_index in 0..ANIMATED_SCENE_FRAME_COUNT {
-        framebuffer.clear();
+        framebuffer.clear(Rgb::BLACK);
 
         let t = frame_index as f32 / lap_frames * TAU;
-        let torus = Shape::new(model.transform(model_matrix_tumble(t)), TORUS_MATERIAL);
+        let torus = Shape::new(model.transform(model_matrix_tumble(t)), DEFAULT_MATERIAL);
         torus.render(&mut framebuffer, &camera, &light);
     }
     let frame_production_elapsed = frame_production_start.elapsed();
