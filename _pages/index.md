@@ -9,7 +9,7 @@ This is yet another learning project of mine, again in Rust. This time, I'm buil
 
 ### Our current progress
 
-![Current render output](https://raw.githubusercontent.com/tindandelion/rust-3d-rasterizer/main/doc/output/current.webp)
+![Current render output](https://github.com/tindandelion/rust-3d-rasterizer/releases/latest/download/scene.webp)
 
 
 ### Motivations

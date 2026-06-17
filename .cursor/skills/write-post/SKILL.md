@@ -154,7 +154,9 @@ For common knowledge:
 
 ## Site Conventions
 
-- Pin render output images to the post’s release tag, not `main`, for example `https://raw.githubusercontent.com/tindandelion/rust-3d-rasterizer/0.0.3/doc/output/current.webp` for version 0.0.3. The homepage may keep `main` for live project progress.
+- Pin render output images to the post’s release tag, not `main`, with an explicit version split:
+  - **`< 0.1.0`**: `https://raw.githubusercontent.com/tindandelion/rust-3d-rasterizer/<VERSION>/doc/output/current.webp` (example: `.../0.0.17/doc/output/current.webp`)
+  - **`>= 0.1.0`**: `https://github.com/tindandelion/rust-3d-rasterizer/releases/download/<VERSION>/scene.webp` (example: `.../releases/download/0.1.0/scene.webp`)
 - The site uses Minima/Jekyll. Run `bundle exec jekyll build` after edits.
 - If `authors:` is present, `_layouts/post.html` renders the header as `May 10, 2026 — by Sergey and Cursor`.
 - Do not edit `_site/`; it is build output.
