@@ -5,35 +5,43 @@ date: 2026-06-17 09:00:00 +0200
 authors: Sergey and Cursor
 ---
 
-In [Planning Phase 2][post-planning-phase-2] we said we would pause new geometry and sharpen the rendering pipeline itself. Version 0.1.0 is that first step: the torus keeps the same shape, but the scene now has a cleaner material model, an explicit background color, and lighting math that is easier to reason about.
+We're starting the [Phase 2][post-planning-phase-2] with updating the general look to match the color palette of three.js geometry browser. That change makes us revisit our implementation for Phong lighting to make the material configuration more flexible. 
 
 [Version 0.1.0 on GitHub][version-0-1-0]{: .no-github-icon}
 
 ## What you will see
 
-The visual target is still the familiar torus scene, now rendered with the Phase 2 material/background setup and exported as before:
+The demo render is still the familiar torus scene, but now rendered with different material and background setup: 
 
 ![Torus render after Phase 2 material and color pipeline updates](https://github.com/tindandelion/rust-3d-rasterizer/releases/download/0.1.0/scene.webp)
 
-At first glance, this does not look like a dramatic “new feature” release, and that is intentional. This milestone is about making the color and lighting pipeline explicit, so later steps (multi-light and final Three.js parity) are straightforward instead of fragile.
+## Revisiting the material setup 
 
-## Why this milestone matters
+We've introduced the [`Material`][material-0.0.13] concept when we first tackled [glossy shading][link to first-shot-at-glossy-shapes]. Back then, it was very simple: just enough to demonstrate the new ability to render specular highlights. Moreover, for a while we lived with a rather awkward code design choices where the material specification and lighting equations were weirdly split between `Shape`, `Material`, and an artificial `BlinnLightModel` data types. 
 
-### Material and light are now separate concepts
+If we combine all those disjoint pieces together, it's fair to say that we had a simple single-color material setup where the lighting equation to color a pixel was the following: 
 
-In earlier iterations, color and shading logic were more tightly coupled. In 0.1.0, a _material_ now clearly describes surface properties (`emissive`, `diffuse`, `specular`, `shininess`), while a _directional light_ describes incoming light direction and intensity.
+[insert a formula here]
 
-That sounds like a small API change, but it is the conceptual split we need for the rest of Phase 2: once the surface and the light are separate, adding several lights becomes “sum contributions from each source” instead of “rewrite half the shader logic.”
+### New improved material 
 
-### We moved shading math into linear color space
+Unlike our previous implementation, now we're moving towards a more flexible material specification. Instead of a single color and a couple of control parameters, we're introducing _different colors_ for each lighting component, matching the `MeshPhongMaterial` from `three.js`: 
+
+* `emissive` is a color of the material that's unaffected by other lighting. Generally speaking, it's the color of the light the object emits by itself, in absence of any light sources. This parameter replaces our previous concept of _ambient color_, serving the same purpose: give some color to the parts of the object that stay in a full shade. 
+* `diffuse` is the base color of the object's body. 
+* `specular` and `shininess` are the parameters of the specular highlight: its color and its sharpness, respectively. 
+
+The overal lighting formula for the pixel looks like this: 
+
+[insert a formula here]
+
+## Introducing linear color space 
 
 Another important cleanup is that lighting composition now happens in _linear color space_, with conversion back to `Rgb` at the output edge. This is easy to gloss over, but it is exactly the kind of detail that decides whether “same palette values” look plausible or weird once highlights and specular terms interact.
 
 This also explains part of the recent discussion around matching Three.js: literal hex values are only half the story; the equation and color-space assumptions matter just as much.
 
-### The scene background is now explicit
-
-The framebuffer gained explicit clear color support, and the scene now clears to `0x444444` instead of relying on implicit black. That puts the project output and the Phase 2 reference setup in the same visual framing, making comparisons less misleading.
+[insert the side-by-side pictures of still-scene-rgb.webp and still-scene-linear.webp from assets]
 
 ## Implementation bridge
 
