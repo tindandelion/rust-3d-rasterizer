@@ -4,7 +4,7 @@
 
 ## Current progress
 
-![Current render output](doc/output/current.webp)
+![Current render output](https://github.com/tindandelion/rust-3d-rasterizer/releases/latest/download/scene.webp)
 
 ## Running
 

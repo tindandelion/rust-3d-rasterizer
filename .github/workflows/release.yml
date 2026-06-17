@@ -1,0 +1,35 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Run tests
+        run: cargo test --release
+
+      - name: Render animated scene
+        run: cargo run --release --bin animated-scene -- artifacts/scene.webp
+
+      - name: Upload WebP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: scene-webp
+          path: artifacts/scene.webp
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/scene.webp
+          generate_release_notes: true
