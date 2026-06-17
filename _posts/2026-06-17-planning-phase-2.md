@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Planning Phase 2"
-date: 2026-06-16 08:00:00 +0200
+date: 2026-06-17 08:00:00 +0200
 authors: Sergey and Cursor
 ---
 

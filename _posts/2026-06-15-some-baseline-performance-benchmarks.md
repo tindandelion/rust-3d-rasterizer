@@ -48,6 +48,6 @@ Using a fixed coarse torus mesh (`torus(24, 16)`, 384 vertices), we swept the fr
 
 Although both graphs show that performance worsens as mesh detail and resolution increase, we're not drawing conclusions yet. At some point we'll take a closer look at improving it. For now, we'll just record the baseline and move to [planning the phase 2 of our project][post-planning-phase-2]. 
 
-[post-planning-phase-2]: {{site.baseurl}}/{% post_url 2026-06-16-planning-phase-2 %}
+[post-planning-phase-2]: {{site.baseurl}}/{% post_url 2026-06-17-planning-phase-2 %}
 [source-performance-eval]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/src/bin/performance-eval.rs#L1
 [source-animated-scene]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/src/bin/animated-scene.rs#L1
