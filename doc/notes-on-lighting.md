@@ -12,11 +12,11 @@ Findings from comparing **thorus-forge** export renders to the local Three.js re
 
 | | **thorus-forge (`still-scene`)** | **Local reference (`threejs/index.html`)** |
 |--|----------------------------------|--------------------------------------------|
-| Material | `Material::new(Rgb(7, 37, 52), Rgb(21, 98, 137), Rgb(17, 17, 17), Some(30))` | `MeshPhongMaterial`: color `0x156289`, emissive `0x072534`, specular `0x111111`, shininess `30` |
+| Material | `default_material()` — diffuse `0x156289`, emissive `0x072534`; specular **`0x444444`**, shininess **`100`** (tentative; browser: `0x111111`, `30`) | `MeshPhongMaterial`: color `0x156289`, emissive `0x072534`, specular `0x111111`, shininess `30` |
 | Shading | Per-pixel Phong via `Material::shade` + `PhongShadedTriangle` | `MeshPhongMaterial` (smooth Phong) |
 | Camera | Orthographic, eye `(0, 0.5, −1)` | Orthographic, eye `(0, 0.5, 30)` (same look-at target) |
 | Torus | `meshes::torus(48, 32)` — default radii `0.7` / `0.3`, ring in **XZ** | `TorusGeometry(0.7, 0.3, 48, 32)` + `rotation.x = π/2` |
-| Background | Black (`FrameBuffer` default clear) | `0x444444` |
+| Background | `SCENE_BACKGROUND` — `0x444444` | `0x444444` |
 | Lights | One `DirectionalLight` at **`intensity` 1.0** (`DirectionalLight::new`) | Three directionals (see **Reference light setup** below) |
 
 Palette hex values match; **pixel values often do not**, even if export-bin intensity were raised (e.g. experiments with **`with_intensity(..., 3.0)`**).
@@ -109,7 +109,7 @@ These affect highlight placement and side-by-side viewing; they are secondary to
 |-------|--------------|-------------------|
 | **Light direction** | e.g. `normalize(1, 0.5, −1)` in `still-scene` | From light **position** toward the scene; e.g. `(-100, −200, −100)` → ~`(0.44, 0.87, 0.22)` |
 | **Torus orientation** | Default mesh: major ring in **XZ** | `torus.rotation.x = π/2` |
-| **Background** | Black clear | `0x444444` — torus on black can **look** brighter in a split view even when torus pixels are unchanged |
+| **Background** | `SCENE_BACKGROUND` — `0x444444` | `0x444444` |
 | **Multi-light** | Single light until multi-light milestone | Official browser sums **three** contributions (each scaled by intensity in linear space) |
 
 ---
@@ -124,9 +124,10 @@ Both systems add **emissive once per fragment**, independent of **`N·L`**, in *
 
 From `doc/planning/project-breakdown.md`:
 
-1. **Material — explicit Phong colors (single light):** palette and **`DirectionalLight::intensity`** are in place; **export bins stay at `intensity` 1.0** (`DirectionalLight::new`). **`FrameBuffer::clear(Rgb(68, 68, 68))`** still open.
-2. **Multi-light:** sum per-light diffuse/specular in **`Shape::render`**; wire three browser directionals at **`intensity` 3** in export bins (first time **`intensity` 3** ships in bins). Expect approximate — not bit-identical — parity with Three.js until multi-light golden WebPs land.
-3. **Parity goal:** reproduce the geometry browser **look** in export artifacts — eyeball + golden WebPs — not bit-identical Three.js output unless reference wiring and light count match.
+1. **Material — explicit Phong colors (single light):** **shipped** — palette plumbing, linear **`Color`** path, **`SCENE_BACKGROUND`**, export bins at **`intensity` 1.0** (`DirectionalLight::new`); golden **`test-data/still-scene.webp`** in **`still-scene`** bin tests.
+2. **Multi-light (next):** sum per-light diffuse/specular in **`Shape::render`**; wire three browser directionals at **`intensity` 3** in export bins (first time **`intensity` 3** ships in bins). Expect approximate — not bit-identical — parity with Three.js until multi-light golden WebPs land.
+3. **Lighting parity (tentative, last in Phase 2):** align **`Material::shade`** / light contrib terms with Three.js so browser specular **`0x111111`** and **`shininess` 30** look right without export-bin tweaks; retire **`default_material()`** specular **`0x444444`** / **`shininess` 100** when done.
+4. **Parity goal:** reproduce the geometry browser **look** in export artifacts — eyeball + golden WebPs — not bit-identical Three.js output unless reference wiring and light count match.
 
 ### Practical guidance
 
@@ -143,7 +144,8 @@ From `doc/planning/project-breakdown.md`:
 - **`src/lighting.rs`** — **`Material`**, **`DirectionalLight`**, unit tests for intensity scaling.
 - **`src/lighting/color.rs`** — linear **`Color`**, sRGB ↔ linear conversion, **`Add`** / **`Mul`** in linear space.
 - **`src/framebuffer/colors.rs`** — display **`Rgb`** (**`from_hex`**, **`brightness`**).
-- **`src/bin/still-scene/main.rs`** — export bin wiring and material constants.
+- **`src/lib.rs`** — **`default_material()`**, **`SCENE_BACKGROUND`**.
+- **`src/bin/still-scene/main.rs`** — export bin wiring; golden WebP test (**`test-data/still-scene.webp`**).
 - **`threejs/index.html`** — local orthographic Three.js reference scene.
 - **`doc/planning/project-spec.md`** — Phase 2 lighting target and known gaps vs browser reference.
-- **`doc/planning/project-breakdown.md`** — open milestones (**Material**, **Multi-light**, …).
+- **`doc/planning/project-breakdown.md`** — open milestones (**Multi-light**, …; **Lighting parity (tentative)** last in Phase 2).

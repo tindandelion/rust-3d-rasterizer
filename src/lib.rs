@@ -36,14 +36,18 @@ pub const ANIMATED_SCENE_FRAME_SPACING_MS: i32 = 20;
 /// Geometry-browser scene background (**`0x444444`**).
 pub const SCENE_BACKGROUND: Rgb = Rgb::from_hex(0x444444);
 
-/// Default export-bin surface material — geometry-browser **`MeshPhongMaterial`**:
-/// diffuse **`0x156289`**, emissive **`0x072534`**, specular **`0x111111`**, **`shininess` 30**.
+/// Default export-bin surface material.
+///
+/// Diffuse and emissive match geometry-browser **`MeshPhongMaterial`** (**`0x156289`**, **`0x072534`**).
+/// **Specular / shininess are tentative** (**`0x444444`**, **`100`**) until lighting-equation parity
+/// with Three.js lands — see **`Lighting parity — Three.js equation alignment (tentative)`** in
+/// **`doc/planning/project-breakdown.md`**. Browser defaults: specular **`0x111111`**, **`shininess` 30**.
 pub fn default_material() -> Material {
     Material::new(
         Rgb::from_hex(0x072534),
         Rgb::from_hex(0x156289),
-        Rgb::from_hex(0x111111),
-        Some(30),
+        Rgb::from_hex(0x444444),
+        Some(100),
     )
 }
 
