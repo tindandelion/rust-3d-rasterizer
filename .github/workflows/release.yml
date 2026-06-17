@@ -20,7 +20,9 @@ jobs:
         run: cargo test --release
 
       - name: Render animated scene
-        run: cargo run --release --bin animated-scene -- artifacts/scene.webp
+        run: |
+          mkdir -p artifacts
+          cargo run --release --bin animated-scene -- artifacts/scene.webp
 
       - name: Upload WebP artifact
         uses: actions/upload-artifact@v4
