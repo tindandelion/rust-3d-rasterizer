@@ -92,16 +92,21 @@ A few patterns showed up repeatedly across the seventeen releases:
 - **Small visible steps beat big leaps.** Every milestone shipped a WebP you could open and eyeball. That kept debugging grounded when the math got harder.
 - **Bugs hide until the next layer.** Back-face culling looked fine on wireframe; the facing sign error only hurt once we filled the cube. Normal transforms looked fine under uniform scale; squash broke them. Each layer stress-tested the one below.
 - **Agent-assisted coding needs review.** Cursor helped implement torus parametrics, camera math, and much of the diary — but Sergey still owned conventions, caught sign errors, and decided when to refactor rather than patch forward.
-- **Orthographic first was the right call.** Keeping parallel sight lines and linear depth interpolation let us learn shading and occlusion without also fighting perspective divide and $w$-aware interpolation. That complexity is explicitly deferred to the next open milestone.
+- **Orthographic first was the right call.** Keeping parallel sight lines and linear depth interpolation let us learn shading and occlusion without also fighting perspective divide and $w$-aware interpolation. That complexity stays out of phase 1; we may tackle it later.
 
 ## What comes next
 
-Phase 1 is the CPU foundation, not the finish line. The [project breakdown][project-breakdown] lists the immediate follow-on:
+Phase 1 is the CPU foundation, not the finish line. Before new geometry or a GPU path, we want to refine what we already have: materials, lights, and scene color, still under orthographic projection.
 
-1. **Perspective projection on the CPU** — homogeneous coordinates, $w$ divide, perspective-correct depth, per-fragment view direction for specular. Replay representative scenes (cube, torus) with the same animation policies, changing only the projection block.
-2. **Phase 2: GPU via wgpu** — port the proven concepts to Metal on macOS: buffers, pipeline state, vertex/fragment shaders, depth test aligned with a deliberate NDC convention checkpoint.
+The [project breakdown][project-breakdown-phase-2] now groups that work as **Phase 2**:
 
-We will keep the same rhythm: one idea per release, a visible artifact, a diary post when the story is worth telling. Phase 1 proved the pipeline works; Phase 2 asks whether we can teach the same ideas to hardware.
+1. **Explicit Phong materials and scene color** — refactor `Material` onto `Shape`, add emissive and tunable specular/shininess, and clear the framebuffer to a chosen background.
+2. **Multiple directional lights** — sum per-light diffuse and specular contributions so export bins can match the three.js torus demo lighting.
+3. **Optional stretches** — perspective projection on the CPU, and possibly positional lights, if we still have appetite before moving on.
+
+**Phase 3** is the **`wgpu`** port: buffers, shaders, and depth testing on the GPU, reusing the concepts proven in phases 1 and 2.
+
+We sketched the visual target and themes in [Planning Phase 2][post-planning-phase-2]. We will keep the same rhythm: one idea per release, a visible artifact, a diary post when the story is worth telling.
 
 [post-torus-takes-shape]: {{site.baseurl}}/{% post_url 2026-06-11-the-torus-takes-shape %}
 [post-one-white-pixel]: {{site.baseurl}}/{% post_url 2026-05-10-one-white-pixel %}
@@ -120,9 +125,11 @@ We will keep the same rhythm: one idea per release, a visible artifact, a diary 
 [post-bugfix-transforming-surface-normals]: {{site.baseurl}}/{% post_url 2026-06-04-bugfix-transforming-surface-normals %}
 [post-phong-shading-natural-highlights]: {{site.baseurl}}/{% post_url 2026-06-06-phong-shading-natural-highlights %}
 [post-introducing-depth-buffer]: {{site.baseurl}}/{% post_url 2026-06-10-introducing-depth-buffer %}
+[post-planning-phase-2]: {{site.baseurl}}/{% post_url 2026-06-17-planning-phase-2 %}
 [version-0-0-17]: https://github.com/tindandelion/rust-3d-rasterizer/tree/0.0.17
 [project-spec]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/doc/planning/project-spec.md
 [project-breakdown]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/doc/planning/project-breakdown.md
+[project-breakdown-phase-2]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/doc/planning/project-breakdown.md#phase-2--rendering-pipeline-materials-lights-colors
 [orthographic-projection]: https://en.wikipedia.org/wiki/Orthographic_projection
 [back-face-culling]: https://en.wikipedia.org/wiki/Back-face_culling
 [directional-light]: https://en.wikipedia.org/wiki/Shading#Light_sources
