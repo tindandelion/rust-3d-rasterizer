@@ -54,40 +54,48 @@ $$
 
 The same vector notation is used here: $\mathbf{l}$ toward light, $\mathbf{n}$ surface normal, $\mathbf{v}$ toward eye, and $\mathbf{h}$ as the Blinn half-vector.
 
-## Introducing linear color space 
+## Discovering linear color space 
 
-Another important cleanup is that lighting composition now happens in _linear color space_, with conversion back to `Rgb` at the output edge. This is easy to gloss over, but it is exactly the kind of detail that decides whether “same palette values” look plausible or weird once highlights and specular terms interact.
+Color is a surprisingly complex subject when it comes to computer graphics. We're not diving into it yet since it doesn't apply to our project that much so far, but there's one very important detail we've discovered: _linear color space_ vs _sRGB color space_, and that discovery revealed to us that we've been doing ligthing calculations slightly wrong. Not in terms of mathematics, but in terms of input values. Let's look at the problem in detail. 
 
-This also explains part of the recent discussion around matching Three.js: literal hex values are only half the story; the equation and color-space assumptions matter just as much.
+On one hand, we have the equations that define the lighting model (such as the ones above). All of them take _intensity_ of incoming light as the input, and then calcuate the intensity of the reflected light. When the color comes into play, we can represent is as a triplet of intensities `(r, g, b)`: one intensity value for each color channel. That implies that the color is a linear value: if I have a color $C_0$ and I divide it by 2, the result is a color $C_1$ with half of the intensity. Same rule applies for addition of color values. 
+
+On the other hand, we have our beloved sRGB encoding for colors that is widely popular nowadays to specify color values. But the key word here is _encoding_: numeric values for `r`, `g` and `b` channels are used to represent specific intensities, but **this encoding is not linear**! In particular, darker intensities are over-represented: 
+
+* The bottom half of sRGB values (0–127) maps to only about the bottom 5% of linear light
+* The top half (128–255) covers the remaining 95%
+
+What it means in practice is that you shouldn't use the sRGB values directly in the lighting equations because of that non-linearity. For example, if you have sRGB gray color $C_0$ encoded `(128, 128, 128)` and you halve it, you'll get the color code $C_1$ `(64, 64, 64)`. But the _actual_ color intensity that's represented by that triplet is going to be darker than if you took the intensity of $C_0$ and divided it by two. 
+
+The bottom line is that arithmetic operations over sRGB values have no physical sense. In order to be able to perform mathematics with colors, we first need to convert sGRB values into _linear color space_, where components `r`, `g` and `b` represent actual intensity values. Luckily, the formula for such conversion is rather simple and [standardized][link-to-the-standard]: 
+
+[insert here the formulas to convert sRGB into RGB]
+
+Having discovered that important subject, we introduced a new type to represent the color in the linear space: [`Color`][link-to-code]. We've also moved the definition of arithmetic operations, such as `*` and `+`, to that data type, previously defined over values of `Rgb` data type. So now we have two data types to represent colors in our program: 
+
+* `Color` represents the color in the linear space: we can do mathematic operations with these values; 
+* `Rgb` represents the color in sRGB encoding; we use these values to represent color constants and to store rendered image as a binary array. 
+
+There are also implementations for `From` and `Into` that allow us to convert between these two data types, that implement in code the formulas from above. 
+
+A quick demonstration of what effect moving to linear color space has when it comes to rendering: 
 
 <div class="still-compare">
 <figure>
 <img src="{{ "/assets/images/2026-06-17-materials-colors-and-the-stage/still-scene-rgb.webp" | relative_url }}" alt="Still scene rendered in non-linear RGB composition" />
-<figcaption>Rendered with non-linear RGB composition</figcaption>
+<figcaption>Rendered with operations over sRGB</figcaption>
 </figure>
 <figure>
 <img src="{{ "/assets/images/2026-06-17-materials-colors-and-the-stage/still-scene-linear.webp" | relative_url }}" alt="Still scene rendered in linear color space before output conversion" />
-<figcaption>Rendered with linear color-space composition</figcaption>
+<figcaption>Rendered with operations over linear color space</figcaption>
 </figure>
 </div>
 
-## Implementation bridge
+The main effect is that now we have the dark side of the sphere lighter, and the border between the lit and dark side is more pronounced. 
 
-Most of the work lands in a few focused places:
+## What's next 
 
-- [`Material` and `DirectionalLight`][source-lighting] own the per-fragment shading inputs and contributions.
-- [`Color`][source-lighting-color] provides the linear-space math path used by material shading.
-- [`default_material()`][source-default-material] and `SCENE_BACKGROUND` define the current export defaults.
-- [`FrameBuffer::clear`][source-framebuffer-clear] makes scene background explicit.
-- [`still-scene`][source-still-scene] and [`animated-scene`][source-animated-scene] both render through the same shape/material/light setup.
-
-The release also tightened confidence around output stability with a golden still-scene render check, and added developer-facing helpers (a performance eval bin and a tag-driven release workflow) to keep iteration smoother in upcoming milestones.
-
-## What comes next
-
-With material and single-light plumbing shipped, the next Phase 2 step is clear: _multiple directional lights_ and summed contributions, using the three-light setup from the Three.js torus reference.
-
-After that, the remaining optional stretches (perspective on CPU and positional lights) stay available, and the final Phase 2 parity pass can revisit shader equations/material tuning with all core lighting pieces in place.
+With the completion of this step, we have a more flexible `Material` data type and correct shading calculation. Our next step is going to be to add several directional light sources to the scene. 
 
 [post-planning-phase-2]: {{site.baseurl}}/{% post_url 2026-06-17-planning-phase-2 %}
 [post-first-shot-at-glossy-shapes]: {{site.baseurl}}/{% post_url 2026-06-03-first-shot-at-glossy-shapes %}
