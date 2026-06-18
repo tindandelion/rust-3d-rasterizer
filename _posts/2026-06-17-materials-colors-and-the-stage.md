@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Materials, Colors, and the Stage"
+title: "Materials, Colors, and the Scene"
 date: 2026-06-17 09:00:00 +0200
 authors: Sergey and Cursor
 ---
@@ -38,7 +38,7 @@ $$
 
 Unlike our previous implementation, now we're moving towards a more flexible material specification. Instead of a single color and a couple of control parameters, we're introducing _different colors_ for each lighting component, matching the [`MeshPhongMaterial`][mesh-phong-material] from [three.js][threejs] (see [`default_material`][source-default-material] in our code): 
 
-* `emissive` is a color of the material that's unaffected by other lighting. Generally speaking, it's the color of the light the object emits by itself, in absence of any light sources. This parameter replaces our previous concept of _ambient color_, serving the same purpose: give some color to the parts of the object that stay in a full shade. 
+* `emissive` is a color of the material that's unaffected by other lighting. Generally speaking, it's the color of the light the object emits by itself, in absence of any light sources. This parameter replaces our previous concept of _ambient color_, serving the same purpose: give some color to the parts of the object that stay in deep shadow. 
 * `diffuse` is the base color of the object's body. 
 * `specular` and `shininess` are the parameters of the specular highlight: its color and its sharpness, respectively. 
 
@@ -103,11 +103,11 @@ To see the effect this change had in practice, compare these two images:
 <div class="still-compare">
 <figure>
 <img src="{{ "/assets/images/2026-06-17-materials-colors-and-the-stage/still-scene-rgb.webp" | relative_url }}" alt="Still scene rendered in non-linear RGB composition" />
-<figcaption>Rendered with operations over sRGB</figcaption>
+<figcaption>Shading math in sRGB</figcaption>
 </figure>
 <figure>
 <img src="{{ "/assets/images/2026-06-17-materials-colors-and-the-stage/still-scene-linear.webp" | relative_url }}" alt="Still scene rendered in linear color space before output conversion" />
-<figcaption>Rendered with operations over linear color space</figcaption>
+<figcaption>Shading math in linear color space</figcaption>
 </figure>
 </div>
 
@@ -115,7 +115,7 @@ The main effect is that the dark side of the sphere is lighter, and the border b
 
 ## What's next 
 
-With the completion of this step, we have a more flexible [`Material`][source-material] data type and correct shading calculations. Our next step is to add several directional light sources to the scene. 
+With the completion of this step, we have a more flexible [`Material`][source-material] data type and correct shading calculations. Our next step is to add three directional light sources to the scene, to match the setup of the [Geometry Browser][geometry-browser] from `three.js`. 
 
 [post-planning-phase-2]: {{site.baseurl}}/{% post_url 2026-06-17-planning-phase-2 %}
 [post-first-shot-at-glossy-shapes]: {{site.baseurl}}/{% post_url 2026-06-03-first-shot-at-glossy-shapes %}
