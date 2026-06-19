@@ -9,7 +9,11 @@ This is yet another learning project of mine, again in Rust. This time, I'm buil
 
 ### Our current progress
 
-![Current render output](https://github.com/tindandelion/rust-3d-rasterizer/releases/latest/download/scene.webp)
+<!-- ![Current render output](https://github.com/tindandelion/rust-3d-rasterizer/releases/latest/download/scene.webp) -->
+<div style="text-align: center;">
+<video src="https://github.com/tindandelion/rust-3d-rasterizer/releases/latest/download/scene.webm" alt="Current render output" autoplay loop muted playsinline
+  width="800" style="max-width: 100%;"></video>
+</div>
 
 
 ### Motivations
