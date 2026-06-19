@@ -1,11 +1,11 @@
 ---
 layout: post
 title: "Materials, Colors, and the Scene"
-date: 2026-06-17 09:00:00 +0200
+date: 2026-06-19 08:00:00 +0200
 authors: Sergey and Cursor
 ---
 
-We're starting [Phase 2][post-planning-phase-2] by updating the general look to match the color palette of the [three.js Geometry Browser][geometry-browser]. That change makes us revisit our Phong lighting implementation to make the material configuration more flexible. 
+We're starting [Phase 2][post-planning-phase-2] by updating the general look to match the color palette of the [three.js Geometry Browser][geometry-browser]. That change forces us to revisit our Phong lighting implementation to make the material configuration more flexible. 
 
 [Version 0.1.0 on GitHub][version-0-1-0]{: .no-github-icon}
 
@@ -17,7 +17,7 @@ The [`animated-scene`][source-animated-scene] demo is still the familiar torus s
 
 ## Revisiting the material setup 
 
-We've introduced the [`Material`][source-material-0-0-13] concept when we first tackled [glossy shading][post-first-shot-at-glossy-shapes]. Back then, it was very simple: just enough to demonstrate the new ability to render specular highlights. Moreover, for a while we lived with rather awkward design choices where the material specification and lighting equations were weirdly split between `Shape`, `Material`, and an artificial `BlinnLightModel` data type in the [`lighting`][source-lighting] module. 
+We've introduced the [`Material`][source-material-0-0-13] abstraction when we first tackled [glossy shading][post-first-shot-at-glossy-shapes]. At the start, it was very simple: just enough to demonstrate the new ability to render specular highlights. Moreover, for a while we lived with rather awkward design choices where the material specification and lighting equations were weirdly split between `Shape`, `Material`, and an artificial `BlinnLightModel` data type in the [`lighting`][source-lighting] module. 
 
 If we combine all those disjoint pieces together, it's fair to say that we had a simple single-color material setup where the lighting equation was scaling this color according to the formula: 
 
@@ -28,7 +28,7 @@ I &= k_a + k_d \left(\max(\mathbf{l}\cdot\mathbf{n}, 0) + \max(\mathbf{n}\cdot\m
 \end{aligned}
 $$
 
-where $\mathbf{l}$ is the unit direction toward the light, $\mathbf{n}$ is the unit surface normal, and $\mathbf{v}$ is the unit direction toward the eye (camera). Here $\mathbf{h}$ is the Blinn half-vector between light and view directions (see our [Blinn-Phong explanation][post-first-shot-at-glossy-shapes-blinn-phong]):
+where $\mathbf{l}$ is the unit vector toward the light, $\mathbf{n}$ is the surface normal, and $\mathbf{v}$ is the unit vector toward the eye (camera). Here $\mathbf{h}$ is the Blinn half-vector between light and view directions (see our [Blinn-Phong explanation][post-first-shot-at-glossy-shapes-blinn-phong]):
 
 $$
 \mathbf{h} = \frac{\mathbf{l} + \mathbf{v}}{\lVert \mathbf{l} + \mathbf{v} \rVert}
@@ -40,7 +40,7 @@ Unlike our previous implementation, now we're moving towards a more flexible mat
 
 * `emissive` is a color of the material that's unaffected by other lighting. Generally speaking, it's the color of the light the object emits by itself, in absence of any light sources. This parameter replaces our previous concept of _ambient color_, serving the same purpose: give some color to the parts of the object that stay in deep shadow. 
 * `diffuse` is the base color of the object's body. 
-* `specular` and `shininess` are the parameters of the specular highlight: its color and its sharpness, respectively. 
+* `specular` and `shininess` are the parameters of the specular highlight: its color and sharpness, respectively. 
 
 The overall lighting formula now scales each color separately and then blends them all together: 
 
@@ -56,18 +56,18 @@ The same vector notation is used here: $\mathbf{l}$ toward light, $\mathbf{n}$ s
 
 ## Discovering linear color space 
 
-Color is a surprisingly complex subject when it comes to computer graphics. We're not diving deeply into color theory yet — it hasn't mattered much for our project so far — but there's one very important detail we've discovered: _linear color space_ vs _sRGB color space_. That discovery revealed that we've been doing lighting calculations slightly wrong. Not in terms of mathematics, but in terms of input values. Let's look at the problem in detail. 
+Color is a surprisingly complex subject when it comes to computer graphics. We're not diving deeply into color theory yet — it hasn't mattered much for our project so far — but there's one very important detail we've discovered: _linear color space_ vs _sRGB color space_. That discovery revealed that we've been doing lighting calculations slightly wrong. Not in terms of mathematics, but in terms of input values that go into formulas. Let's look at the problem in detail. 
 
-On one hand, we have the equations that define the lighting model (such as the ones above). All of them take _intensity_ of incoming light as the input, and then calculate the intensity of the reflected light. When color comes into play, we can represent it as a triplet of intensities `(r, g, b)`: one intensity value for each color channel. That implies that the color is a linear value: if we have a color $C_0$ and we divide it by 2, the result is a color $C_1$ with half of the intensity. The same rule applies for addition of color values. 
+On one hand, we have the equations that define the lighting model (such as the ones above). All of them take _intensity_ of incoming light as the input, and then calculate the intensity of the reflected light. When color comes into play, we can represent it as a triplet of intensities `(r, g, b)`: one intensity value per color channel. That implies that the color as a whole is a linear value: if we have a color $C_0$ and we divide it by 2, the result is a color $C_1$ with half of the intensity. The same rule applies for addition of color values. 
 
-On the other hand, we have our beloved [_sRGB_][srgb] encoding for colors that is widely used today to specify color values. But the key word here is _encoding_: numeric values for `r`, `g`, and `b` channels are used to represent specific intensities, but **this encoding is not linear**! In particular, darker intensities are over-represented: 
+On the other hand, we have our beloved [_sRGB_][srgb] encoding for colors that is widely used today on the Web and elsewhere. But the key word here is _encoding_: numeric values for `r`, `g`, and `b` channels are used to represent specific intensities, but **this representation is not linear**! In particular, darker intensities are over-represented: 
 
-* The bottom half of sRGB values (0–127) maps to only about the bottom 5% of linear light
-* The top half (128–255) covers the remaining 95%
+* The bottom half of sRGB values (0–127) maps to only about the bottom 20% of linear light
+* The top half (128–255) covers the remaining 80%
 
-What it means in practice is that you shouldn't use the sRGB values directly in the lighting equations because of that non-linearity. For example, if you have sRGB gray color $C_0$ encoded `(128, 128, 128)` and you halve it, you'll get the color code $C_1$ `(64, 64, 64)`. But the _actual_ color intensity that's represented by that triplet is going to be darker than if you took the intensity of $C_0$ and divided it by two. 
+What it means in practice is that you shouldn't use the sRGB values directly in the lighting equations because of that non-linearity. For example, if you have sRGB gray color $C_0$ encoded as `(128, 128, 128)` and you halve it, you'll get the color code $C_1$ `(64, 64, 64)`. But the _actual_ color intensity that's represented by that triplet is going to be darker than if you took the intensity of $C_0$ and divided it by two. 
 
-The bottom line is that sRGB is **an encoding** and so arithmetic operations over its values have no physical sense. In order to perform mathematics with colors, we first need to convert sRGB values into _linear color space_, where components `r`, `g`, and `b` represent actual intensities. 
+The bottom line is that sRGB is **an encoding** and so arithmetic operations over its values have no physical sense. In order to perform mathematics with colors, we first need to convert sRGB values into _linear color space_, where components `r`, `g`, and `b` represent actual intensities and behave linearly. 
 
 Fortunately, the algorithm for such conversion is rather simple and [standardized][srgb-standard]. For each channel, treat the sRGB byte value as a normalized quantity $c_s \in [0, 1]$ (divide by 255), then decode to linear light $c_{\text{lin}}$:
 
@@ -87,7 +87,7 @@ c_s = \begin{cases}
 \end{cases}
 $$
 
-Apply the same formula independently to each of the `r`, `g`, and `b` channels.
+Apply the same formula independently to each of the `r`, `g`, and `b` channels, and you have two-way conversion between sRGB and the linear RGB space. 
 
 ### Implementation
 
@@ -102,20 +102,20 @@ To see the effect this change had in practice, compare these two images:
 
 <div class="still-compare">
 <figure>
-<img src="{{ "/assets/images/2026-06-17-materials-colors-and-the-stage/still-scene-rgb.webp" | relative_url }}" alt="Still scene rendered in non-linear RGB composition" />
+<img src="{{ "/assets/images/2026-06-19-materials-colors-and-the-stage/still-scene-rgb.webp" | relative_url }}" alt="Still scene rendered in non-linear RGB composition" />
 <figcaption>Shading math in sRGB</figcaption>
 </figure>
 <figure>
-<img src="{{ "/assets/images/2026-06-17-materials-colors-and-the-stage/still-scene-linear.webp" | relative_url }}" alt="Still scene rendered in linear color space before output conversion" />
+<img src="{{ "/assets/images/2026-06-19-materials-colors-and-the-stage/still-scene-linear.webp" | relative_url }}" alt="Still scene rendered in linear color space before output conversion" />
 <figcaption>Shading math in linear color space</figcaption>
 </figure>
 </div>
 
-The main effect is that the dark side of the sphere is lighter, and the border between the lit and dark sides is more pronounced. 
+The main effect is that the dark side of the sphere is brighter in the linear space, and the boundary between the lit and dark sides is more pronounced. 
 
 ## What's next 
 
-With the completion of this step, we have a more flexible [`Material`][source-material] data type and correct shading calculations. Our next step is to add three directional light sources to the scene, to match the setup of the [Geometry Browser][geometry-browser] from `three.js`. 
+Having completed of this step, we have a more flexible [`Material`][source-material] data type and correct shading calculations. Our next step is to add three directional light sources to the scene, to match the setup of the [Geometry Browser][geometry-browser] from `three.js`. 
 
 [post-planning-phase-2]: {{site.baseurl}}/{% post_url 2026-06-17-planning-phase-2 %}
 [post-first-shot-at-glossy-shapes]: {{site.baseurl}}/{% post_url 2026-06-03-first-shot-at-glossy-shapes %}

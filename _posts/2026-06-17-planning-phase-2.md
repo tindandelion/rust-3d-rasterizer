@@ -54,4 +54,4 @@ We'll start from the most visual part: borrowing the color palette from `three.j
 [perspective-projection]: https://en.wikipedia.org/wiki/3D_projection#Perspective_projection
 [orthographic-projection]: https://en.wikipedia.org/wiki/Orthographic_projection
 [project-breakdown]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/doc/planning/project-breakdown.md#phase-2--rendering-pipeline-materials-lights-colors
-[post-materials-colors-stage]: {{site.baseurl}}/{% post_url 2026-06-17-materials-colors-and-the-stage %}
+[post-materials-colors-stage]: {{site.baseurl}}/{% post_url 2026-06-19-materials-colors-and-the-stage %}
