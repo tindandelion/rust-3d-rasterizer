@@ -26,7 +26,7 @@ When behavior or scope is unclear, **prefer the planning docs** over guessing.
 
 ## How to work in this repo
 
-- Run **`cargo build`**, **`cargo test`**, **`cargo fmt`**, and **`cargo clippy`** after substantive changes when applicable.
+- Run **`cargo build`**, **`cargo test -q`**, **`cargo fmt`**, and **`cargo clippy`** after substantive changes when applicable.
 - Prefer **small, focused changes** that match existing style and module boundaries.
 - Do **not** expand scope (new dependencies, large refactors, unrelated features) without a clear ask or alignment with the planning docs.
 
