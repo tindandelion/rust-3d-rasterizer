@@ -1,4 +1,4 @@
-//! **`meshes::torus(48, 32)`** at the origin, **Phong** **`DirectionalLight`**, back-face culled —
+//! Benchmark render: **`meshes::torus`**, **Phong** multi-light, back-face culled —
 //! **`ANIMATED_SCENE_FRAME_COUNT`**-frame lossless WebP.
 //!
 //! **Fixed camera** (same eye as **`still-scene`**). **Model:** world-fixed **`R_z R_y R_x`** tumble with
@@ -11,7 +11,7 @@ use glam::{Mat4, Vec3};
 use thorus_forge::geometry::Mesh;
 use thorus_forge::meshes::torus;
 use thorus_forge::{
-    ANIMATED_SCENE_FRAME_COUNT, Camera, DirectionalLight, FrameBuffer, Rgb, Shape, default_material,
+    ANIMATED_SCENE_FRAME_COUNT, Camera, FrameBuffer, Rgb, Shape, default_lights, default_material,
 };
 
 const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.5, -1.0);
@@ -78,7 +78,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn run_render(model: &Mesh, scene_width: u32, scene_height: u32) -> f64 {
     let mut framebuffer = FrameBuffer::new(scene_width, scene_height);
     let camera = Camera::for_viewport(scene_width, scene_height).move_to(CAMERA_POS);
-    let light = DirectionalLight::new(glam::Vec3::new(1.0, 0.5, -1.0).into());
+    let lights = default_lights();
 
     let frame_production_start = std::time::Instant::now();
     let lap_frames = ANIMATED_SCENE_FRAME_COUNT.max(1) as f32;
@@ -87,7 +87,7 @@ fn run_render(model: &Mesh, scene_width: u32, scene_height: u32) -> f64 {
 
         let t = frame_index as f32 / lap_frames * TAU;
         let torus = Shape::new(model.transform(model_matrix_tumble(t)), default_material());
-        torus.render(&mut framebuffer, &camera, &light);
+        torus.render(&mut framebuffer, &camera, &lights);
     }
     let frame_production_elapsed = frame_production_start.elapsed();
     let frame_production_secs = frame_production_elapsed.as_secs_f64().max(1e-12);

@@ -41,6 +41,7 @@ Optional stretch beyond these phases is allowed (e.g. CPU perspective in Phase 2
 ## Coordinate conventions
 
 - **Unity-style world/camera intuition:** left-handed, **+Y up**, **+Z forward** (camera/object relationships aligned with Unity thinking).
+- **Three.js reference import:** geometry-browser sources are **RHS** (**+Y** up, default camera **−Z** forward). When borrowing **positions** or **directions** (lights, camera eye, …), **negate `z`** after any scale factor; **`x`** and **`y`** stay as in Three.js.
 - **Clip space / framebuffer mapping:** **simplest pragmatic mapping first** on the CPU rasterizer. A deliberate **“wgpu alignment checkpoint”** is deferred until **Phase 3** prep (depth range, winding, NDC vs row-major Y, etc.).
 - Keep **wgpu/Vulkan-style conventions** in mind for later so **Phase 3** is mostly “same ideas, different executor,” but **do not front-load** full parity in phase 1.
 
@@ -64,8 +65,8 @@ Optional stretch beyond these phases is allowed (e.g. CPU perspective in Phase 2
 
 - **Cube / dodecahedron:** faceted (**`Facet::with_facet_normal`** duplicates the facet normal at each corner).
 - **Sphere / torus:** smooth vertex normals (**`Facet::with_vertex_normals`**); **Phong** raster (**`PhongShadedTriangle`**: interpolate normals per pixel, renormalize, shade).
-- **Lighting (current):** **`DirectionalLight`** (**`toward_light`** + **`intensity`**, default **`1.0`** via **`new`**) with explicit **`Material`** (**`diffuse`**, **`emissive`**, **`specular`**, **`shininess`**) on **`Shape`**. **`Material::shade`** composes in **linear** space (**`src/lighting/color.rs`**) then encodes to sRGB **`Rgb`**. **`Shape::render(fb, camera, &light)`** passes constant **`toward_eye = −Camera::direction()`** under orthographic projection. **Export bins** use **`default_material()`** (diffuse/emissive match browser; specular/shininess **tentatively** tweaked — **`doc/planning/project-breakdown.md`** **`Lighting parity`**), **`SCENE_BACKGROUND`** (**`0x444444`**) clear, and **`DirectionalLight::new`** only (**`intensity` 1.0**); **`with_intensity`** is for tests and experiments — **not** for matching the browser’s per-light **`intensity` 3** on a single light.
-- **Lighting (Phase 2 remaining):** **Multi-light** — **`Shape::render`** takes **`&[DirectionalLight]`** and sums per-light diffuse/specular; export bins add the browser’s three directionals (**`intensity` 3** each). **Optional stretch:** **perspective projection (CPU)**, then **positional** lights. **Lighting parity (tentative, last)** — align equations with Three.js so browser **`MeshPhongMaterial`** constants look right without export tweaks. **Emissive** added once per fragment throughout. **`Scene`** type deferred until multi-light bin wiring earns it.
+- **Lighting (current):** **`DirectionalLight`** (**`toward_light`** + **`intensity`**, default **`1.0`** via **`new`**) with explicit **`Material`** (**`diffuse`**, **`emissive`**, **`specular`**, **`shininess`**) on **`Shape`**. **`Material::shade`** composes in **linear** space (**`src/lighting/color.rs`**) then encodes to sRGB **`Rgb`**; **sums** per-light diffuse/specular, **emissive** once. **`Shape::render(fb, camera, &[DirectionalLight])`** passes constant **`toward_eye = −Camera::direction()`** under orthographic projection. **Export bins** use **`default_material()`** (**`0x156289`**, **`0x072534`**, specular **`0x444444`**, **`shininess` 30**), **`default_lights()`** (three directionals at **`intensity` 1.0** each), **`SCENE_BACKGROUND`** (**`0x444444`**); **`with_intensity`** is for tests and experiments. Residual **equation** parity vs Three.js — **`doc/planning/project-breakdown.md`** **`Lighting parity`**.
+- **Lighting (Phase 2 remaining):** **Optional stretch:** **perspective projection (CPU)**, then **positional** lights. **Lighting parity (tentative, last)** — align shading **equations** with Three.js for the shipped **`default_material()`** palette. **`Scene`** type still deferred — bin wiring stayed direct after **Multi-light**.
 - **Historical note:** **Gouraud** intensity interpolation was an intermediate milestone; only **Phong** remains in code.
 
 Phase 1 milestone ambition (from earlier discussion): interpolated vertex attributes (**level 3**) before treating phase 1 as complete. **Phase 2** adds explicit material/light colors; **perspective-correct texturing (**level 4**)** remains optional stretch.
@@ -76,7 +77,7 @@ Phase 1 milestone ambition (from earlier discussion): interpolated vertex attrib
 
 - **Current pipeline:** **`geometry::Mesh`** stores indexed **`Facet`**s + **`Vec3`** positions. **`Mesh::visible_triangles(view_direction)`** culls back faces and yields world-space **`Triangle`** records (corners + per-vertex **`UnitVec3`** normals). Scene-level **`Shape`** (**`mesh` + `material`**, **`src/lib.rs`**) projects each **`Triangle`** via **`Camera::transform`** → **`FbPixel`** (pixel **`xy`** + view-space **`depth`**) and draws with **`PhongShadedTriangle`**. **`meshes::{cube,dodecahedron,sphere,torus}`** are procedural builders on that stack.
 - **Depth:** **`FrameBuffer::write_pixel`** keeps the nearer fragment (**smaller view-space **`z`**).
-- **Phase 2 gaps (vs [Three.js TorusGeometry browser](https://threejs.org/docs/scenes/geometry-browser.html#TorusGeometry) reference):** **single light** only (reference: **three** directionals at **`intensity` 3**, summed in **Multi-light** — export bins deliberately stay at **`DirectionalLight::new`** / **`intensity` 1.0** until then). **Out of Phase 2 scope (by choice):** wireframe overlay, flat shading, extended torus API (**`radius`**, **`tube`**, **`arc`**), live **`winit`** viewer / GUI.
+- **Phase 2 gaps (vs [Three.js TorusGeometry browser](https://threejs.org/docs/scenes/geometry-browser.html#TorusGeometry) reference):** **shading equation** parity (export bins ship three summed directionals via **`default_lights()`** but **`Material::shade`** contrib terms may still differ from Three.js — see **`Lighting parity`**). **Out of Phase 2 scope (by choice):** wireframe overlay, flat shading, extended torus API (**`radius`**, **`tube`**, **`arc`**), live **`winit`** viewer / GUI.
 - **No separate `Vertex` type:** positions live in **`Mesh`**; normals live on **`Facet`**; surface appearance is **`Shape::material`** via **`Material::shade`**.
 
 ---
@@ -86,7 +87,7 @@ Phase 1 milestone ambition (from earlier discussion): interpolated vertex attrib
 ### Current filled path
 
 - **`PhongShadedTriangle`** (**`src/framebuffer/phong_shaded_triangle.rs`**): y-sorted scanlines, edge walking with **`Interpolator`**, per-pixel normal interpolation (**`NormalInterpolator`**), depth interpolation, and **`FrameBuffer::write_pixel`** (depth test + RGB write).
-- **`Shape::render`**: one **`PhongShadedTriangle::draw`** per visible **`Triangle`**; lighting via **`Material::shade`** with **`DirectionalLight`** (closure passed into **`draw`**).
+- **`Shape::render`**: one **`PhongShadedTriangle::draw`** per visible **`Triangle`**; lighting via **`Material::shade`** with **`&[DirectionalLight]`** (closure passed into **`draw`**).
 - **Out-of-bounds:** **`write_pixel`** ignores coordinates outside the framebuffer; **`Camera::transform`** does not clip — negative projected **`xy`** may wrap when cast to **`u32`** (documented in **`ortho_camera`** module docs).
 
 ### Historical milestones (retired code paths)
@@ -125,14 +126,13 @@ Earlier phase-1 work exercised **wireframe**, **DDA lines**, **quad fill**, **`d
 
 ## Deferred checkpoints (do not lose track)
 
-1. **Phase 2 — multi-light** — **`Shape::render(&[DirectionalLight])`** summation; three white directionals at **`intensity` 3** each in export bins (geometry-browser positions); first milestone that raises bin intensity above **`1.0`**.
-2. **Phase 2 stretch — perspective projection (CPU)** — optional; only if appetite after materials/lights.
-3. **Phase 2 stretch — positional lights** — optional; point lights with per-fragment **`toward_light`**; after perspective stretch (or after multi-light if perspective skipped).
-4. **Phase 2 — lighting parity (tentative, last)** — align **`Material::shade`** / light contrib with Three.js; adopt browser specular **`0x111111`** and **`shininess` 30** in **`default_material()`** (retire current **`0x444444`** / **`100`** tweak).
-5. **Phase 3 — wgpu** — swapchain/surface, buffers, pipeline state, shaders, depth test, culling; **wgpu convention alignment** (depth range, winding, NDC vs framebuffer); **perspective in GPU** if not done on CPU.
-6. **Animated golden WebP / pixel-diff tests** — adopt when eyeballing saturates for multi-frame exports.
-7. **Cross-platform** — revisit when/if portability becomes a goal.
-8. **Live `winit` viewer** — interactive geometry-browser-style presentation; deferred past Phase 2.
+1. **Phase 2 stretch — perspective projection (CPU)** — optional; only if appetite after materials/lights.
+2. **Phase 2 stretch — positional lights** — optional; point lights with per-fragment **`toward_light`**; after perspective stretch (or after **Multi-light** if perspective skipped).
+3. **Phase 2 — lighting parity (tentative, last)** — align **`Material::shade`** / light contrib with Three.js for the shipped **`default_material()`** palette (specular **`0x444444`**, **`shininess` 30**).
+4. **Phase 3 — wgpu** — swapchain/surface, buffers, pipeline state, shaders, depth test, culling; **wgpu convention alignment** (depth range, winding, NDC vs framebuffer); **perspective in GPU** if not done on CPU.
+5. **Animated golden WebP / pixel-diff tests** — adopt when eyeballing saturates for multi-frame exports.
+6. **Cross-platform** — revisit when/if portability becomes a goal.
+7. **Live `winit` viewer** — interactive geometry-browser-style presentation; deferred past Phase 2.
 
 ---
 

@@ -4,14 +4,14 @@ use std::thread;
 
 use glam::Vec3;
 
-use thorus_forge::DirectionalLight;
 use thorus_forge::meshes::torus;
-use thorus_forge::{Camera, FrameBuffer, SCENE_BACKGROUND, Shape, WebpEncoder, default_material};
+use thorus_forge::{
+    Camera, FrameBuffer, SCENE_BACKGROUND, Shape, WebpEncoder, default_lights, default_material,
+};
 
 use crate::kitty_terminal::KittyTerminal;
 
 const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.5, -1.0);
-const LIGHT_DIRECTION: Vec3 = Vec3::new(1.0, 2.0, -1.0);
 const OUT_PATH: &str = "still-scene.webp";
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -31,10 +31,10 @@ fn render_scene(width: u32, height: u32) -> FrameBuffer {
     let mut framebuffer = FrameBuffer::new(width, height);
     framebuffer.clear(SCENE_BACKGROUND);
     let camera = Camera::for_viewport(width, height).move_to(CAMERA_POS);
-    let light = DirectionalLight::with_intensity(LIGHT_DIRECTION.into(), 1.0);
+    let lights = default_lights();
 
     let torus = Shape::new(torus(48, 32), default_material());
-    torus.render(&mut framebuffer, &camera, &light);
+    torus.render(&mut framebuffer, &camera, &lights);
 
     framebuffer
 }

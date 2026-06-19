@@ -24,7 +24,7 @@ fn draw_single_unit_cube_produces_rectangle() {
     let light = DirectionalLight::new(-camera.direction());
 
     let shape = positioned_cube(0.0, Rgb::BLUE);
-    shape.render(&mut fb, &camera, &light);
+    shape.render(&mut fb, &camera, &[light]);
 
     let expected = framebuffer_with_rectangle(UVec2::new(25, 25), UVec2::new(75, 75), Rgb::BLUE);
     assert_eq!(fb.as_ref(), expected.as_ref());
@@ -34,13 +34,14 @@ fn draw_single_unit_cube_produces_rectangle() {
 fn draw_occluded_cubes_hides_far_cube() {
     let mut fb = FrameBuffer::new(FB_WIDTH, FB_HEIGHT);
     let camera = Camera::for_viewport(FB_WIDTH, FB_HEIGHT).move_to(CAMERA_POS);
-    let light = DirectionalLight::new(-camera.direction());
-
     let near_shape = positioned_cube(0.0, Rgb::BLUE);
     let far_shape = positioned_cube(2.0, Rgb::RED);
 
-    near_shape.render(&mut fb, &camera, &light);
-    far_shape.render(&mut fb, &camera, &light);
+    let light = DirectionalLight::new(-camera.direction());
+    near_shape.render(&mut fb, &camera, &[light]);
+
+    let light = DirectionalLight::new(-camera.direction());
+    far_shape.render(&mut fb, &camera, &[light]);
 
     let expected = framebuffer_with_rectangle(UVec2::new(25, 25), UVec2::new(75, 75), Rgb::BLUE);
     assert_eq!(fb.as_ref(), expected.as_ref());

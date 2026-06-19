@@ -1,4 +1,4 @@
-//! **`meshes::torus(48, 32)`** at the origin, **Phong** **`DirectionalLight`**, back-face culled —
+//! **`meshes::torus(48, 32)`** at the origin, **Phong** multi-light, back-face culled —
 //! **`ANIMATED_SCENE_FRAME_COUNT`**-frame lossless WebP.
 //!
 //! **Fixed camera** (same eye as **`still-scene`**). **Model:** world-fixed **`R_z R_y R_x`** tumble with
@@ -13,12 +13,12 @@ use glam::{Mat4, Vec3};
 
 use thorus_forge::meshes::torus;
 use thorus_forge::{
-    ANIMATED_SCENE_FRAME_COUNT, ANIMATED_SCENE_FRAME_SPACING_MS, Camera, DirectionalLight,
-    FrameBuffer, SCENE_BACKGROUND, SCENE_HEIGHT, SCENE_WIDTH, Shape, WebpEncoder, default_material,
+    ANIMATED_SCENE_FRAME_COUNT, ANIMATED_SCENE_FRAME_SPACING_MS, Camera, FrameBuffer,
+    SCENE_BACKGROUND, SCENE_HEIGHT, SCENE_WIDTH, Shape, WebpEncoder, default_lights,
+    default_material,
 };
 
 const CAMERA_POS: Vec3 = Vec3::new(0.0, 0.5, -1.0);
-const LIGHT_DIRECTION: Vec3 = Vec3::new(1.0, 2.0, -1.0);
 
 const TORUS_RING_SEGMENTS: usize = 48;
 const TORUS_TUBE_SEGMENTS: usize = 32;
@@ -49,7 +49,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ANIMATED_SCENE_FRAME_SPACING_MS,
     )?;
     let camera = Camera::for_viewport(SCENE_WIDTH, SCENE_HEIGHT).move_to(CAMERA_POS);
-    let light = DirectionalLight::new(LIGHT_DIRECTION.into());
+    let lights = default_lights();
 
     let base_mesh = torus(TORUS_RING_SEGMENTS, TORUS_TUBE_SEGMENTS);
 
@@ -69,7 +69,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             base_mesh.transform(model_matrix_tumble(t)),
             default_material(),
         );
-        torus.render(&mut framebuffer, &camera, &light);
+        torus.render(&mut framebuffer, &camera, &lights);
 
         encoder.add_frame(&framebuffer)?;
     }

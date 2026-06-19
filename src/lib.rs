@@ -4,6 +4,8 @@
 
 use std::array;
 
+use glam::Vec3;
+
 pub mod framebuffer;
 pub mod geometry;
 pub mod lighting;
@@ -38,17 +40,27 @@ pub const SCENE_BACKGROUND: Rgb = Rgb::from_hex(0x444444);
 
 /// Default export-bin surface material.
 ///
-/// Diffuse and emissive match geometry-browser **`MeshPhongMaterial`** (**`0x156289`**, **`0x072534`**).
-/// **Specular / shininess are tentative** (**`0x444444`**, **`100`**) until lighting-equation parity
-/// with Three.js lands — see **`Lighting parity — Three.js equation alignment (tentative)`** in
-/// **`doc/planning/project-breakdown.md`**. Browser defaults: specular **`0x111111`**, **`shininess` 30**.
+/// Export-bin **`MeshPhongMaterial`** palette: emissive **`0x072534`**, diffuse **`0x156289`**,
+/// specular **`0x444444`**, **`shininess` 30**.
 pub fn default_material() -> Material {
     Material::new(
         Rgb::from_hex(0x072534),
         Rgb::from_hex(0x156289),
         Rgb::from_hex(0x444444),
-        Some(100),
+        Some(30),
     )
+}
+
+/// Three white directionals for export bins (**`intensity` 1.0** each).
+///
+/// **`toward_light`** from geometry-browser positions **÷ 100**, **`z`** negated for LHS:
+/// **`(0, 2, 0)`**, **`(1, 2, −1)`**, **`(-1, -2, 1)`**.
+pub fn default_lights() -> [DirectionalLight; 3] {
+    [
+        DirectionalLight::new(Vec3::new(0.0, 2.0, 0.0).into()),
+        DirectionalLight::new(Vec3::new(1.0, 2.0, -1.0).into()),
+        DirectionalLight::new(Vec3::new(-1.0, -2.0, 1.0).into()),
+    ]
 }
 
 /// A posed **[`Mesh`]** plus surface **[`Material`]** for filled rendering.
@@ -63,7 +75,7 @@ impl Shape {
         Self { mesh, material }
     }
 
-    pub fn render(&self, fb: &mut FrameBuffer, camera: &Camera, light: &DirectionalLight) {
+    pub fn render(&self, fb: &mut FrameBuffer, camera: &Camera, lights: &[DirectionalLight]) {
         let forward = camera.direction();
         let toward_eye: UnitVec3 = -camera.direction();
         let material = self.material;
@@ -73,7 +85,7 @@ impl Shape {
                 normal: triangle.normals[i],
             });
             PhongShadedTriangle::new(corners)
-                .draw(fb, |normal| material.shade(light, normal, toward_eye));
+                .draw(fb, |normal| material.shade(lights, normal, toward_eye));
         }
     }
 }
