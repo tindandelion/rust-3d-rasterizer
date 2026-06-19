@@ -5,8 +5,11 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 frames_dir="${root}/target/animated-scene"
 output="${root}/scene.webm"
 framerate=50
-pix_fmt="${FFMPEG_PIX_FMT:-yuv444p}"
-cpu_used="${FFMPEG_CPU_USED:-2}"
+# Safari plays VP9 Profile 0 with 4:2:0 only (not yuv444p / lossless VP9 Profile 1).
+pix_fmt="${FFMPEG_PIX_FMT:-yuv420p}"
+crf="${FFMPEG_CRF:-4}"
+cpu_used="${FFMPEG_CPU_USED:-0}"
+deadline="${FFMPEG_DEADLINE:-best}"
 
 cd "${root}"
 
@@ -17,10 +20,12 @@ ffmpeg -y \
   -start_number 0 \
   -i "${frames_dir}/%06d.png" \
   -c:v libvpx-vp9 \
-  -lossless 1 \
   -pix_fmt "${pix_fmt}" \
+  -crf "${crf}" \
+  -b:v 0 \
+  -deadline "${deadline}" \
   -row-mt 1 \
   -cpu-used "${cpu_used}" \
   "${output}"
 
-echo "Wrote ${output} (lossless vp9, pix_fmt=${pix_fmt}, cpu-used=${cpu_used})"
+echo "Wrote ${output} (vp9 profile 0, pix_fmt=${pix_fmt}, crf=${crf}, cpu-used=${cpu_used}, deadline=${deadline})"

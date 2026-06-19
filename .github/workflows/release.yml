@@ -30,18 +30,6 @@ jobs:
       - name: Render animated scene WebM
         run: ./scripts/animated-scene-webm
 
-      - name: Upload WebP artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: scene-webp
-          path: artifacts/scene.webp
-
-      - name: Upload WebM artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: scene-webm
-          path: scene.webm
-
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
