@@ -1,15 +1,16 @@
 //! **`meshes::torus(48, 32)`** at the origin, **Phong** multi-light, back-face culled —
-//! **`ANIMATED_SCENE_FRAME_COUNT`**-frame lossless WebP.
+//! **`ANIMATED_SCENE_FRAME_COUNT`**-frame lossless WebP plus numbered PNG frames.
 //!
 //! **Fixed camera** (same eye as **`still-scene`**). **Model:** world-fixed **`R_z R_y R_x`** tumble with
 //! **`α = β = γ = t`**, **`t`** sweeping **`0 … τ`** over the clip (**seamless loop**).
 
-use std::env;
 use std::f32::consts::TAU;
-use std::ffi::OsString;
-use std::path::Path;
+use std::fs::{self, File};
+use std::io::BufWriter;
+use std::path::{Path, PathBuf};
 
 use glam::{Mat4, Vec3};
+use png::{BitDepth, ColorType, Encoder};
 
 use thorus_forge::meshes::torus;
 use thorus_forge::{
@@ -24,13 +25,51 @@ const TORUS_RING_SEGMENTS: usize = 48;
 const TORUS_TUBE_SEGMENTS: usize = 32;
 const TORUS_SCALE: f32 = 0.8;
 
-const DEFAULT_OUT_PATH: &str = "scene.webp";
+const WEBP_OUT_PATH: &str = "target/scene.webp";
+const PNG_OUT_DIR: &str = "target/animated-scene";
 
-/// Output **`.webp`** path: first **argv** argument if set, else [`DEFAULT_OUT_PATH`].
-fn output_webp_path_from_args() -> OsString {
-    env::args_os()
-        .nth(1)
-        .unwrap_or_else(|| DEFAULT_OUT_PATH.into())
+struct PngFrameWriter {
+    out_dir: PathBuf,
+    width: u32,
+    height: u32,
+}
+
+impl PngFrameWriter {
+    fn new(
+        out_dir: impl Into<PathBuf>,
+        width: u32,
+        height: u32,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
+        Ok(Self {
+            out_dir: out_dir.into(),
+            width,
+            height,
+        })
+    }
+
+    fn clear(&self) -> Result<(), Box<dyn std::error::Error>> {
+        if self.out_dir.exists() {
+            fs::remove_dir_all(&self.out_dir)?;
+        }
+        fs::create_dir_all(&self.out_dir)?;
+        Ok(())
+    }
+
+    fn write_frame(
+        &self,
+        frame_index: u32,
+        rgb: impl AsRef<[u8]>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let path = self.out_dir.join(format!("{frame_index:06}.png"));
+        let file = File::create(path)?;
+        let writer = BufWriter::new(file);
+        let mut encoder = Encoder::new(writer, self.width, self.height);
+        encoder.set_color(ColorType::Rgb);
+        encoder.set_depth(BitDepth::Eight);
+        let mut writer = encoder.write_header()?;
+        writer.write_image_data(rgb.as_ref())?;
+        Ok(())
+    }
 }
 
 /// Uniform scale plus world-fixed **`R_z R_y R_x`** at angle **`t`** (radians).
@@ -40,14 +79,15 @@ fn model_matrix_tumble(t: f32) -> Mat4 {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let out_path = output_webp_path_from_args();
-
-    let mut framebuffer = FrameBuffer::new(SCENE_WIDTH, SCENE_HEIGHT);
-    let mut encoder = WebpEncoder::with_frame_spacing(
+    let png_writer = PngFrameWriter::new(PNG_OUT_DIR, SCENE_WIDTH, SCENE_HEIGHT)?;
+    let mut webp_encoder = WebpEncoder::with_frame_spacing(
         SCENE_WIDTH,
         SCENE_HEIGHT,
         ANIMATED_SCENE_FRAME_SPACING_MS,
     )?;
+
+    png_writer.clear()?;
+    let mut framebuffer = FrameBuffer::new(SCENE_WIDTH, SCENE_HEIGHT);
     let camera = Camera::for_viewport(SCENE_WIDTH, SCENE_HEIGHT).move_to(CAMERA_POS);
     let lights = default_lights();
 
@@ -71,19 +111,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
         torus.render(&mut framebuffer, &camera, &lights);
 
-        encoder.add_frame(&framebuffer)?;
+        png_writer.write_frame(frame_index, &framebuffer)?;
+        webp_encoder.add_frame(&framebuffer)?;
     }
     let frame_production_elapsed = frame_production_start.elapsed();
     let frame_production_secs = frame_production_elapsed.as_secs_f64().max(1e-12);
     let frame_production_fps = ANIMATED_SCENE_FRAME_COUNT as f64 / frame_production_secs;
 
-    encoder.write(Path::new(&out_path))?;
+    webp_encoder.write(Path::new(WEBP_OUT_PATH))?;
 
     println!(
-        "Wrote {} ({ANIMATED_SCENE_FRAME_COUNT} frames, {}×{}, lossless)",
-        out_path.to_string_lossy(),
-        SCENE_WIDTH,
-        SCENE_HEIGHT,
+        "Wrote {WEBP_OUT_PATH} ({ANIMATED_SCENE_FRAME_COUNT} frames, {}×{}, lossless)",
+        SCENE_WIDTH, SCENE_HEIGHT,
+    );
+    println!(
+        "Wrote {ANIMATED_SCENE_FRAME_COUNT} PNG frames to {} ({}×{})",
+        png_writer.out_dir.display(),
+        png_writer.width,
+        png_writer.height,
     );
     println!(
         "Frame production: {:.2} fps ({ANIMATED_SCENE_FRAME_COUNT} frames in {:?})",

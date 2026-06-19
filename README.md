@@ -9,7 +9,7 @@
 ## Running
 
 - `cargo run --bin still-scene` — Phong torus at terminal pixel size; displays centered in a Kitty-compatible terminal (any key to dismiss) and writes `still-scene.webp` in parallel.
-- `cargo run` (default `animated-scene`) — lossless animated WebP at 800×600 (`scene.webp` by default).
+- `cargo run` (default `animated-scene`) — lossless animated WebP at 800×600 (`target/scene.webp`) and numbered PNG frames under `target/animated-scene/`.
 
 ## Project plans
 

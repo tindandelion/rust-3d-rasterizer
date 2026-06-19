@@ -23,9 +23,7 @@ jobs:
         run: cargo test --release
 
       - name: Render animated scene
-        run: |
-          mkdir -p artifacts
-          cargo run --release --bin animated-scene -- artifacts/scene.webp
+        run: cargo run --release --bin animated-scene
 
       - name: Render animated scene WebM
         run: ./scripts/animated-scene-webm
@@ -34,6 +32,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            artifacts/scene.webp
-            scene.webm
+            target/scene.webp
+            target/scene.webm
           generate_release_notes: true
