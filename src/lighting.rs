@@ -18,9 +18,9 @@ impl Material {
     /// **`shininess`** enables specular when **`Some`**.
     pub fn new(emissive: Rgb, diffuse: Rgb, specular: Rgb, shininess: Option<i32>) -> Self {
         Self {
-            emissive: emissive.into(),
-            diffuse: diffuse.into(),
-            specular: specular.into(),
+            emissive: Color::from_linear(emissive.to_linear()),
+            diffuse: Color::from_linear(diffuse.to_linear()),
+            specular: Color::from_linear(specular.to_linear()),
 
             shininess,
         }
@@ -44,7 +44,7 @@ impl Material {
         });
         let shaded_color =
             self.emissive + self.diffuse * diffuse_contrib + self.specular * specular_contrib;
-        shaded_color.into()
+        Rgb::from_linear(shaded_color.to_linear())
     }
 }
 
@@ -217,10 +217,12 @@ mod tests {
             diffuse_contrib: f32,
             specular_contrib: f32,
         ) -> Rgb {
-            let emissive: Color = emissive.into();
-            let diffuse: Color = diffuse.into();
-            let specular: Color = specular.into();
-            Rgb::from(emissive + diffuse * diffuse_contrib + specular * specular_contrib)
+            let emissive = Color::from_linear(emissive.to_linear());
+            let diffuse = Color::from_linear(diffuse.to_linear());
+            let specular = Color::from_linear(specular.to_linear());
+            Rgb::from_linear(
+                (emissive + diffuse * diffuse_contrib + specular * specular_contrib).to_linear(),
+            )
         }
 
         #[test]

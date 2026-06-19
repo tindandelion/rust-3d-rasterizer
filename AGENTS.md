@@ -18,6 +18,7 @@ When behavior or scope is unclear, **prefer the planning docs** over guessing.
 - **Language:** Rust (see `Cargo.toml` for `edition` and package name).
 - **Layout:** Single Cargo crate for now; introduce modules as needed (e.g. `raster`, export/WebP). Scene-wide constants (**`SCENE_WIDTH`**, **`ANIMATED_SCENE_FRAME_COUNT`**, …) stay as **`pub const`** in **`lib.rs`** until a dedicated config module earns its keep; per-bin output paths and bin-local helpers live in **`src/bin/`** (directory bins when warranted — e.g. **`still-scene/`** with **`kitty_terminal.rs`**). Split into a workspace only if maintainability demands it.
 - **Modules:** Prefer the post-2018 layout for directory modules: **`parent.rs` + `parent/child.rs`** (e.g. `geometry.rs` + `geometry/mesh.rs`, `meshes.rs` + `meshes/cube.rs`). Avoid adding new **`mod.rs`** files unless there is a compelling reason. **Private submodules, flat public surface:** implementation files stay **`mod`**-private; re-export types and functions at the parent boundary (**`geometry::Mesh`**, **`meshes::cube()`**, …).
+- **Member ordering:** Within a module, **`impl`**, or type body, list items by visibility — **`pub`** first, then **`pub(crate)`** / **`pub(super)`**, then private members (constants, functions, fields, trait impls, and nested **`mod`** blocks).
 
 ## Conventions to preserve
 
