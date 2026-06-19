@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+frames_dir="${root}/target/animated-scene"
+output="${root}/scene.webm"
+framerate=50
+pix_fmt="${FFMPEG_PIX_FMT:-yuv444p}"
+cpu_used="${FFMPEG_CPU_USED:-2}"
+
+cd "${root}"
+
+cargo run --release --bin animated-scene-frames
+
+ffmpeg -y \
+  -framerate "${framerate}" \
+  -start_number 0 \
+  -i "${frames_dir}/%06d.png" \
+  -c:v libvpx-vp9 \
+  -lossless 1 \
+  -pix_fmt "${pix_fmt}" \
+  -row-mt 1 \
+  -cpu-used "${cpu_used}" \
+  "${output}"
+
+echo "Wrote ${output} (lossless vp9, pix_fmt=${pix_fmt}, cpu-used=${cpu_used})"

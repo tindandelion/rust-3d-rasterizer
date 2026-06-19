@@ -34,7 +34,7 @@ pub struct RenderedWebp {
 }
 
 /// Resolves `CARGO_BIN_EXE_<binary_name>` where **`binary_name`** is the hyphenated Cargo target (**`animated-scene`**, **`still-scene`**, …).
-fn cargo_bin_exe_path(binary_name: &str) -> PathBuf {
+pub fn cargo_bin_exe_path(binary_name: &str) -> PathBuf {
     let key = format!("CARGO_BIN_EXE_{binary_name}");
     std::env::var_os(&key)
         .map(PathBuf::from)

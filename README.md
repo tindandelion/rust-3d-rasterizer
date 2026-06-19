@@ -6,6 +6,8 @@
 
 ![Current render output](https://github.com/tindandelion/rust-3d-rasterizer/releases/latest/download/scene.webp)
 
+<video src="https://github.com/tindandelion/rust-3d-rasterizer/releases/latest/download/scene.webm" autoplay loop muted playsinline width="800"></video>
+
 ## Running
 
 - `cargo run --bin still-scene` — Phong torus at terminal pixel size; displays centered in a Kitty-compatible terminal (any key to dismiss) and writes `still-scene.webp` in parallel.

@@ -9,6 +9,7 @@ approx = "0.5"
 base64 = "0.22"
 crossterm = "0.28"
 glam = { version = "0.32.1", features = ["approx"] }
+png = "0.17"
 webp-animation = "0.10"
 
 [dev-dependencies]
