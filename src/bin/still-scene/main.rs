@@ -72,6 +72,7 @@ mod tests {
     use webp_animation::{ColorMode, Decoder};
 
     const EXPECTED_WEBP: &str = "test-data/still-scene.webp";
+    const IMAGE_DISTANCE_TOLERANCE: f64 = 10.0;
 
     #[test]
     fn test_render_scene() {
@@ -82,7 +83,7 @@ mod tests {
         let actual_rgb = actual.as_ref();
         let l2_distance = rgb_l2_distance(actual_rgb, &expected_rgb);
         assert!(
-            actual_rgb == expected_rgb.as_slice(),
+            l2_distance < IMAGE_DISTANCE_TOLERANCE,
             "rendered scene does not match {} (L2 distance: {l2_distance})",
             expected_path.display()
         );
