@@ -115,9 +115,10 @@ The main effect is that the dark side of the sphere is brighter in the linear sp
 
 ## What's next 
 
-Having completed of this step, we have a more flexible [`Material`][source-material] data type and correct shading calculations. Our next step is to add three directional light sources to the scene, to match the setup of the [Geometry Browser][geometry-browser] from `three.js`. 
+Having completed of this step, we have a more flexible [`Material`][source-material] data type and correct shading calculations. Our next step is to add three directional light sources to the scene, to match the setup of the [Geometry Browser][geometry-browser] from `three.js` — which we cover in [Three Lights Are Better Than One][post-three-lights]. 
 
 [post-planning-phase-2]: {{site.baseurl}}/{% post_url 2026-06-17-planning-phase-2 %}
+[post-three-lights]: {{site.baseurl}}/{% post_url 2026-06-19-three-directional-lights %}
 [post-first-shot-at-glossy-shapes]: {{site.baseurl}}/{% post_url 2026-06-03-first-shot-at-glossy-shapes %}
 [post-first-shot-at-glossy-shapes-blinn-phong]: {{site.baseurl}}/{% post_url 2026-06-03-first-shot-at-glossy-shapes %}#blinnphong-reflection-model
 [version-0-1-0]: https://github.com/tindandelion/rust-3d-rasterizer/tree/0.1.0
