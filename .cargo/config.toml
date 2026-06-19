@@ -1,5 +1,4 @@
 [alias]
-update-doc = "run --release -- doc/output/current.webp"
 'watch:test' = ["watch", "-c", "-x", "test --lib -- --format=terse"]
 'watch:still' = ["watch", "-x", "run --bin still-scene"]
 'watch:build' = ["watch", "-x", "build --all-targets"]
