@@ -23,7 +23,7 @@ When behavior or scope is unclear, **prefer the planning docs** over guessing.
 ## Conventions to preserve
 
 - **World/camera intuition:** Unity-style **left-handed**, **+Y up**, **+Z forward** (see spec for clip/screen mapping details).
-- **Scope:** Restricted scenes in early phases; procedural meshes; **torus** is the current export-bin mesh — follow open milestones in the breakdown doc (**Phase 2 remaining:** optional stretch CPU perspective, positional lights, lighting parity; **Phase 3:** **`wgpu`**).
+- **Scope:** Restricted scenes in early phases; procedural meshes; **torus** is the current export-bin mesh — follow open milestones in the breakdown doc (**Phase 2 remaining:** **PointLight**, optional stretch CPU perspective, lighting parity; **Phase 3:** **`wgpu`**).
 
 ## How to work in this repo
 
