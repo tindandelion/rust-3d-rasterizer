@@ -1,18 +1,18 @@
 //! Filled triangle with per-pixel Phong shading: interpolate normals, evaluate lighting per fragment.
 
-use glam::{Vec2, Vec3};
+use glam::Vec2;
 
 use crate::{
     framebuffer::{FbPixel, interpolator::Interpolator},
-    geometry::UnitVec3,
+    geometry::SurfacePoint,
 };
 
 use super::{FrameBuffer, Rgb};
 
 #[derive(Clone, Copy, Debug)]
 pub struct PhongCorner {
-    pub point: FbPixel,
-    pub normal: UnitVec3,
+    pub pixel: FbPixel,
+    pub surface_point: SurfacePoint,
 }
 
 pub struct PhongShadedTriangle {
@@ -21,30 +21,28 @@ pub struct PhongShadedTriangle {
 
 impl PhongShadedTriangle {
     pub fn new(mut corners: [PhongCorner; 3]) -> Self {
-        corners.sort_by_key(|v| v.point.y);
+        corners.sort_by_key(|v| v.pixel.y);
         Self { corners }
     }
 
-    pub fn draw(&self, fb: &mut FrameBuffer, shader_fn: impl Fn(UnitVec3) -> Rgb) {
-        for ((x1, z1, start_normal), (x2, z2, end_normal), y) in self.scan_lines() {
-            let horz_normal = NormalInterpolator::from_endpoints(
-                (x1 as f32, start_normal),
-                (x2 as f32, end_normal),
-            );
+    pub fn draw(&self, fb: &mut FrameBuffer, shader_fn: impl Fn(SurfacePoint) -> Rgb) {
+        for ((x1, z1, start_pt), (x2, z2, end_pt), y) in self.scan_lines() {
+            let horiz_surface_points =
+                Interpolator::from_endpoints((x1 as f32, start_pt), (x2 as f32, end_pt));
             let z_interp = Interpolator::from_endpoints((x1 as f32, z1), (x2 as f32, z2));
             for x in x1..=x2 {
                 let depth = z_interp.get(x as f32);
-                let normal = horz_normal.get(x as f32);
-                fb.write_pixel(FbPixel::new(x, y, depth), shader_fn(normal));
+                let surface_point = horiz_surface_points.get(x as f32);
+                fb.write_pixel(FbPixel::new(x, y, depth), shader_fn(surface_point));
             }
         }
     }
 
     fn scan_lines(
         &self,
-    ) -> impl Iterator<Item = ((u32, f32, UnitVec3), (u32, f32, UnitVec3), u32)> {
-        let y_range = self.corners[0].point.y..=self.corners[2].point.y;
-        let midpoint = self.corners[1].point;
+    ) -> impl Iterator<Item = ((u32, f32, SurfacePoint), (u32, f32, SurfacePoint), u32)> {
+        let y_range = self.corners[0].pixel.y..=self.corners[2].pixel.y;
+        let midpoint = self.corners[1].pixel;
 
         let ac_edge = EdgeWalker::from_corners(self.corners[0], self.corners[2]);
         let ab_edge = EdgeWalker::from_corners(self.corners[0], self.corners[1]);
@@ -74,120 +72,40 @@ impl PhongShadedTriangle {
     }
 }
 
-struct NormalInterpolator(Interpolator<Vec3>);
-
-impl NormalInterpolator {
-    fn from_endpoints(a: (f32, UnitVec3), b: (f32, UnitVec3)) -> Self {
-        Self(Interpolator::from_endpoints(
-            (a.0, Vec3::from(a.1)),
-            (b.0, Vec3::from(b.1)),
-        ))
-    }
-
-    fn get(&self, x: f32) -> UnitVec3 {
-        self.0.get(x).into()
-    }
-}
-
 struct EdgeWalker {
     start_pt: Vec2,
     x_interp: Interpolator<f32>,
     depth_interp: Interpolator<f32>,
-    normal_interp: NormalInterpolator,
+    surface_interp: Interpolator<SurfacePoint>,
 }
 
 impl EdgeWalker {
     fn from_corners(a: PhongCorner, b: PhongCorner) -> Self {
-        let pt_a = Vec2::new(a.point.x as f32, a.point.y as f32);
-        let pt_b = Vec2::new(b.point.x as f32, b.point.y as f32);
+        let pt_a = Vec2::new(a.pixel.x as f32, a.pixel.y as f32);
+        let pt_b = Vec2::new(b.pixel.x as f32, b.pixel.y as f32);
         let edge_length = (pt_b - pt_a).length();
 
         Self {
             start_pt: pt_a,
-            normal_interp: NormalInterpolator::from_endpoints(
-                (0.0, a.normal),
-                (edge_length, b.normal),
+            surface_interp: Interpolator::from_endpoints(
+                (0.0, a.surface_point),
+                (edge_length, b.surface_point),
             ),
             x_interp: Interpolator::from_endpoints((pt_a.y, pt_a.x), (pt_b.y, pt_b.x)),
             depth_interp: Interpolator::from_endpoints(
-                (pt_a.y, a.point.depth),
-                (pt_b.y, b.point.depth),
+                (pt_a.y, a.pixel.depth),
+                (pt_b.y, b.pixel.depth),
             ),
         }
     }
 
-    fn get(&self, y: f32) -> (f32, f32, UnitVec3) {
+    fn get(&self, y: f32) -> (f32, f32, SurfacePoint) {
         let x = self.x_interp.get(y);
         let depth = self.depth_interp.get(y);
 
         let current_distance = (Vec2::new(x, y) - self.start_pt).length();
-        let normal = self.normal_interp.get(current_distance);
-        (x, depth, normal)
-    }
-}
-
-#[cfg(test)]
-mod normal_interpolator_tests {
-    use super::NormalInterpolator;
-    use crate::geometry::UnitVec3;
-    use approx::assert_relative_eq;
-    use glam::Vec3;
-
-    #[test]
-    fn returns_start_and_end_normals_at_endpoints() {
-        let interpolator =
-            NormalInterpolator::from_endpoints((0.0, UnitVec3::X), (10.0, UnitVec3::Y));
-
-        assert_relative_eq!(interpolator.get(0.0), UnitVec3::X);
-        assert_relative_eq!(interpolator.get(10.0), UnitVec3::Y);
-    }
-
-    #[test]
-    fn returns_normalized_midpoint_between_endpoints() {
-        let interpolator =
-            NormalInterpolator::from_endpoints((0.0, UnitVec3::X), (2.0, UnitVec3::Y));
-
-        let mid = interpolator.get(1.0);
-        let expected = UnitVec3::from(Vec3::new(1.0, 1.0, 0.0));
-
-        assert_relative_eq!(mid, expected);
-    }
-
-    #[test]
-    fn interpolates_with_non_zero_start_parameter() {
-        let interpolator =
-            NormalInterpolator::from_endpoints((2.0, UnitVec3::X), (6.0, UnitVec3::Y));
-
-        let mid = interpolator.get(4.0);
-        let expected = UnitVec3::from(Vec3::new(1.0, 1.0, 0.0));
-
-        assert_relative_eq!(mid, expected);
-    }
-
-    #[test]
-    fn returns_start_normal_when_parameter_span_is_zero() {
-        let interpolator =
-            NormalInterpolator::from_endpoints((3.0, UnitVec3::X), (3.0, UnitVec3::Y));
-
-        assert_relative_eq!(interpolator.get(3.0), UnitVec3::X);
-        assert_relative_eq!(interpolator.get(100.0), UnitVec3::X);
-    }
-
-    #[test]
-    fn returns_same_normal_when_endpoints_share_normal() {
-        let interpolator =
-            NormalInterpolator::from_endpoints((0.0, UnitVec3::Z), (8.0, UnitVec3::Z));
-
-        assert_relative_eq!(interpolator.get(4.0), UnitVec3::Z);
-    }
-
-    #[test]
-    #[should_panic(expected = "UnitVec3 requires a non-zero Vec3")]
-    fn panics_when_blend_cancels_out() {
-        let interpolator =
-            NormalInterpolator::from_endpoints((0.0, UnitVec3::X), (2.0, UnitVec3::NEG_X));
-
-        let _ = interpolator.get(1.0);
+        let surface_point = self.surface_interp.get(current_distance);
+        (x, depth, surface_point)
     }
 }
 
@@ -198,11 +116,13 @@ mod tests {
     use crate::framebuffer::test_helpers::assert_ascii_art_eq;
 
     mod draw_triangle_shapes {
-        use crate::framebuffer::test_helpers::to_ascii_art;
+        use glam::Vec3;
+
+        use crate::{framebuffer::test_helpers::to_ascii_art, geometry::UnitVec3};
 
         use super::*;
 
-        const FULL_BRIGHTNESS: fn(UnitVec3) -> Rgb = |_| Rgb::WHITE;
+        const FULL_BRIGHTNESS: fn(SurfacePoint) -> Rgb = |_| Rgb::WHITE;
 
         #[test]
         fn fill_degenerate_triangle_is_line_segment() {
@@ -353,21 +273,22 @@ mod tests {
 
         fn pts(corners: [(u32, u32); 3]) -> [PhongCorner; 3] {
             std::array::from_fn(|i| PhongCorner {
-                point: FbPixel::new(corners[i].0, corners[i].1, 0.0),
-                normal: UnitVec3::Z,
+                pixel: FbPixel::new(corners[i].0, corners[i].1, 0.0),
+                surface_point: SurfacePoint::new(Vec3::ZERO, UnitVec3::Z),
             })
         }
     }
 
     mod shading_triangles {
-        use crate::framebuffer::test_helpers::to_ascii_art;
+        use crate::{framebuffer::test_helpers::to_ascii_art, geometry::UnitVec3};
+        use glam::Vec3;
 
         use super::*;
 
         const TOWARD_LIGHT: UnitVec3 = UnitVec3::Z;
 
-        fn diffuse_lambert_shader(normal: UnitVec3) -> Rgb {
-            let factor = TOWARD_LIGHT.dot(normal).max(0.0);
+        fn diffuse_lambert_shader(pt: SurfacePoint) -> Rgb {
+            let factor = TOWARD_LIGHT.dot(pt.normal()).max(0.0);
             let channel = (255.0 * factor).round().clamp(0.0, 255.0) as u8;
             Rgb(channel, channel, channel)
         }
@@ -440,7 +361,7 @@ mod tests {
             let expected_result = to_ascii_art(&[
                 "          ",
                 "  ██████▓▓",
-                "  ▓▓▓▒▒░  ",
+                "  ▓▓▒▒░░  ",
                 "          ",
                 "          ",
             ]);
@@ -459,7 +380,7 @@ mod tests {
             let expected_result = to_ascii_art(&[
                 "          ",
                 "        ▓ ",
-                "     ▓▓██ ",
+                "     ▒▓██ ",
                 "   ░▓███  ",
                 "          ",
             ]);
@@ -470,14 +391,19 @@ mod tests {
 
         fn pts(corners: [((u32, u32), UnitVec3); 3]) -> [PhongCorner; 3] {
             std::array::from_fn(|i| PhongCorner {
-                point: FbPixel::new(corners[i].0.0, corners[i].0.1, 0.0),
-                normal: corners[i].1,
+                pixel: FbPixel::new(corners[i].0.0, corners[i].0.1, 0.0),
+                surface_point: SurfacePoint::new(Vec3::ZERO, corners[i].1),
             })
         }
     }
 
     mod occlusion_tests {
-        use crate::framebuffer::test_helpers::{assert_ascii_art_eq, to_ascii_art};
+        use glam::Vec3;
+
+        use crate::{
+            framebuffer::test_helpers::{assert_ascii_art_eq, to_ascii_art},
+            geometry::UnitVec3,
+        };
 
         use super::*;
 
@@ -539,8 +465,8 @@ mod tests {
 
         fn corner(x: u32, y: u32, depth: f32) -> PhongCorner {
             PhongCorner {
-                point: FbPixel::new(x, y, depth),
-                normal: UnitVec3::Z,
+                pixel: FbPixel::new(x, y, depth),
+                surface_point: SurfacePoint::new(Vec3::ZERO, UnitVec3::Z),
             }
         }
     }

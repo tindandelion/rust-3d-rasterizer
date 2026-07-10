@@ -6,7 +6,7 @@ use glam::Vec3;
 
 use thorus_forge::meshes::torus;
 use thorus_forge::{
-    Camera, FrameBuffer, SCENE_BACKGROUND, Shape, WebpEncoder, default_lights, default_material,
+    Camera, FrameBuffer, Light, SCENE_BACKGROUND, Shape, WebpEncoder, default_material,
 };
 
 use crate::kitty_terminal::KittyTerminal;
@@ -31,7 +31,11 @@ fn render_scene(width: u32, height: u32) -> FrameBuffer {
     let mut framebuffer = FrameBuffer::new(width, height);
     framebuffer.clear(SCENE_BACKGROUND);
     let camera = Camera::for_viewport(width, height).move_to(CAMERA_POS);
-    let lights = default_lights();
+    let lights = [
+        Light::directional(Vec3::new(0.0, 2.0, 0.0).into(), 0.5),
+        Light::point(Vec3::new(1.0, 2.0, -1.0).into(), 1.0),
+        Light::point(Vec3::new(-1.0, -2.0, 1.0).into(), 1.0),
+    ];
 
     let torus = Shape::new(torus(48, 32), default_material());
     torus.render(&mut framebuffer, &camera, &lights);

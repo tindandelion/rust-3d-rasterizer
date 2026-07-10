@@ -14,12 +14,12 @@ pub mod ortho_camera;
 pub mod webp_encoder;
 
 pub use framebuffer::{FrameBuffer, Rgb};
-pub use lighting::{DirectionalLight, Material};
+pub use lighting::{Light, Material};
 pub use ortho_camera::Camera;
 pub use webp_encoder::WebpEncoder;
 
 use crate::framebuffer::{PhongCorner, PhongShadedTriangle};
-use crate::geometry::{Mesh, UnitVec3};
+use crate::geometry::{Mesh, SurfacePoint, UnitVec3};
 
 /// Raster width in pixels (golden stills / integration tests must agree).
 pub const SCENE_WIDTH: u32 = 800;
@@ -51,15 +51,11 @@ pub fn default_material() -> Material {
     )
 }
 
-/// Three white directionals for export bins (**`intensity` 1.0** each).
-///
-/// **`toward_light`** from geometry-browser positions **÷ 100**, **`z`** negated for LHS:
-/// **`(0, 2, 0)`**, **`(1, 2, −1)`**, **`(-1, -2, 1)`**.
-pub fn default_lights() -> [DirectionalLight; 3] {
+pub fn default_lights() -> [Light; 3] {
     [
-        DirectionalLight::new(Vec3::new(0.0, 2.0, 0.0).into()),
-        DirectionalLight::new(Vec3::new(1.0, 2.0, -1.0).into()),
-        DirectionalLight::new(Vec3::new(-1.0, -2.0, 1.0).into()),
+        Light::directional(Vec3::new(0.0, 2.0, 0.0).into(), 0.5),
+        Light::point(Vec3::new(1.0, 2.0, -1.0).into(), 1.0),
+        Light::point(Vec3::new(-1.0, -2.0, 1.0).into(), 1.0),
     ]
 }
 
@@ -75,17 +71,18 @@ impl Shape {
         Self { mesh, material }
     }
 
-    pub fn render(&self, fb: &mut FrameBuffer, camera: &Camera, lights: &[DirectionalLight]) {
+    pub fn render(&self, fb: &mut FrameBuffer, camera: &Camera, lights: &[Light]) {
         let forward = camera.direction();
         let toward_eye: UnitVec3 = -camera.direction();
         let material = self.material;
         for triangle in self.mesh.visible_triangles(forward) {
             let corners: [PhongCorner; 3] = array::from_fn(|i| PhongCorner {
-                point: camera.transform(triangle.corners[i]),
-                normal: triangle.normals[i],
+                pixel: camera.transform(triangle.corners[i]),
+                surface_point: SurfacePoint::new(triangle.corners[i], triangle.normals[i]),
             });
-            PhongShadedTriangle::new(corners)
-                .draw(fb, |normal| material.shade(lights, normal, toward_eye));
+            PhongShadedTriangle::new(corners).draw(fb, |surface_pt| {
+                material.shade(lights, surface_pt, toward_eye)
+            });
         }
     }
 }

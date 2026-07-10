@@ -2,19 +2,11 @@
 
 use std::ops::{Add, Mul};
 
+use approx::{AbsDiffEq, RelativeEq};
+
 /// Linear RGB in **`[0, 1]`** per channel (light-energy space); may exceed **`1.0`** during shading.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub(super) struct Color(f32, f32, f32);
-
-impl Color {
-    pub(super) fn from_linear(linear: (f32, f32, f32)) -> Self {
-        Self(linear.0, linear.1, linear.2)
-    }
-
-    pub(super) fn to_linear(self) -> (f32, f32, f32) {
-        (self.0, self.1, self.2)
-    }
-}
+pub struct Color(pub f32, pub f32, pub f32);
 
 impl Add for Color {
     type Output = Self;
@@ -42,35 +34,63 @@ impl Mul<Color> for f32 {
     }
 }
 
+impl AbsDiffEq for Color {
+    type Epsilon = f32;
+
+    fn default_epsilon() -> Self::Epsilon {
+        f32::default_epsilon()
+    }
+
+    fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
+        self.0.abs_diff_eq(&other.0, epsilon)
+            && self.1.abs_diff_eq(&other.1, epsilon)
+            && self.2.abs_diff_eq(&other.2, epsilon)
+    }
+}
+
+impl RelativeEq for Color {
+    fn default_max_relative() -> Self::Epsilon {
+        f32::default_max_relative()
+    }
+
+    fn relative_eq(
+        &self,
+        other: &Self,
+        epsilon: Self::Epsilon,
+        max_relative: Self::Epsilon,
+    ) -> bool {
+        self.0.relative_eq(&other.0, epsilon, max_relative)
+            && self.1.relative_eq(&other.1, epsilon, max_relative)
+            && self.2.relative_eq(&other.2, epsilon, max_relative)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::Color;
-    use crate::framebuffer::Rgb;
     use approx::assert_relative_eq;
 
     #[test]
     fn add_sums_linear_channels() {
-        let a = Color::from_linear(Rgb(10, 20, 30).to_linear());
-        let b = Color::from_linear(Rgb(1, 2, 3).to_linear());
+        let a = Color(0.1, 0.2, 0.3);
+        let b = Color(0.4, 0.5, 0.6);
+
         let sum = a + b;
-        assert_relative_eq!(sum.0, a.0 + b.0);
-        assert_relative_eq!(sum.1, a.1 + b.1);
-        assert_relative_eq!(sum.2, a.2 + b.2);
+        assert_relative_eq!(Color(0.5, 0.7, 0.9), sum);
     }
 
     #[test]
     fn mul_scales_each_channel() {
-        let color = Color::from_linear(Rgb(0, 98, 0).to_linear());
-        assert_eq!(Rgb::from_linear((color * 3.0).to_linear()), Rgb(0, 163, 0));
-        assert_eq!(
-            Rgb::from_linear((0.5 * color).to_linear()),
-            Rgb::from_linear(Color::from_linear((0.0, color.1 * 0.5, 0.0)).to_linear())
-        );
+        let color = Color(0.1, 0.2, 0.3);
+
+        let scaled = color * 3.0;
+
+        assert_relative_eq!(Color(0.3, 0.6, 0.9), scaled);
     }
 
     #[test]
     fn scalar_mul_matches_color_mul() {
-        let color = Color::from_linear(Rgb(40, 80, 120).to_linear());
+        let color = Color(0.1, 0.2, 0.3);
         assert_eq!(0.25 * color, color * 0.25);
     }
 }
