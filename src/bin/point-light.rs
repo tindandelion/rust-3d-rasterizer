@@ -1,4 +1,4 @@
-//! Ground plane lit by two white **point lights** — lossless still WebP export.
+//! Ground plane lit by a white **point light** — lossless still WebP export.
 
 use std::path::Path;
 

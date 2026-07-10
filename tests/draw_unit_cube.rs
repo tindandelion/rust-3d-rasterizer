@@ -2,7 +2,7 @@
 //!
 //! The golden fills the projected **−Z** cap with a local **`fill_rect`** helper (duplicated facet normals → uniform
 //! intensity, so the shaded square matches a flat fill). With **`Camera::direction` = +Z**, the strictly
-//! front-facing hull facet is the **−Z** cap (outward normal **`NEG_Z`**). **`DirectionalLight`** toward **`NEG_Z`**
+//! front-facing hull facet is the **−Z** cap (outward normal **`NEG_Z`**). **`Light::directional`** toward **`NEG_Z`**
 //! with a high-ambient matte yields uniform intensity, so
 //! the material **`emissive`** is unchanged when **`diffuse`** is black. On this **`FB_WIDTH`×`FB_HEIGHT`** canvas,
 //! **`scale = (min(w,h) − 1) / 2`** is an integer, so unit-cube **`±0.5`** corners land exactly on

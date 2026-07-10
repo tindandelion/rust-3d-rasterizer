@@ -51,6 +51,10 @@ pub fn default_material() -> Material {
     )
 }
 
+/// Default export-bin lights — geometry-browser positions adapted to **LHS** (see **`project-breakdown.md`**).
+///
+/// One **`Light::directional`** toward **`(0, 2, 0)`** at **`intensity` 0.5**, plus two **`Light::point`**
+/// at **`(1, 2, −1)`** and **`(-1, −2, 1)`** at **`intensity` 1.0** each.
 pub fn default_lights() -> [Light; 3] {
     [
         Light::directional(Vec3::new(0.0, 2.0, 0.0).into(), 0.5),
