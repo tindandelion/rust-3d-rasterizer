@@ -5,22 +5,39 @@ date: 2026-07-11 10:00:00 +0200
 authors: Sergey and Cursor
 ---
 
-We ended the [last lighting entry][post-three-lights] unsure what to tackle first: point lights or perspective projection. Point lights won. Until now every light in the scene has been infinitely far away — the sun, essentially, casting parallel rays that arrive from the same direction everywhere. This milestone gives a light an actual _place_ in the world.
+At the beginning of the project, we introduced [directional light sources][post-cube-gets-light]. Now we're ready to add a different type of light source: _point light_. As we'll explore in this post, this addition requires us to make changes to the rasterizer on the lowest level, because for the point lights we need to map each pixel of the frame buffer to the coordinates in the world space. 
 
 [Version 0.1.5 on GitHub][version-0-1-5]{: .no-github-icon}
 
-A quick note on the version jump. The releases between the previous post and this one — 0.1.2 through 0.1.4 — were plumbing only: PNG frame export, a VP9 WebM for Safari playback, and tidying all output under `target/`. None of them changed the picture, so we skip straight from three directional lights to point lights.
+A quick note on the version jump. The releases between the previous post and this one (0.1.2 through 0.1.4) were related to some house-keeping and the CI/CD pipeline. None of them changed the picture, so we skip straight from three directional lights to point lights.
 
 ## What you will see
 
-The torus scene is now lit by a _mix_ of light types: where 0.1.1 used three directional lights of equal strength, the export now uses one directional light (dimmed to half strength) plus two _point lights_. Here is the tumbling torus under the new setup:
+The torus scene is now lit by a _mix_ of light types: where [previous version][link-to-prev-post] used three directional lights of equal strength, the export now uses one directional light from above plus two _point lights_ from the corners. Here is the tumbling torus under the new setup:
 
 <div style="text-align: center;">
 <video src="https://github.com/tindandelion/rust-3d-rasterizer/releases/download/0.1.5/scene.webm" alt="Torus lit by one directional and two point lights" autoplay loop muted playsinline
   width="800" style="max-width: 100%;"></video>
 </div>
 
-On a shape as compact as the torus the difference from the earlier three-directional-light render is quiet, because the point lights sit fairly far from the surface and their direction barely changes across it. To see the effect on its own, we also added a small showcase: a flat ground plane lit by a single point light, with a tiny yellow sphere marking where the light hangs. The plane is brightest directly beneath the light and fades toward the edges — not because the light weakens with distance (it doesn't yet), but because the _angle_ between the surface and the light opens up as you move outward.
+To be fair, the difference from the earlier renders is very subtle: with three lights and the complex surface it's not that evident what has changed. To explore the difference between the directional and point light sources, we've added a small separate showcase: the additional binary `point-light` that allows us to play with light settings and see the lighting effects on a simple horizontal plane. 
+
+## The difference between directional and point light sources
+
+<div class="still-compare">
+<figure>
+<img src="{{ "/assets/images/2026-07-11-introducing-point-lights/point-light-1.webp" | relative_url }}" alt="Ground plane lit by a point light high above the surface" />
+<figcaption>Light high above the plane</figcaption>
+</figure>
+<figure>
+<img src="{{ "/assets/images/2026-07-11-introducing-point-lights/point-light-2.webp" | relative_url }}" alt="Ground plane lit by a point light lowered closer to the surface" />
+<figcaption>Light lowered closer</figcaption>
+</figure>
+<figure>
+<img src="{{ "/assets/images/2026-07-11-introducing-point-lights/point-light-3.webp" | relative_url }}" alt="Ground plane lit by a point light just above the surface, with a tight bright hotspot" />
+<figcaption>Light just above the surface</figcaption>
+</figure>
+</div>
 
 ## Directional lights live at infinity
 
