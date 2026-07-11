@@ -67,8 +67,10 @@ The change in code to support multiple lights is quite small. Basically, the onl
 
 With multiple lights in place, the obvious follow-ups are [_point lights_][point-light] — sources at a finite position whose direction and intensity vary across the surface — and [perspective projection][perspective-projection], which we've been postponing. We spent some time sketching what a `PointLight` would require, and it turns out the two are intertwined: point lights want per-fragment world positions, which perspective projection touches as well. 
 
-The order in which to implement these features is still an open question for now.
+We're going to go on now with implementing [point lights][post-point-lights].
 
+
+[post-point-lights]: {{site.baseurl}}/{% post_url 2026-07-11-introducing-point-lights %}
 [post-materials-colors-stage]: {{site.baseurl}}/{% post_url 2026-06-19-materials-colors-and-the-stage %}
 [post-cube-gets-light]: {{site.baseurl}}/{% post_url 2026-05-22-the-cube-gets-light %}#the-light-source-directional-light
 [post-materials-colors-stage-linear]: {{site.baseurl}}/{% post_url 2026-06-19-materials-colors-and-the-stage %}#discovering-linear-color-space
