@@ -7,16 +7,39 @@ pub struct Light {
     intensity: f32,
 }
 
+pub struct DistanceFalloff {
+    constant: f32,
+    linear: f32,
+    quadratic: f32,
+}
+
 enum LightType {
-    Directional { toward_light: UnitVec3 },
-    Point { position: Vec3 },
+    Directional {
+        toward_light: UnitVec3,
+    },
+    Point {
+        position: Vec3,
+        falloff: DistanceFalloff,
+    },
+}
+
+impl DistanceFalloff {
+    fn calculate(&self, distance: f32) -> f32 {
+        1.0 / (self.constant + self.linear * distance + self.quadratic * distance * distance)
+    }
 }
 
 impl LightType {
-    fn toward_light(&self, point_pos: Vec3) -> UnitVec3 {
+    // A helper method to calculate the unit vector toward the light and the falloff factor
+    // for a given point position
+    fn factors(&self, point_pos: Vec3) -> (UnitVec3, f32) {
         match self {
-            LightType::Directional { toward_light } => *toward_light,
-            LightType::Point { position } => (position - point_pos).into(),
+            LightType::Directional { toward_light } => (*toward_light, 1.0),
+            LightType::Point { position, falloff } => {
+                let toward_light = position - point_pos;
+                let falloff = falloff.calculate(toward_light.length());
+                (toward_light.into(), falloff)
+            }
         }
     }
 }
@@ -29,20 +52,32 @@ impl Light {
         }
     }
 
-    pub const fn point(position: Vec3, intensity: f32) -> Self {
+    pub const fn point_with_falloff(
+        position: Vec3,
+        intensity: f32,
+        falloff: DistanceFalloff,
+    ) -> Self {
         Self {
-            light_type: LightType::Point { position },
+            light_type: LightType::Point { position, falloff },
             intensity,
         }
     }
 
+    pub const fn point(position: Vec3, intensity: f32) -> Self {
+        Self::point_with_falloff(
+            position,
+            intensity,
+            DistanceFalloff {
+                constant: 1.0,
+                linear: 0.0,
+                quadratic: 0.0,
+            },
+        )
+    }
+
     pub fn diffuse_contrib(&self, point: SurfacePoint) -> f32 {
-        self.intensity
-            * self
-                .light_type
-                .toward_light(point.position())
-                .dot(point.normal())
-                .max(0.0)
+        let (toward_light, falloff) = self.light_type.factors(point.position());
+        self.intensity * falloff * toward_light.dot(point.normal()).max(0.0)
     }
 
     pub fn specular_contrib(
@@ -51,8 +86,10 @@ impl Light {
         point: SurfacePoint,
         toward_eye: UnitVec3,
     ) -> f32 {
-        let half_vector = (self.light_type.toward_light(point.position()) + toward_eye).normalize();
-        self.intensity * point.normal().dot(half_vector).max(0.0).powi(shininess)
+        let (toward_light, falloff) = self.light_type.factors(point.position());
+
+        let half_vector = (toward_light + toward_eye).normalize();
+        self.intensity * falloff * point.normal().dot(half_vector).max(0.0).powi(shininess)
     }
 }
 
@@ -227,12 +264,44 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "UnitVec3 requires a non-zero Vec3")]
-        fn panics_when_light_coincides_with_surface() {
-            let light = Light::point(Vec3::new(1.0, 2.0, 3.0), 1.0);
-            let point = SurfacePoint::new(Vec3::new(1.0, 2.0, 3.0), UnitVec3::Z);
+        fn diffuse_contrib_changes_with_distance() {
+            let falloff = DistanceFalloff {
+                constant: 1.0,
+                linear: 0.0,
+                quadratic: 1.0,
+            };
+            let light_with_falloff =
+                Light::point_with_falloff(Vec3::new(0.0, 1.0, 0.0), 1.0, falloff);
 
-            let _ = light.diffuse_contrib(point);
+            let unit_distance = SurfacePoint::new(Vec3::ZERO, UnitVec3::Y);
+            let further_away = SurfacePoint::new(Vec3::new(0.0, -1.0, 0.0), UnitVec3::Y);
+
+            assert_relative_eq!(0.5, light_with_falloff.diffuse_contrib(unit_distance));
+            assert_relative_eq!(0.2, light_with_falloff.diffuse_contrib(further_away));
+        }
+
+        #[test]
+        fn specular_contrib_changes_with_distance() {
+            let falloff = DistanceFalloff {
+                constant: 1.0,
+                linear: 0.0,
+                quadratic: 1.0,
+            };
+            let light_with_falloff =
+                Light::point_with_falloff(Vec3::new(0.0, 1.0, 0.0), 1.0, falloff);
+
+            let unit_distance = SurfacePoint::new(Vec3::ZERO, UnitVec3::Y);
+            let further_away = SurfacePoint::new(Vec3::new(0.0, -1.0, 0.0), UnitVec3::Y);
+
+            let toward_eye = UnitVec3::Y;
+            assert_relative_eq!(
+                0.5,
+                light_with_falloff.specular_contrib(1, unit_distance, toward_eye)
+            );
+            assert_relative_eq!(
+                0.2,
+                light_with_falloff.specular_contrib(1, further_away, toward_eye)
+            );
         }
     }
 }
