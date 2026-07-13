@@ -55,7 +55,8 @@ pub fn default_material() -> Material {
 /// Default export-bin lights — geometry-browser positions adapted to **LHS** (see **`project-breakdown.md`**).
 ///
 /// One **`Light::directional`** toward **`(0, 2, 0)`** at **`intensity` 0.5**, plus two **`Light::point`**
-/// at **`(1, 2, −1)`** and **`(-1, −2, 1)`** at **`intensity` 1.0** each.
+/// at **`(1, 2, −1)`** and **`(-1, −2, 1)`** at **`intensity` 3.0** each with **`DistanceFalloff`**
+/// **`{ constant: 0.5, linear: 0.0, quadratic: 1.0 }`** (see **`project-breakdown.md`** **Phase 2 reference palette**).
 pub fn default_lights() -> [Light; 3] {
     let light_falloff = DistanceFalloff {
         constant: 0.5,
