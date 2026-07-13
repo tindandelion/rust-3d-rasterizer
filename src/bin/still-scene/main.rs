@@ -4,6 +4,7 @@ use std::thread;
 
 use glam::Vec3;
 
+use thorus_forge::lighting::DistanceFalloff;
 use thorus_forge::meshes::torus;
 use thorus_forge::{
     Camera, FrameBuffer, Light, SCENE_BACKGROUND, Shape, WebpEncoder, default_material,
@@ -31,10 +32,15 @@ fn render_scene(width: u32, height: u32) -> FrameBuffer {
     let mut framebuffer = FrameBuffer::new(width, height);
     framebuffer.clear(SCENE_BACKGROUND);
     let camera = Camera::for_viewport(width, height).move_to(CAMERA_POS);
+    let light_falloff = DistanceFalloff {
+        constant: 0.5,
+        linear: 0.0,
+        quadratic: 1.0,
+    };
     let lights = [
         Light::directional(Vec3::new(0.0, 2.0, 0.0).into(), 0.5),
-        Light::point(Vec3::new(1.0, 2.0, -1.0).into(), 1.0),
-        Light::point(Vec3::new(-1.0, -2.0, 1.0).into(), 1.0),
+        Light::point(Vec3::new(1.0, 2.0, -1.0).into(), 4.0, light_falloff),
+        Light::point(Vec3::new(-1.0, -2.0, 1.0).into(), 4.0, light_falloff),
     ];
 
     let torus = Shape::new(torus(48, 32), default_material());

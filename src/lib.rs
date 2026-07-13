@@ -20,6 +20,7 @@ pub use webp_encoder::WebpEncoder;
 
 use crate::framebuffer::{PhongCorner, PhongShadedTriangle};
 use crate::geometry::{Mesh, SurfacePoint, UnitVec3};
+use crate::lighting::DistanceFalloff;
 
 /// Raster width in pixels (golden stills / integration tests must agree).
 pub const SCENE_WIDTH: u32 = 800;
@@ -56,10 +57,15 @@ pub fn default_material() -> Material {
 /// One **`Light::directional`** toward **`(0, 2, 0)`** at **`intensity` 0.5**, plus two **`Light::point`**
 /// at **`(1, 2, −1)`** and **`(-1, −2, 1)`** at **`intensity` 1.0** each.
 pub fn default_lights() -> [Light; 3] {
+    let light_falloff = DistanceFalloff {
+        constant: 0.5,
+        linear: 0.0,
+        quadratic: 1.0,
+    };
     [
         Light::directional(Vec3::new(0.0, 2.0, 0.0).into(), 0.5),
-        Light::point(Vec3::new(1.0, 2.0, -1.0).into(), 1.0),
-        Light::point(Vec3::new(-1.0, -2.0, 1.0).into(), 1.0),
+        Light::point(Vec3::new(1.0, 2.0, -1.0).into(), 3.0, light_falloff),
+        Light::point(Vec3::new(-1.0, -2.0, 1.0).into(), 3.0, light_falloff),
     ]
 }
 

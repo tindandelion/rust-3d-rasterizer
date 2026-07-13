@@ -7,10 +7,11 @@ pub struct Light {
     intensity: f32,
 }
 
+#[derive(Clone, Copy, Debug)]
 pub struct DistanceFalloff {
-    constant: f32,
-    linear: f32,
-    quadratic: f32,
+    pub constant: f32,
+    pub linear: f32,
+    pub quadratic: f32,
 }
 
 enum LightType {
@@ -24,6 +25,12 @@ enum LightType {
 }
 
 impl DistanceFalloff {
+    pub const NONE: Self = Self {
+        constant: 1.0,
+        linear: 0.0,
+        quadratic: 0.0,
+    };
+
     fn calculate(&self, distance: f32) -> f32 {
         1.0 / (self.constant + self.linear * distance + self.quadratic * distance * distance)
     }
@@ -52,27 +59,11 @@ impl Light {
         }
     }
 
-    pub const fn point_with_falloff(
-        position: Vec3,
-        intensity: f32,
-        falloff: DistanceFalloff,
-    ) -> Self {
+    pub const fn point(position: Vec3, intensity: f32, falloff: DistanceFalloff) -> Self {
         Self {
             light_type: LightType::Point { position, falloff },
             intensity,
         }
-    }
-
-    pub const fn point(position: Vec3, intensity: f32) -> Self {
-        Self::point_with_falloff(
-            position,
-            intensity,
-            DistanceFalloff {
-                constant: 1.0,
-                linear: 0.0,
-                quadratic: 0.0,
-            },
-        )
     }
 
     pub fn diffuse_contrib(&self, point: SurfacePoint) -> f32 {
@@ -110,7 +101,7 @@ mod tests {
     const LIGHT_POS: Vec3 = Vec3::new(0.0, 1.0, 0.0);
 
     const DIRECTIONAL_LIGHT: Light = Light::directional(TOWARD_LIGHT, 3.0);
-    const POINT_LIGHT: Light = Light::point(LIGHT_POS, 2.0);
+    const POINT_LIGHT: Light = Light::point(LIGHT_POS, 2.0, DistanceFalloff::NONE);
 
     mod diffuse_contrib {
         use super::*;
@@ -125,7 +116,7 @@ mod tests {
         #[test]
         fn zero_intensity_suppresses_diffuse_contrib() {
             let directional_light = Light::directional(TOWARD_LIGHT, 0.0);
-            let point_light = Light::point(LIGHT_POS, 0.0);
+            let point_light = Light::point(LIGHT_POS, 0.0, DistanceFalloff::NONE);
 
             let surface_point = SurfacePoint::new(SURFACE_POS, TOWARD_LIGHT);
             assert_relative_eq!(0.0, directional_light.diffuse_contrib(surface_point));
@@ -270,8 +261,7 @@ mod tests {
                 linear: 0.0,
                 quadratic: 1.0,
             };
-            let light_with_falloff =
-                Light::point_with_falloff(Vec3::new(0.0, 1.0, 0.0), 1.0, falloff);
+            let light_with_falloff = Light::point(Vec3::new(0.0, 1.0, 0.0), 1.0, falloff);
 
             let unit_distance = SurfacePoint::new(Vec3::ZERO, UnitVec3::Y);
             let further_away = SurfacePoint::new(Vec3::new(0.0, -1.0, 0.0), UnitVec3::Y);
@@ -287,8 +277,7 @@ mod tests {
                 linear: 0.0,
                 quadratic: 1.0,
             };
-            let light_with_falloff =
-                Light::point_with_falloff(Vec3::new(0.0, 1.0, 0.0), 1.0, falloff);
+            let light_with_falloff = Light::point(Vec3::new(0.0, 1.0, 0.0), 1.0, falloff);
 
             let unit_distance = SurfacePoint::new(Vec3::ZERO, UnitVec3::Y);
             let further_away = SurfacePoint::new(Vec3::new(0.0, -1.0, 0.0), UnitVec3::Y);

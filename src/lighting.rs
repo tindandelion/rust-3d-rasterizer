@@ -5,6 +5,7 @@ use crate::framebuffer::Rgb;
 use crate::geometry::{SurfacePoint, UnitVec3};
 
 pub use color::Color;
+pub use light::DistanceFalloff;
 pub use light::Light;
 
 /// Surface **emissive**, pre-scaled **diffuse**, and **specular** colors for Phong shading.

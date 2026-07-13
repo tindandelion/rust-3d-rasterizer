@@ -5,6 +5,7 @@ use std::path::Path;
 use glam::{Mat4, Vec3};
 
 use thorus_forge::geometry::{Facet, Mesh, UnitVec3};
+use thorus_forge::lighting::DistanceFalloff;
 use thorus_forge::meshes::sphere;
 use thorus_forge::{
     Camera, FrameBuffer, Light, Material, Rgb, SCENE_BACKGROUND, SCENE_HEIGHT, SCENE_WIDTH, Shape,
@@ -41,15 +42,21 @@ fn light_marker(position: Vec3) -> Shape {
     Shape::new(mesh, light_marker_material())
 }
 
+const FALLOFF: DistanceFalloff = DistanceFalloff {
+    constant: 0.5,
+    linear: 0.0,
+    quadratic: 1.0,
+};
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut framebuffer = FrameBuffer::new(SCENE_WIDTH, SCENE_HEIGHT);
     framebuffer.clear(SCENE_BACKGROUND);
 
     let camera = Camera::for_viewport(SCENE_WIDTH, SCENE_HEIGHT).move_to(CAMERA_POS);
-    let light_positions = [Vec3::new(0.0, 0.1, 0.0)];
+    let light_positions = [Vec3::new(0.0, -0.5, 0.0)];
     let lights: Vec<Light> = light_positions
         .iter()
-        .map(|&position| Light::point(position, 1.0))
+        .map(|&position| Light::point(position, 1.0, FALLOFF))
         .collect();
 
     let material = Material::new(Rgb::BLACK, Rgb::from_hex(0x156289), Rgb::BLACK, None);
