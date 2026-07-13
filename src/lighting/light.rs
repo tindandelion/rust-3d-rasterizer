@@ -32,7 +32,7 @@ impl DistanceFalloff {
     };
 
     fn calculate(&self, distance: f32) -> f32 {
-        1.0 / (self.constant + self.linear * distance + self.quadratic * distance * distance)
+        (self.constant + self.linear * distance + self.quadratic * distance * distance).recip()
     }
 }
 
