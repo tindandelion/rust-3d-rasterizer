@@ -7,22 +7,24 @@ authors: Sergey and Cursor
 
 At the beginning of the project, we introduced [directional light sources][post-cube-gets-light]. Now we're ready to add a different type of light source: _point light_. As we'll explore in this post, this addition requires us to make changes to the rasterizer on the lowest level, because for the point lights we need to map each pixel of the frame buffer to the coordinates in the world space. 
 
-[Version 0.1.5 on GitHub][version-0-1-5]{: .no-github-icon}
+[Version 0.1.6 on GitHub][version-0-1-6]{: .no-github-icon}
 
 A quick note on the version jump. The releases between the previous post and this one (0.1.2 through 0.1.4) were related to some house-keeping and the CI/CD pipeline. None of them changed the picture, so we skip straight from three directional lights to point lights.
 
 ## What you will see
 
-The torus scene is now lit by a _mix_ of light types: where [previous version][link-to-prev-post] used three directional lights of equal strength, the export now uses one directional light from above plus two _point lights_ from the corners. Here is the tumbling torus under the new setup:
+The torus scene is now lit by a _mix_ of light types: where the [previous version][post-three-lights] used three directional lights of equal strength, the export now uses one directional light from above plus two _point lights_ from the corners. Here is the tumbling torus under the new setup:
 
 <div style="text-align: center;">
-<video src="https://github.com/tindandelion/rust-3d-rasterizer/releases/download/0.1.5/scene.webm" alt="Torus lit by one directional and two point lights" autoplay loop muted playsinline
+<video src="https://github.com/tindandelion/rust-3d-rasterizer/releases/download/0.1.6/scene.webm" alt="Torus lit by one directional and two point lights" autoplay loop muted playsinline
   width="800" style="max-width: 100%;"></video>
 </div>
 
 To be fair, the difference from the earlier renders is very subtle: with three lights and the complex surface it's not that evident what has changed. To explore the difference between the directional and point light sources, we've added a small separate showcase: the additional binary `point-light` that allows us to play with light settings and see the lighting effects on a simple horizontal plane. 
 
 ## The difference between directional and point light sources
+
+A directional light would flood this flat plane evenly no matter where we placed the source. A point light behaves quite differently. In the three renders below the same point light is lowered step by step toward the plane, and the illumination collapses into an ever brighter, tighter pool right beneath it — a behaviour a directional light simply cannot produce. We explain _why_ the pool tightens in the sections below.
 
 <div class="still-compare">
 <figure>
@@ -61,38 +63,45 @@ Here is the crux of the milestone, and it is more about plumbing than about ligh
 
 That position has to be interpolated per pixel, exactly the way normals already were. Each triangle vertex knows its world position; as the rasterizer walks the scanlines it blends those positions across the triangle, so every fragment can compute its own $\mathbf{l}$ toward each point light.
 
-## What we are not doing yet: distance falloff
+## Distance falloff: lights that fade with range
 
-Real point lights also get dimmer the farther you are from them, following an inverse-square [_attenuation_][inverse-square] law. We deliberately left that out of this first pass. Our point light varies only in _direction_ with position, not in _intensity_ — a light one unit away and a light ten units away illuminate an aligned surface equally.
+There is one more thing a real point light does that a direction alone can't capture: it gets dimmer the farther you are from it. A bare bulb lights the table beneath it far more strongly than the far wall. That is _distance falloff_, and it is what makes the pool of light in the showcase tighten as the source descends.
 
-We did sketch how attenuation would slot in (a small distance-based multiplier applied to both the diffuse and specular terms, with directional lights pinned at 1.0), but chose to keep the first cut simple, as the plan asked. It becomes worth adding the moment a scene actually needs a light to feel local. So the ground-plane hotspot you see in the showcase is pure cosine falloff from the changing angle, not distance falloff.
+We model it with the classic polynomial [_attenuation_][inverse-square] curve. For a fragment at distance $d$ from the light, the contribution is scaled by:
+
+$$
+f(d) = \frac{1}{k_c + k_l\, d + k_q\, d^2}
+$$
+
+The three coefficients — constant, linear, and quadratic — dial the shape of the curve, from no falloff at all ($k_c = 1$, the rest zero) to a physically flavoured inverse-square drop dominated by $k_q$. Our export scenes lean on the quadratic term, which is exactly why the showcase images change so dramatically: as the light nears the plane the distance to the closest fragments shrinks, $f(d)$ spikes, and the light concentrates into a small, intense hotspot. Because the same factor multiplies both the diffuse and the specular terms, the whole hotspot brightens together rather than merely sliding the highlight around. A directional light keeps a falloff of exactly 1 — a source at infinity has no meaningful distance — so this behaviour is unique to point lights.
 
 ## Implementation
 
-The lighting types were reshaped around a single [`Light`][source-light] enum with two constructors, [`Light::directional`][source-light-directional] and [`Light::point`][source-light-point]; the old standalone `DirectionalLight` type retired into it. A private [`toward_light`][source-toward-light] helper hides the branch — it returns the stored direction for a directional light, or computes $\mathbf{p}_{\text{light}} - \mathbf{p}$ for a point light — so the diffuse and specular routines stay identical for both kinds.
+The lighting types were reshaped around a single [`Light`][source-light] type with two constructors, [`Light::directional`][source-light-directional] and [`Light::point`][source-light-point]; the old standalone `DirectionalLight` retired into it. A private [`factors`][source-factors] helper hides the branch — for a directional light it returns the stored direction and a falloff of 1; for a point light it computes both the direction $\mathbf{p}_{\text{light}} - \mathbf{p}$ and the distance falloff from that same displacement — so the diffuse and specular routines stay identical for both kinds and simply multiply by whatever falloff comes back.
 
 Carrying position through the rasterizer needed a small new geometry type, [`SurfacePoint`][source-surface-point], bundling a world position and a normal. It implements the arithmetic operators the scanline interpolator expects, so [`PhongShadedTriangle`][source-phong] now interpolates a whole `SurfacePoint` per pixel instead of just a normal. [`Material::shade`][source-shade] takes that `SurfacePoint` and hands it to each light.
 
-The export recipe in [`default_lights`][source-default-lights] changed to demonstrate the mix: one directional light toward $(0, 2, 0)$ at intensity 0.5, plus two point lights at $(1, 2, -1)$ and $(-1, -2, 1)$ at intensity 1.0 each — the same browser-derived positions as before, but two of them now interpreted as places rather than directions. The standalone [`point-light`][source-point-light-bin] binary renders the ground-plane demo.
+The falloff itself lives in a small [`DistanceFalloff`][source-distance-falloff] struct holding the three coefficients. The export recipe in [`default_lights`][source-default-lights] uses the mix: one directional light toward $(0, 2, 0)$ at intensity 0.5, plus two point lights at $(1, 2, -1)$ and $(-1, -2, 1)$ — the same browser-derived positions as before, but now interpreted as places rather than directions. Each point light carries a quadratic falloff and a boosted intensity of 3.0 to make up for the light it now loses to distance. The standalone [`point-light`][source-point-light-bin] binary renders the ground-plane demo.
 
 Two design notes worth remembering. First, the per-fragment view direction $\mathbf{t}$ is still a constant across the frame — under our orthographic camera the eye is effectively at infinity, so `toward_eye` remains $-\mathbf{camera.direction()}$ for every pixel, point light or not. That will have to change alongside perspective projection. Second, there is a genuine singularity when a point light sits exactly on a surface: $\mathbf{p}_{\text{light}} - \mathbf{p}$ becomes the zero vector and cannot be normalized. We know about it and left it as a loud panic rather than papering over it, since it only arises from a degenerate scene.
 
 ## What's next
 
-The two obvious follow-ons remain [perspective projection][perspective-projection] — still an optional stretch, and the piece that will finally make `toward_eye` vary per fragment — and, after that, a pass at aligning our shading equation more closely with the three.js reference. Distance attenuation is now a small, well-understood addition whenever a scene calls for a light that feels genuinely local.
+The two obvious follow-ons remain [perspective projection][perspective-projection] — still an optional stretch, and the piece that will finally make `toward_eye` vary per fragment — and, after that, a pass at aligning our shading equation more closely with the three.js reference.
 
 [post-three-lights]: {{site.baseurl}}/{% post_url 2026-06-19-three-directional-lights %}
 [post-cube-gets-light]: {{site.baseurl}}/{% post_url 2026-05-22-the-cube-gets-light %}#the-light-source-directional-light
-[version-0-1-5]: https://github.com/tindandelion/rust-3d-rasterizer/tree/0.1.5
-[source-light]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.1.5/src/lighting/light.rs#L10
-[source-light-directional]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.1.5/src/lighting/light.rs#L16
-[source-light-point]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.1.5/src/lighting/light.rs#L23
-[source-toward-light]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.1.5/src/lighting/light.rs#L44
-[source-surface-point]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.1.5/src/geometry/surface_point.rs#L10
-[source-phong]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.1.5/src/framebuffer/phong_shaded_triangle.rs#L28
-[source-shade]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.1.5/src/lighting.rs#L31
-[source-default-lights]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.1.5/src/lib.rs#L58
-[source-point-light-bin]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.1.5/src/bin/point-light.rs#L44
+[version-0-1-6]: https://github.com/tindandelion/rust-3d-rasterizer/tree/0.1.6
+[source-light]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.1.6/src/lighting/light.rs#L5
+[source-light-directional]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.1.6/src/lighting/light.rs#L55
+[source-light-point]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.1.6/src/lighting/light.rs#L62
+[source-factors]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.1.6/src/lighting/light.rs#L42
+[source-distance-falloff]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.1.6/src/lighting/light.rs#L11
+[source-surface-point]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.1.6/src/geometry/surface_point.rs#L10
+[source-phong]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.1.6/src/framebuffer/phong_shaded_triangle.rs#L28
+[source-shade]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.1.6/src/lighting.rs#L32
+[source-default-lights]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.1.6/src/lib.rs#L59
+[source-point-light-bin]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.1.6/src/bin/point-light.rs#L51
 [point-light]: https://en.wikipedia.org/wiki/Shading#Point_lighting
 [lambert]: https://en.wikipedia.org/wiki/Lambertian_reflectance
 [inverse-square]: https://en.wikipedia.org/wiki/Inverse-square_law
