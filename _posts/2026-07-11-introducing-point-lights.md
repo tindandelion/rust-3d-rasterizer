@@ -5,7 +5,7 @@ date: 2026-07-11 10:00:00 +0200
 authors: Sergey and Cursor
 ---
 
-At the beginning of the project, we introduced [directional light sources][post-cube-gets-light]. Now we're ready to add a different type of light source: _point light_. As we'll explore in this post, this addition requires us to make changes to the rasterizer on the lowest level, because for the point lights we need to map each pixel of the frame buffer to the coordinates in the world space. 
+At the beginning of the project, we introduced [directional light sources][post-cube-gets-light]. Now we're ready to add a different type of light source: _point lights_. As we'll explore in this post, this addition also requires us to make changes to the rasterizer on the lowest level, because for the point lights we need to map each pixel of the frame buffer to the coordinates in the world space. 
 
 [Version 0.1.6 on GitHub][version-0-1-6]{: .no-github-icon}
 
@@ -17,14 +17,29 @@ The torus scene is now lit by a _mix_ of light types: where the [previous versio
 
 <div style="text-align: center;">
 <video src="https://github.com/tindandelion/rust-3d-rasterizer/releases/download/0.1.6/scene.webm" alt="Torus lit by one directional and two point lights" autoplay loop muted playsinline
-  width="800" style="max-width: 100%;"></video>
+  width="800" style="max-width: 100%; padding-bottom: 1em; padding-top: 1em"></video>
 </div>
 
-To be fair, the difference from the earlier renders is very subtle: with three lights and the complex surface it's not that evident what has changed. To explore the difference between the directional and point light sources, we've added a small separate showcase: the additional binary `point-light` that allows us to play with light settings and see the lighting effects on a simple horizontal plane. 
+To be fair, the animation video doesn't show big difference from the previous renders: with three light sources and the complex surface it's not clearly visible what has changed. To see the differences better, let's look at the still image of a torus, lit by a single light, one with directional, and another with the point light: 
 
-## The difference between directional and point light sources
+<div class="still-compare">
+<figure>
+<img src="{{ "/assets/images/2026-07-11-introducing-point-lights/still-scene-dir.webp" | relative_url }}" alt="Directional light" />
+<figcaption>Directional light</figcaption>
+</figure>
+<figure>
+<img src="{{ "/assets/images/2026-07-11-introducing-point-lights/still-scene-point.webp" | relative_url }}" alt="Point light" />
+<figcaption>Point light</figcaption>
+</figure>
+</div>
 
-A directional light would flood this flat plane evenly no matter where we placed the source. A point light behaves quite differently. In the three renders below the same point light is lowered step by step toward the plane, and the illumination collapses into an ever brighter, tighter pool right beneath it — a behaviour a directional light simply cannot produce. We explain _why_ the pool tightens in the sections below.
+Now the difference in lighting is clearly visible. Let's explore what makes the point light different from the directional one. 
+
+## Introducing point lights
+
+When we [introduced the directional lights][link?], we said that the real-world equivalent for it is our sun: it's located very far away from us, so that all light rays come in parallel from the same direction. 
+
+A point light can be said to emulate an incadescent light bulb in the dark room. With some simplifications, we can say that a light bulb emits light in all directions from a fixed position in the scene. Light rays are no longer parallel: instead, they form a radial pattern emanating outward from a single point. Because of that, they hit the flat surface at different angles at different locations: 
 
 <div class="still-compare">
 <figure>
@@ -41,39 +56,40 @@ A directional light would flood this flat plane evenly no matter where we placed
 </figure>
 </div>
 
-## Directional lights live at infinity
-
-Recall how a [_directional light_][post-cube-gets-light] works. It has no position — only a direction. Every point on every surface receives light coming from the same fixed angle, as if the source were infinitely far away. That is a good model for the sun: across a room, or across a torus, the sun's rays are effectively parallel.
-
-That assumption is exactly what made the shading math cheap. To light a fragment, the renderer only needed its surface normal $\mathbf{n}$; the direction toward the light $\mathbf{l}$ was a constant carried by the light itself.
-
-## A point light has an address
-
-A [_point light_][point-light] is different: it emits from a specific position $\mathbf{p}_{\text{light}}$ in the scene, radiating outward in all directions. Now the direction toward the light is no longer a shared constant — it depends on _where you are_. For a fragment at world position $\mathbf{p}$:
+When it comes to the lighting model, we still use our fmailiar Phong lighting equations. Remember that for directional lights, the light vector $\mathbf{l}$ was the same for each surface point. With point lights, it's no longer a constant: now we need to calculate the value of $\mathbf{l}$ for each surface point $\mathbf{p}$ separately: 
 
 $$
 \mathbf{l}(\mathbf{p}) = \frac{\mathbf{p}_{\text{light}} - \mathbf{p}}{\lVert \mathbf{p}_{\text{light}} - \mathbf{p} \rVert}
 $$
 
-A directional light is really just the limiting case of this, where $\mathbf{p}_{\text{light}}$ recedes to infinity and $\mathbf{l}$ stops depending on $\mathbf{p}$. That symmetry is worth holding onto: once we have $\mathbf{l}$ for a fragment, everything downstream is identical. The [Lambertian diffuse][lambert] term and the Blinn half-vector specular term from the previous milestones don't change at all. Only the way we _obtain_ $\mathbf{l}$ is new.
+That's the biggest difference that makes point lights distinct from directional ones. 
 
-## The renderer suddenly needs to know where each pixel is
+Another distinct property is that point lights are a subject to _distance falloff_: the further away we are from the light, the less energy we receive. In real world, the energy is inverse proportional to the square of the distance to the light. Computer graphics, however, adopted a slightly different approach to calculate the falloff, to compensate to the fact that we use approximate models of physical lights. 
 
-Here is the crux of the milestone, and it is more about plumbing than about lighting theory. With directional lights, the shader only ever saw a surface normal. A point light forces a new piece of information all the way down the pipeline: the fragment's **world-space position**.
-
-That position has to be interpolated per pixel, exactly the way normals already were. Each triangle vertex knows its world position; as the rasterizer walks the scanlines it blends those positions across the triangle, so every fragment can compute its own $\mathbf{l}$ toward each point light.
-
-## Distance falloff: lights that fade with range
-
-There is one more thing a real point light does that a direction alone can't capture: it gets dimmer the farther you are from it. A bare bulb lights the table beneath it far more strongly than the far wall. That is _distance falloff_, and it is what makes the pool of light in the showcase tighten as the source descends.
-
-We model it with the classic polynomial [_attenuation_][inverse-square] curve. For a fragment at distance $d$ from the light, the contribution is scaled by:
+There are different formulas to calculate the falloff. In our project, we model it with the classic polynomial [_attenuation_][inverse-square] curve. For a fragment at distance $d$ from the light, the contribution is scaled by:
 
 $$
 f(d) = \frac{1}{k_c + k_l\, d + k_q\, d^2}
 $$
 
-The three coefficients — constant, linear, and quadratic — dial the shape of the curve, from no falloff at all ($k_c = 1$, the rest zero) to a physically flavoured inverse-square drop dominated by $k_q$. Our export scenes lean on the quadratic term, which is exactly why the showcase images change so dramatically: as the light nears the plane the distance to the closest fragments shrinks, $f(d)$ spikes, and the light concentrates into a small, intense hotspot. Because the same factor multiplies both the diffuse and the specular terms, the whole hotspot brightens together rather than merely sliding the highlight around. A directional light keeps a falloff of exactly 1 — a source at infinity has no meaningful distance — so this behaviour is unique to point lights.
+The three coefficients — constant, linear, and quadratic — dial the shape of the falloff curve, from no falloff at all ($k_c = 1$, the rest zero) to a physically flavoured inverse-square drop dominated by $k_q$. The picture above demonstrates the falloff behaviour with $k_q > 0$: the closer the light is moved to the surface, the brighter the lit spot becomes. 
+
+## Interpolation of surface points 
+
+So now we know how to implement point lights. There's a missing piece, though, that we need to address. 
+
+As we discussed above, a point light needs to know the world-space position (i.e., its coordinates) of each point on the surface, to calculate the light vector. However, we don't have this information immediately available. Recall that we represent our shapes as a trianglular mesh, where we have the coordiantes of vertices, but we don't have the coordinates of _every_ point on the shape's surface. How can we get round this limitation? 
+
+Fortunately, the solution is quite familiar at this stage: linear interpolation. Recall that we had a similar problem before with surface normals, when we first started with [Phong shading][link-to-post?]. In order to calculate the illumination of each point, we had to know the normal to the surface at that point, but we only had normal values for mesh vertices. We solved it back then by interpolating the intermediate normal values between vertices. 
+
+Now that we need point positions as well, we can do exactly the same interpolation technique, using vertex positions as anchor values. Our `PhongShadedTriangle` now needs to interpolate two distinct values for each framebuffer pixel: 
+* the surface normal - as we did before; 
+* the world position - the new addition to support point lights, 
+
+and that give us all necessary inputs to calculate the illumination of that pixel. 
+
+Implementation-wise, we've noticed that the point position and the normal are very frequently used together in the code, so to make the code cleaner we've decided to bundle them into a a new geomery type, [`SurfacePoint`][source-surface-point]. This type also makes reasoning about the interpolation a bit easier: now we can say that we interpolate `SurfacePoint`s, which includes both the position and the normal. 
+
 
 ## Implementation
 
