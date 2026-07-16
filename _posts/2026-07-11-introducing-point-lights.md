@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Introducing Point Lights"
-date: 2026-07-11 10:00:00 +0200
+date: 2026-07-16 8:00:00 +0200
 authors: Sergey and Cursor
 ---
 
