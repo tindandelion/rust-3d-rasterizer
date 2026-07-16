@@ -91,19 +91,24 @@ and that give us all necessary inputs to calculate the illumination of that pixe
 Implementation-wise, we've noticed that the point position and the normal are very frequently used together in the code, so to make the code cleaner we've decided to bundle them into a a new geomery type, [`SurfacePoint`][source-surface-point]. This type also makes reasoning about the interpolation a bit easier: now we can say that we interpolate `SurfacePoint`s, which includes both the position and the normal. 
 
 
-## Implementation
+## Light implementation 
 
-The lighting types were reshaped around a single [`Light`][source-light] type with two constructors, [`Light::directional`][source-light-directional] and [`Light::point`][source-light-point]; the old standalone `DirectionalLight` retired into it. A private [`factors`][source-factors] helper hides the branch — for a directional light it returns the stored direction and a falloff of 1; for a point light it computes both the direction $\mathbf{p}_{\text{light}} - \mathbf{p}$ and the distance falloff from that same displacement — so the diffuse and specular routines stay identical for both kinds and simply multiply by whatever falloff comes back.
+Up until now, we used a struct [`DirectionalLight`][link-to-previous-version] to represent a directional light source. Now we deprecate this data type, and introduce a new one, [`Light`][source-light], that handle both directional and point lights. 
 
-Carrying position through the rasterizer needed a small new geometry type, [`SurfacePoint`][source-surface-point], bundling a world position and a normal. It implements the arithmetic operators the scanline interpolator expects, so [`PhongShadedTriangle`][source-phong] now interpolates a whole `SurfacePoint` per pixel instead of just a normal. [`Material::shade`][source-shade] takes that `SurfacePoint` and hands it to each light.
+The instances of `Light` can be created by means of two constructors, [`Light::directional`][source-light-directional] and [`Light::point`][source-light-point]. The public interface of the `Light` type is nearly identical to the old `DirectionalLight`, with one notable extension: instead of passing a `normal` vector, we're now passing an instance of `SurefacePoint` that bundle both the normal and the position, so that we can use that data to handle both light types. 
 
-The falloff itself lives in a small [`DistanceFalloff`][source-distance-falloff] struct holding the three coefficients. The export recipe in [`default_lights`][source-default-lights] uses the mix: one directional light toward $(0, 2, 0)$ at intensity 0.5, plus two point lights at $(1, 2, -1)$ and $(-1, -2, 1)$ — the same browser-derived positions as before, but now interpreted as places rather than directions. Each point light carries a quadratic falloff and a boosted intensity of 3.0 to make up for the light it now loses to distance. The standalone [`point-light`][source-point-light-bin] binary renders the ground-plane demo.
+Finally, to show-case the new abilities, we change the light setup for the [animated scene binary][link-to-animated-scene]. From now on, we're going to use a heterogeneous light setup: 
 
-Two design notes worth remembering. First, the per-fragment view direction $\mathbf{t}$ is still a constant across the frame — under our orthographic camera the eye is effectively at infinity, so `toward_eye` remains $-\mathbf{camera.direction()}$ for every pixel, point light or not. That will have to change alongside perspective projection. Second, there is a genuine singularity when a point light sits exactly on a surface: $\mathbf{p}_{\text{light}} - \mathbf{p}$ becomes the zero vector and cannot be normalized. We know about it and left it as a loud panic rather than papering over it, since it only arises from a degenerate scene.
+* One directional light above the torus toward $(0, 2, 0)$ lits the shape from above; 
+* Two point lights placed at $(1, 2, -1)$ and $(-1, -2, 1)$ lit the shape from the sides, above and below the shape, respectively. 
+
+This is roughly the same light setup that three.js Geometry Browser uses, except that our setup uses lights of different types. 
 
 ## What's next
 
-The two obvious follow-ons remain [perspective projection][perspective-projection] — still an optional stretch, and the piece that will finally make `toward_eye` vary per fragment — and, after that, a pass at aligning our shading equation more closely with the three.js reference.
+Frankly speaking, at this point it feels that we've accomplished all our [major goals planned for the phase 2][link-to-planning-phase-2]. One notable milestone we haven't approached yet is [perspective projection][perspective-projection]. 
+
+Even though introducing perspective projection would affect the rendering pipeline code, it doesn't look like it's going to change the visual result dramatically. At the moment, we're tempted to push this milestone further down the line and do something more interesting. 
 
 [post-three-lights]: {{site.baseurl}}/{% post_url 2026-06-19-three-directional-lights %}
 [post-cube-gets-light]: {{site.baseurl}}/{% post_url 2026-05-22-the-cube-gets-light %}#the-light-source-directional-light
