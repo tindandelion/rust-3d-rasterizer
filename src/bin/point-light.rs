@@ -33,7 +33,7 @@ fn ground_plane() -> Mesh {
 
 fn light_marker_material() -> Material {
     let yellow = Rgb::from_hex(0xFFD700);
-    Material::new(yellow, Rgb::BLACK, Rgb::BLACK, None)
+    Material::from_rgb(yellow, Rgb::BLACK, Rgb::BLACK, None)
 }
 
 fn light_marker(position: Vec3) -> Shape {
@@ -59,11 +59,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map(|&position| Light::point(position, 1.0, FALLOFF))
         .collect();
 
-    let material = Material::new(Rgb::BLACK, Rgb::from_hex(0x156289), Rgb::BLACK, None);
+    let material = Material::from_rgb(Rgb::BLACK, Rgb::from_hex(0x156289), Rgb::BLACK, None);
 
-    Shape::new(ground_plane(), material).render(&mut framebuffer, &camera, &lights);
+    Shape::new(ground_plane(), material).render_phong(&mut framebuffer, &camera, &lights);
     for &position in &light_positions {
-        light_marker(position).render(&mut framebuffer, &camera, &lights);
+        light_marker(position).render_phong(&mut framebuffer, &camera, &lights);
     }
 
     let mut encoder = WebpEncoder::new(SCENE_WIDTH, SCENE_HEIGHT)?;

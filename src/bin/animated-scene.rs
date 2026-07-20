@@ -109,7 +109,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             base_mesh.transform(model_matrix_tumble(t)),
             default_material(),
         );
-        torus.render(&mut framebuffer, &camera, &lights);
+        torus.render_phong(&mut framebuffer, &camera, &lights);
 
         png_writer.write_frame(frame_index, &framebuffer)?;
         webp_encoder.add_frame(&framebuffer)?;

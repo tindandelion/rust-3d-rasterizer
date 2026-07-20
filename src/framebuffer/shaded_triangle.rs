@@ -2,30 +2,27 @@
 
 use glam::Vec2;
 
-use crate::{
-    framebuffer::{FbPixel, interpolator::Interpolator},
-    geometry::SurfacePoint,
-};
+use crate::framebuffer::{FbPixel, interpolator::Interpolator};
 
-use super::{FrameBuffer, Rgb};
+use super::{FrameBuffer, Rgb, interpolator::Interpolatable};
 
 #[derive(Clone, Copy, Debug)]
-pub struct PhongCorner {
+pub struct ShadedCorner<T> {
     pub pixel: FbPixel,
-    pub surface_point: SurfacePoint,
+    pub value: T,
 }
 
-pub struct PhongShadedTriangle {
-    corners: [PhongCorner; 3],
+pub struct ShadedTriangle<T: Interpolatable> {
+    corners: [ShadedCorner<T>; 3],
 }
 
-impl PhongShadedTriangle {
-    pub fn new(mut corners: [PhongCorner; 3]) -> Self {
+impl<T: Interpolatable> ShadedTriangle<T> {
+    pub fn new(mut corners: [ShadedCorner<T>; 3]) -> Self {
         corners.sort_by_key(|v| v.pixel.y);
         Self { corners }
     }
 
-    pub fn draw(&self, fb: &mut FrameBuffer, shader_fn: impl Fn(SurfacePoint) -> Rgb) {
+    pub fn draw(&self, fb: &mut FrameBuffer, shader_fn: impl Fn(T) -> Rgb) {
         for ((x1, z1, start_pt), (x2, z2, end_pt), y) in self.scan_lines() {
             let horiz_surface_points =
                 Interpolator::from_endpoints((x1 as f32, start_pt), (x2 as f32, end_pt));
@@ -38,9 +35,7 @@ impl PhongShadedTriangle {
         }
     }
 
-    fn scan_lines(
-        &self,
-    ) -> impl Iterator<Item = ((u32, f32, SurfacePoint), (u32, f32, SurfacePoint), u32)> {
+    fn scan_lines(&self) -> impl Iterator<Item = ((u32, f32, T), (u32, f32, T), u32)> {
         let y_range = self.corners[0].pixel.y..=self.corners[2].pixel.y;
         let midpoint = self.corners[1].pixel;
 
@@ -72,25 +67,22 @@ impl PhongShadedTriangle {
     }
 }
 
-struct EdgeWalker {
+struct EdgeWalker<T: Interpolatable> {
     start_pt: Vec2,
     x_interp: Interpolator<f32>,
     depth_interp: Interpolator<f32>,
-    surface_interp: Interpolator<SurfacePoint>,
+    surface_interp: Interpolator<T>,
 }
 
-impl EdgeWalker {
-    fn from_corners(a: PhongCorner, b: PhongCorner) -> Self {
+impl<T: Interpolatable> EdgeWalker<T> {
+    fn from_corners(a: ShadedCorner<T>, b: ShadedCorner<T>) -> Self {
         let pt_a = Vec2::new(a.pixel.x as f32, a.pixel.y as f32);
         let pt_b = Vec2::new(b.pixel.x as f32, b.pixel.y as f32);
         let edge_length = (pt_b - pt_a).length();
 
         Self {
             start_pt: pt_a,
-            surface_interp: Interpolator::from_endpoints(
-                (0.0, a.surface_point),
-                (edge_length, b.surface_point),
-            ),
+            surface_interp: Interpolator::from_endpoints((0.0, a.value), (edge_length, b.value)),
             x_interp: Interpolator::from_endpoints((pt_a.y, pt_a.x), (pt_b.y, pt_b.x)),
             depth_interp: Interpolator::from_endpoints(
                 (pt_a.y, a.pixel.depth),
@@ -99,7 +91,7 @@ impl EdgeWalker {
         }
     }
 
-    fn get(&self, y: f32) -> (f32, f32, SurfacePoint) {
+    fn get(&self, y: f32) -> (f32, f32, T) {
         let x = self.x_interp.get(y);
         let depth = self.depth_interp.get(y);
 
@@ -113,16 +105,29 @@ impl EdgeWalker {
 mod tests {
     use super::*;
     use crate::FrameBuffer;
+    use crate::framebuffer::interpolator::AnchorPoint;
     use crate::framebuffer::test_helpers::assert_ascii_art_eq;
 
-    mod draw_triangle_shapes {
-        use glam::Vec3;
+    #[derive(Clone, Copy, Debug)]
+    pub struct NoValue;
 
-        use crate::{framebuffer::test_helpers::to_ascii_art, geometry::UnitVec3};
+    impl Interpolatable for NoValue {
+        fn calc_coefficients(_a: AnchorPoint<Self>, _b: AnchorPoint<Self>) -> (Self, Self) {
+            (Self, Self)
+        }
+
+        fn interpolate(_x: f32, _slope: Self, _intercept: Self) -> Self {
+            Self
+        }
+    }
+
+    mod draw_triangle_shapes {
+
+        use crate::framebuffer::test_helpers::to_ascii_art;
 
         use super::*;
 
-        const FULL_BRIGHTNESS: fn(SurfacePoint) -> Rgb = |_| Rgb::WHITE;
+        const FULL_BRIGHTNESS: fn(NoValue) -> Rgb = |_| Rgb::WHITE;
 
         #[test]
         fn fill_degenerate_triangle_is_line_segment() {
@@ -135,7 +140,7 @@ mod tests {
                 "          ",
             ]);
             let mut fb = FrameBuffer::new(10, 5);
-            PhongShadedTriangle::new(corners).draw(&mut fb, FULL_BRIGHTNESS);
+            ShadedTriangle::new(corners).draw(&mut fb, FULL_BRIGHTNESS);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected_result, "");
         }
 
@@ -150,7 +155,7 @@ mod tests {
                 "          ",
             ]);
             let mut fb = FrameBuffer::new(10, 5);
-            PhongShadedTriangle::new(corners).draw(&mut fb, FULL_BRIGHTNESS);
+            ShadedTriangle::new(corners).draw(&mut fb, FULL_BRIGHTNESS);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected_result, "");
         }
 
@@ -165,7 +170,7 @@ mod tests {
                 "          ",
             ]);
             let mut fb = FrameBuffer::new(10, 5);
-            PhongShadedTriangle::new(corners).draw(&mut fb, FULL_BRIGHTNESS);
+            ShadedTriangle::new(corners).draw(&mut fb, FULL_BRIGHTNESS);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected_result, "");
         }
 
@@ -180,7 +185,7 @@ mod tests {
                 "          ",
             ]);
             let mut fb = FrameBuffer::new(10, 5);
-            PhongShadedTriangle::new(corners).draw(&mut fb, FULL_BRIGHTNESS);
+            ShadedTriangle::new(corners).draw(&mut fb, FULL_BRIGHTNESS);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected_result, "");
         }
 
@@ -202,7 +207,7 @@ mod tests {
                     corners_ccw[(start + 2) % 3],
                 ]);
                 let mut fb = FrameBuffer::new(10, 5);
-                PhongShadedTriangle::new(corners).draw(&mut fb, FULL_BRIGHTNESS);
+                ShadedTriangle::new(corners).draw(&mut fb, FULL_BRIGHTNESS);
                 assert_ascii_art_eq(
                     &fb.to_ascii_art(),
                     &expected_result,
@@ -222,7 +227,7 @@ mod tests {
                 "          ",
             ]);
             let mut fb = FrameBuffer::new(10, 5);
-            PhongShadedTriangle::new(corners).draw(&mut fb, FULL_BRIGHTNESS);
+            ShadedTriangle::new(corners).draw(&mut fb, FULL_BRIGHTNESS);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected_result, "");
         }
 
@@ -237,7 +242,7 @@ mod tests {
                 "          ",
             ]);
             let mut fb = FrameBuffer::new(10, 5);
-            PhongShadedTriangle::new(corners).draw(&mut fb, FULL_BRIGHTNESS);
+            ShadedTriangle::new(corners).draw(&mut fb, FULL_BRIGHTNESS);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected_result, "");
         }
 
@@ -252,7 +257,7 @@ mod tests {
                 "          ",
             ]);
             let mut fb = FrameBuffer::new(10, 5);
-            PhongShadedTriangle::new(corners).draw(&mut fb, FULL_BRIGHTNESS);
+            ShadedTriangle::new(corners).draw(&mut fb, FULL_BRIGHTNESS);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected_result, "");
         }
 
@@ -267,14 +272,14 @@ mod tests {
                 "  █       ",
             ]);
             let mut fb = FrameBuffer::new(10, 5);
-            PhongShadedTriangle::new(corners).draw(&mut fb, FULL_BRIGHTNESS);
+            ShadedTriangle::new(corners).draw(&mut fb, FULL_BRIGHTNESS);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected_result, "");
         }
 
-        fn pts(corners: [(u32, u32); 3]) -> [PhongCorner; 3] {
-            std::array::from_fn(|i| PhongCorner {
+        fn pts(corners: [(u32, u32); 3]) -> [ShadedCorner<NoValue>; 3] {
+            std::array::from_fn(|i| ShadedCorner {
                 pixel: FbPixel::new(corners[i].0, corners[i].1, 0.0),
-                surface_point: SurfacePoint::new(Vec3::ZERO, UnitVec3::Z),
+                value: NoValue,
             })
         }
     }
@@ -287,8 +292,8 @@ mod tests {
 
         const TOWARD_LIGHT: UnitVec3 = UnitVec3::Z;
 
-        fn diffuse_lambert_shader(pt: SurfacePoint) -> Rgb {
-            let factor = TOWARD_LIGHT.dot(pt.normal()).max(0.0);
+        fn diffuse_lambert_shader(normal: Vec3) -> Rgb {
+            let factor = TOWARD_LIGHT.dot(normal.normalize()).max(0.0);
             let channel = (255.0 * factor).round().clamp(0.0, 255.0) as u8;
             Rgb(channel, channel, channel)
         }
@@ -308,7 +313,7 @@ mod tests {
                 "          ",
             ]);
             let mut fb = FrameBuffer::new(10, 5);
-            PhongShadedTriangle::new(corners).draw(&mut fb, diffuse_lambert_shader);
+            ShadedTriangle::new(corners).draw(&mut fb, diffuse_lambert_shader);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected_result, "");
         }
 
@@ -328,7 +333,7 @@ mod tests {
                 "          ",
             ]);
             let mut fb = FrameBuffer::new(10, 5);
-            PhongShadedTriangle::new(corners).draw(&mut fb, diffuse_lambert_shader);
+            ShadedTriangle::new(corners).draw(&mut fb, diffuse_lambert_shader);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected_result, "");
         }
 
@@ -347,7 +352,7 @@ mod tests {
                 "          ",
             ]);
             let mut fb = FrameBuffer::new(10, 5);
-            PhongShadedTriangle::new(corners).draw(&mut fb, diffuse_lambert_shader);
+            ShadedTriangle::new(corners).draw(&mut fb, diffuse_lambert_shader);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected_result, "");
         }
 
@@ -366,7 +371,7 @@ mod tests {
                 "          ",
             ]);
             let mut fb = FrameBuffer::new(10, 5);
-            PhongShadedTriangle::new(corners).draw(&mut fb, diffuse_lambert_shader);
+            ShadedTriangle::new(corners).draw(&mut fb, diffuse_lambert_shader);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected_result, "");
         }
 
@@ -385,25 +390,21 @@ mod tests {
                 "          ",
             ]);
             let mut fb = FrameBuffer::new(10, 5);
-            PhongShadedTriangle::new(corners).draw(&mut fb, diffuse_lambert_shader);
+            ShadedTriangle::new(corners).draw(&mut fb, diffuse_lambert_shader);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected_result, "");
         }
 
-        fn pts(corners: [((u32, u32), UnitVec3); 3]) -> [PhongCorner; 3] {
-            std::array::from_fn(|i| PhongCorner {
+        fn pts(corners: [((u32, u32), UnitVec3); 3]) -> [ShadedCorner<Vec3>; 3] {
+            std::array::from_fn(|i| ShadedCorner {
                 pixel: FbPixel::new(corners[i].0.0, corners[i].0.1, 0.0),
-                surface_point: SurfacePoint::new(Vec3::ZERO, corners[i].1),
+                value: corners[i].1.into(),
             })
         }
     }
 
     mod occlusion_tests {
-        use glam::Vec3;
 
-        use crate::{
-            framebuffer::test_helpers::{assert_ascii_art_eq, to_ascii_art},
-            geometry::UnitVec3,
-        };
+        use crate::framebuffer::test_helpers::{assert_ascii_art_eq, to_ascii_art};
 
         use super::*;
 
@@ -429,9 +430,9 @@ mod tests {
                 "█                  ▒",
             ]);
             let mut fb = FrameBuffer::new(20, 15);
-            PhongShadedTriangle::new([corner(13, 7, 1.0), corner(0, 0, 1.0), corner(0, 14, 1.0)])
+            ShadedTriangle::new([corner(13, 7, 1.0), corner(0, 0, 1.0), corner(0, 14, 1.0)])
                 .draw(&mut fb, |_| Rgb::WHITE);
-            PhongShadedTriangle::new([corner(7, 7, 0.0), corner(19, 0, 0.0), corner(19, 14, 0.0)])
+            ShadedTriangle::new([corner(7, 7, 0.0), corner(19, 0, 0.0), corner(19, 14, 0.0)])
                 .draw(&mut fb, |_| DIM_WHITE);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected, "");
         }
@@ -456,17 +457,17 @@ mod tests {
                 "█████▒▒▒▒▒██████████",
             ]);
             let mut fb = FrameBuffer::new(20, 15);
-            PhongShadedTriangle::new([corner(0, 0, 1.0), corner(19, 14, 1.0), corner(0, 14, 1.0)])
+            ShadedTriangle::new([corner(0, 0, 1.0), corner(19, 14, 1.0), corner(0, 14, 1.0)])
                 .draw(&mut fb, |_| Rgb::WHITE);
-            PhongShadedTriangle::new([corner(19, 0, 2.0), corner(0, 19, 0.0), corner(19, 19, 2.0)])
+            ShadedTriangle::new([corner(19, 0, 2.0), corner(0, 19, 0.0), corner(19, 19, 2.0)])
                 .draw(&mut fb, |_| DIM_WHITE);
             assert_ascii_art_eq(&fb.to_ascii_art(), &expected, "");
         }
 
-        fn corner(x: u32, y: u32, depth: f32) -> PhongCorner {
-            PhongCorner {
+        fn corner(x: u32, y: u32, depth: f32) -> ShadedCorner<NoValue> {
+            ShadedCorner {
                 pixel: FbPixel::new(x, y, depth),
-                surface_point: SurfacePoint::new(Vec3::ZERO, UnitVec3::Z),
+                value: NoValue,
             }
         }
     }

@@ -4,6 +4,7 @@
     "Gouraud",
     "horiz",
     "interp",
+    "Interpolatable",
     "Octa",
     "phong",
     "rasterizer",

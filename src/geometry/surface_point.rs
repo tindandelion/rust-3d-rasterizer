@@ -1,6 +1,6 @@
 //! Interpolatable surface attributes (e.g. per-vertex normal) for scanline rasterization.
 
-use std::ops::{Add, Div, Mul, Sub};
+use std::ops::{Add, Mul, Sub};
 
 use glam::Vec3;
 
@@ -58,17 +58,6 @@ impl Add for SurfacePoint {
         Self {
             position: self.position + other.position,
             normal: self.normal + other.normal,
-        }
-    }
-}
-
-impl Div<f32> for SurfacePoint {
-    type Output = SurfacePoint;
-
-    fn div(self, other: f32) -> Self::Output {
-        Self {
-            position: self.position / other,
-            normal: self.normal / other,
         }
     }
 }

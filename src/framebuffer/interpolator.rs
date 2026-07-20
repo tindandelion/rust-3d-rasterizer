@@ -1,4 +1,26 @@
-use std::ops::{Add, Div, Mul, Sub};
+use std::ops::{Add, Mul, Sub};
+
+pub type AnchorPoint<T> = (f32, T);
+
+pub trait Interpolatable: Sized + Clone + Copy {
+    fn calc_coefficients(a: AnchorPoint<Self>, b: AnchorPoint<Self>) -> (Self, Self);
+    fn interpolate(x: f32, slope: Self, intercept: Self) -> Self;
+}
+
+impl<T> Interpolatable for T
+where
+    T: Copy + Add<Output = T> + Sub<Output = T> + Mul<f32, Output = T>,
+{
+    fn calc_coefficients(a: AnchorPoint<Self>, b: AnchorPoint<Self>) -> (Self, Self) {
+        let slope = (b.1 - a.1) * (1.0 / (b.0 - a.0));
+        let intercept = a.1 - slope * a.0;
+        (slope, intercept)
+    }
+
+    fn interpolate(x: f32, slope: Self, intercept: Self) -> Self {
+        slope * x + intercept
+    }
+}
 
 pub struct Interpolator<T> {
     slope: Option<T>,
@@ -7,17 +29,17 @@ pub struct Interpolator<T> {
 
 impl<T> Interpolator<T>
 where
-    T: Copy + Add<T, Output = T> + Sub<T, Output = T> + Mul<f32, Output = T> + Div<f32, Output = T>,
+    T: Interpolatable,
 {
-    pub fn from_endpoints(a: (f32, T), b: (f32, T)) -> Self {
+    pub fn from_endpoints(a: AnchorPoint<T>, b: AnchorPoint<T>) -> Self {
         if a.0 == b.0 {
             return Self {
                 slope: None,
                 intercept: a.1,
             };
         }
-        let slope = (b.1 - a.1) / (b.0 - a.0);
-        let intercept = a.1 - slope * a.0;
+
+        let (slope, intercept) = T::calc_coefficients(a, b);
         Self {
             slope: Some(slope),
             intercept,
@@ -26,7 +48,7 @@ where
 
     pub fn get(&self, x: f32) -> T {
         match self.slope {
-            Some(slope) => slope * x + self.intercept,
+            Some(slope) => Interpolatable::interpolate(x, slope, self.intercept),
             None => self.intercept,
         }
     }

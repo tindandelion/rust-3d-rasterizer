@@ -39,12 +39,12 @@ fn render_scene(width: u32, height: u32) -> FrameBuffer {
     };
     let lights = [
         Light::directional(Vec3::new(0.0, 2.0, 0.0).into(), 0.5),
-        Light::point(Vec3::new(1.0, 2.0, -1.0).into(), 4.0, light_falloff),
-        Light::point(Vec3::new(-1.0, -2.0, 1.0).into(), 4.0, light_falloff),
+        Light::point(Vec3::new(1.0, 2.0, -1.0), 4.0, light_falloff),
+        Light::point(Vec3::new(-1.0, -2.0, 1.0), 4.0, light_falloff),
     ];
 
     let torus = Shape::new(torus(48, 32), default_material());
-    torus.render(&mut framebuffer, &camera, &lights);
+    torus.render_phong(&mut framebuffer, &camera, &lights);
 
     framebuffer
 }

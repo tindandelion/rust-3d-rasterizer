@@ -18,9 +18,9 @@ pub use lighting::{Light, Material};
 pub use ortho_camera::Camera;
 pub use webp_encoder::WebpEncoder;
 
-use crate::framebuffer::{PhongCorner, PhongShadedTriangle};
+use crate::framebuffer::{Interpolatable, ShadedCorner, ShadedTriangle};
 use crate::geometry::{Mesh, SurfacePoint, UnitVec3};
-use crate::lighting::DistanceFalloff;
+use crate::lighting::{Color, DistanceFalloff};
 
 /// Raster width in pixels (golden stills / integration tests must agree).
 pub const SCENE_WIDTH: u32 = 800;
@@ -44,7 +44,7 @@ pub const SCENE_BACKGROUND: Rgb = Rgb::from_hex(0x444444);
 /// Export-bin **`MeshPhongMaterial`** palette: emissive **`0x072534`**, diffuse **`0x156289`**,
 /// specular **`0x444444`**, **`shininess` 30**.
 pub fn default_material() -> Material {
-    Material::new(
+    Material::from_rgb(
         Rgb::from_hex(0x072534),
         Rgb::from_hex(0x156289),
         Rgb::from_hex(0x444444),
@@ -65,9 +65,66 @@ pub fn default_lights() -> [Light; 3] {
     };
     [
         Light::directional(Vec3::new(0.0, 2.0, 0.0).into(), 0.5),
-        Light::point(Vec3::new(1.0, 2.0, -1.0).into(), 3.0, light_falloff),
-        Light::point(Vec3::new(-1.0, -2.0, 1.0).into(), 3.0, light_falloff),
+        Light::point(Vec3::new(1.0, 2.0, -1.0), 3.0, light_falloff),
+        Light::point(Vec3::new(-1.0, -2.0, 1.0), 3.0, light_falloff),
     ]
+}
+
+impl Material {
+    pub fn from_rgb(emissive: Rgb, diffuse: Rgb, specular: Rgb, shininess: Option<i32>) -> Self {
+        Self::new(
+            Color::from(emissive),
+            Color::from(diffuse),
+            Color::from(specular),
+            shininess,
+        )
+    }
+}
+
+trait Shader {
+    type VertexData: Interpolatable;
+
+    fn shade_vertex(&self, position: Vec3, normal: UnitVec3) -> Self::VertexData;
+    fn shade_pixel(&self, data: Self::VertexData) -> Color;
+}
+
+struct PhongShader<'a> {
+    material: &'a Material,
+    lights: &'a [Light],
+    toward_eye: UnitVec3,
+}
+
+impl<'a> Shader for PhongShader<'a> {
+    type VertexData = SurfacePoint;
+
+    fn shade_vertex(&self, position: Vec3, normal: UnitVec3) -> Self::VertexData {
+        SurfacePoint::new(position, normal)
+    }
+
+    fn shade_pixel(&self, surface_point: SurfacePoint) -> Color {
+        self.material
+            .shade(self.lights, surface_point, self.toward_eye)
+    }
+}
+
+struct GouraudShader<'a> {
+    material: &'a Material,
+    lights: &'a [Light],
+    toward_eye: UnitVec3,
+}
+
+impl<'a> Shader for GouraudShader<'a> {
+    type VertexData = Color;
+
+    fn shade_vertex(&self, position: Vec3, normal: UnitVec3) -> Self::VertexData {
+        let surface_point = SurfacePoint::new(position, normal);
+        self.material
+            .shade(self.lights, surface_point, self.toward_eye)
+    }
+
+    fn shade_pixel(&self, color: Color) -> Color {
+        color
+    }
 }
 
 /// A posed **[`Mesh`]** plus surface **[`Material`]** for filled rendering.
@@ -82,18 +139,33 @@ impl Shape {
         Self { mesh, material }
     }
 
-    pub fn render(&self, fb: &mut FrameBuffer, camera: &Camera, lights: &[Light]) {
+    pub fn render_gouraud(&self, fb: &mut FrameBuffer, camera: &Camera, lights: &[Light]) {
+        let shader = GouraudShader {
+            material: &self.material,
+            lights,
+            toward_eye: -camera.direction(),
+        };
+        self._render(fb, camera, &shader);
+    }
+
+    pub fn render_phong(&self, fb: &mut FrameBuffer, camera: &Camera, lights: &[Light]) {
+        let shader = PhongShader {
+            material: &self.material,
+            lights,
+            toward_eye: -camera.direction(),
+        };
+        self._render(fb, camera, &shader);
+    }
+
+    fn _render<S: Shader>(&self, fb: &mut FrameBuffer, camera: &Camera, shader: &S) {
         let forward = camera.direction();
-        let toward_eye: UnitVec3 = -camera.direction();
-        let material = self.material;
         for triangle in self.mesh.visible_triangles(forward) {
-            let corners: [PhongCorner; 3] = array::from_fn(|i| PhongCorner {
+            let corners = array::from_fn(|i| ShadedCorner {
                 pixel: camera.transform(triangle.corners[i]),
-                surface_point: SurfacePoint::new(triangle.corners[i], triangle.normals[i]),
+                value: shader.shade_vertex(triangle.corners[i], triangle.normals[i]),
             });
-            PhongShadedTriangle::new(corners).draw(fb, |surface_pt| {
-                material.shade(lights, surface_pt, toward_eye)
-            });
+            ShadedTriangle::new(corners)
+                .draw(fb, |surface_pt| Rgb::from(shader.shade_pixel(surface_pt)));
         }
     }
 }

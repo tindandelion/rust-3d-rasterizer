@@ -24,7 +24,7 @@ fn draw_single_unit_cube_produces_rectangle() {
     let light = Light::directional(-camera.direction(), 1.0);
 
     let shape = positioned_cube(0.0, Rgb::BLUE);
-    shape.render(&mut fb, &camera, &[light]);
+    shape.render_phong(&mut fb, &camera, &[light]);
 
     let expected = framebuffer_with_rectangle(UVec2::new(25, 25), UVec2::new(75, 75), Rgb::BLUE);
     assert_eq!(fb.as_ref(), expected.as_ref());
@@ -38,10 +38,10 @@ fn draw_occluded_cubes_hides_far_cube() {
     let far_shape = positioned_cube(2.0, Rgb::RED);
 
     let light = Light::directional(-camera.direction(), 1.0);
-    near_shape.render(&mut fb, &camera, &[light]);
+    near_shape.render_phong(&mut fb, &camera, &[light]);
 
     let light = Light::directional(-camera.direction(), 1.0);
-    far_shape.render(&mut fb, &camera, &[light]);
+    far_shape.render_phong(&mut fb, &camera, &[light]);
 
     let expected = framebuffer_with_rectangle(UVec2::new(25, 25), UVec2::new(75, 75), Rgb::BLUE);
     assert_eq!(fb.as_ref(), expected.as_ref());
@@ -50,7 +50,7 @@ fn draw_occluded_cubes_hides_far_cube() {
 fn positioned_cube(z_position: f32, color: Rgb) -> Shape {
     Shape::new(
         cube().transform(Mat4::from_translation(Vec3::new(0.0, 0.0, z_position))),
-        Material::new(color, Rgb::BLACK, Rgb::BLACK, None),
+        Material::from_rgb(color, Rgb::BLACK, Rgb::BLACK, None),
     )
 }
 

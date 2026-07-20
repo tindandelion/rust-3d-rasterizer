@@ -1,6 +1,6 @@
 //! Linear RGB for Phong shading (light-energy space; encode to sRGB via [`Rgb::from_linear`](crate::framebuffer::Rgb::from_linear)).
 
-use std::ops::{Add, Mul};
+use std::ops::{Add, Mul, Sub};
 
 use approx::{AbsDiffEq, RelativeEq};
 
@@ -14,6 +14,14 @@ impl Add for Color {
     /// Per-channel **add** in linear light space (no clamp until sRGB encode).
     fn add(self, other: Self) -> Self::Output {
         Self(self.0 + other.0, self.1 + other.1, self.2 + other.2)
+    }
+}
+
+impl Sub for Color {
+    type Output = Self;
+
+    fn sub(self, other: Self) -> Self::Output {
+        Self(self.0 - other.0, self.1 - other.1, self.2 - other.2)
     }
 }
 

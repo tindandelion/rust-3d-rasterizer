@@ -53,7 +53,7 @@ fn run_render(model: &Mesh, scene_width: u32, scene_height: u32) -> f64 {
 
         let t = frame_index as f32 / lap_frames * TAU;
         let torus = Shape::new(model.transform(model_matrix_tumble(t)), default_material());
-        torus.render(&mut framebuffer, &camera, &lights);
+        torus.render_phong(&mut framebuffer, &camera, &lights);
     }
     let frame_production_elapsed = frame_production_start.elapsed();
     let frame_production_secs = frame_production_elapsed.as_secs_f64().max(1e-12);
