@@ -11,6 +11,7 @@ pub mod geometry;
 pub mod lighting;
 pub mod meshes;
 pub mod ortho_camera;
+pub mod shaders;
 pub mod webp_encoder;
 
 pub use framebuffer::{FrameBuffer, Rgb};
@@ -19,8 +20,9 @@ pub use ortho_camera::Camera;
 pub use webp_encoder::WebpEncoder;
 
 use crate::framebuffer::{Interpolatable, ShadedCorner, ShadedTriangle};
-use crate::geometry::{Mesh, SurfacePoint, UnitVec3};
+use crate::geometry::{Mesh, UnitVec3};
 use crate::lighting::{Color, DistanceFalloff};
+use crate::shaders::{GouraudShader, PhongShader};
 
 /// Raster width in pixels (golden stills / integration tests must agree).
 pub const SCENE_WIDTH: u32 = 800;
@@ -86,45 +88,6 @@ trait Shader {
 
     fn shade_vertex(&self, position: Vec3, normal: UnitVec3) -> Self::VertexData;
     fn shade_pixel(&self, data: Self::VertexData) -> Color;
-}
-
-struct PhongShader<'a> {
-    material: &'a Material,
-    lights: &'a [Light],
-    toward_eye: UnitVec3,
-}
-
-impl<'a> Shader for PhongShader<'a> {
-    type VertexData = SurfacePoint;
-
-    fn shade_vertex(&self, position: Vec3, normal: UnitVec3) -> Self::VertexData {
-        SurfacePoint::new(position, normal)
-    }
-
-    fn shade_pixel(&self, surface_point: SurfacePoint) -> Color {
-        self.material
-            .shade(self.lights, surface_point, self.toward_eye)
-    }
-}
-
-struct GouraudShader<'a> {
-    material: &'a Material,
-    lights: &'a [Light],
-    toward_eye: UnitVec3,
-}
-
-impl<'a> Shader for GouraudShader<'a> {
-    type VertexData = Color;
-
-    fn shade_vertex(&self, position: Vec3, normal: UnitVec3) -> Self::VertexData {
-        let surface_point = SurfacePoint::new(position, normal);
-        self.material
-            .shade(self.lights, surface_point, self.toward_eye)
-    }
-
-    fn shade_pixel(&self, color: Color) -> Color {
-        color
-    }
 }
 
 /// A posed **[`Mesh`]** plus surface **[`Material`]** for filled rendering.
