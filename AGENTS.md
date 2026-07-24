@@ -4,7 +4,7 @@ Instructions for AI assistants and contributors working on this repository.
 
 ## What this project is
 
-Personal learning project: a **3D software rasterizer** in **Rust**, developed primarily on **macOS**. Work proceeds in three phases: **Phase 1** CPU rasterization (**shipped** — orthographic, Phong, depth, export bins), **Phase 2** rendering pipeline on CPU (**materials, lights, colors**; export-first), **Phase 3** **`wgpu`** (Metal on Mac). Authoritative planning lives under:
+Personal learning project: a **3D software rasterizer** in **Rust**, developed primarily on **macOS**. **Phase 1** CPU rasterization (**shipped** — orthographic, Phong, depth, export bins) and **Phase 2** rendering pipeline on CPU (**shipped** — materials, lights, colors; export-first) are complete. **Future plans** (not scheduled now) include optional CPU perspective, lighting parity, and **`wgpu`** (Metal on Mac). Authoritative planning lives under:
 
 - `doc/planning/project-spec.md` — goals, math, dependencies, coordinate conventions, raster strategy.
 - `doc/planning/project-breakdown.md` — phased milestones and expected artifacts (WebP stills/animations); export bins use **`default_material()`** and **`default_lights()`** (one directional + two point lights with **`DistanceFalloff`** — see breakdown **Phase 2 reference palette**).
@@ -23,7 +23,7 @@ When behavior or scope is unclear, **prefer the planning docs** over guessing.
 ## Conventions to preserve
 
 - **World/camera intuition:** Unity-style **left-handed**, **+Y up**, **+Z forward** (see spec for clip/screen mapping details).
-- **Scope:** Restricted scenes in early phases; procedural meshes; **torus** is the current export-bin mesh — follow open milestones in the breakdown doc (**Phase 2 remaining:** optional stretch CPU perspective, lighting parity; **Phase 3:** **`wgpu`**).
+- **Scope:** Restricted scenes in early phases; procedural meshes; **torus** is the current export-bin mesh — follow open milestones in the breakdown doc **Future plans** section (optional CPU perspective, lighting parity, **`wgpu`**).
 
 ## How to work in this repo
 

@@ -9,10 +9,10 @@ Personal learning project: a simple **3D renderer** using **rasterization**, imp
 | Phase | Focus |
 |-------|--------|
 | **1** | Math and algorithms on the CPU (software rasterization path). **Shipped:** orthographic camera, indexed meshes, Phong shading, depth buffer, export bins. |
-| **2** | **Rendering pipeline** on CPU — decoupled **materials**, **lights**, and **scene clear color**; smooth Phong retained; current **`meshes::torus`** API unchanged. Export-first (**WebP** / Kitty); live **`winit`** viewer deferred. |
-| **3** | Hardware acceleration using **`wgpu`** (Metal backend on Mac). **Perspective** lands in the GPU pipeline; **no** CPU-perspective prerequisite. |
+| **2** | **Rendering pipeline** on CPU — decoupled **materials**, **lights**, and **scene clear color**; smooth Phong retained; current **`meshes::torus`** API unchanged. Export-first (**WebP** / Kitty); live **`winit`** viewer deferred. **Shipped.** |
+| **Future plans** | Not scheduled now. Open items: optional **CPU perspective**, **Three.js lighting parity**, **`wgpu`** (Metal on Mac). **Perspective** can land on CPU or in the GPU pipeline; **no** CPU-perspective prerequisite for **`wgpu`**. |
 
-Optional stretch beyond these phases is allowed (e.g. CPU perspective in Phase 2, richer GPU work, live viewer) if motivation persists.
+Optional stretch beyond the shipped phases lives under **Future plans** in **`project-breakdown.md`** (e.g. CPU perspective, **`wgpu`**, live viewer) if motivation returns.
 
 ---
 
@@ -42,8 +42,8 @@ Optional stretch beyond these phases is allowed (e.g. CPU perspective in Phase 2
 
 - **Unity-style world/camera intuition:** left-handed, **+Y up**, **+Z forward** (camera/object relationships aligned with Unity thinking).
 - **Three.js reference import:** geometry-browser sources are **RHS** (**+Y** up, default camera **−Z** forward). When borrowing **positions** or **directions** (lights, camera eye, …), **negate `z`** after any scale factor; **`x`** and **`y`** stay as in Three.js.
-- **Clip space / framebuffer mapping:** **simplest pragmatic mapping first** on the CPU rasterizer. A deliberate **“wgpu alignment checkpoint”** is deferred until **Phase 3** prep (depth range, winding, NDC vs row-major Y, etc.).
-- Keep **wgpu/Vulkan-style conventions** in mind for later so **Phase 3** is mostly “same ideas, different executor,” but **do not front-load** full parity in phase 1.
+- **Clip space / framebuffer mapping:** **simplest pragmatic mapping first** on the CPU rasterizer. A deliberate **“wgpu alignment checkpoint”** is deferred until **`wgpu`** prep (**Future plans** — depth range, winding, NDC vs row-major Y, etc.).
+- Keep **wgpu/Vulkan-style conventions** in mind for later so a **`wgpu`** port is mostly “same ideas, different executor,” but **do not front-load** full parity in phase 1.
 
 ---
 
@@ -66,7 +66,7 @@ Optional stretch beyond these phases is allowed (e.g. CPU perspective in Phase 2
 - **Cube / dodecahedron:** faceted (**`Facet::with_facet_normal`** duplicates the facet normal at each corner).
 - **Sphere / torus:** smooth vertex normals (**`Facet::with_vertex_normals`**); **Phong** raster (**`PhongShadedTriangle`**: interpolate normals per pixel, renormalize, shade).
 - **Lighting (current):** unified **`Light`** (**`Light::directional`** / **`Light::point`**, white only; **`intensity`** per source) with explicit **`Material`** (**`diffuse`**, **`emissive`**, **`specular`**, **`shininess`**) on **`Shape`**. **`Light::point`** carries **`DistanceFalloff`** (**`constant`**, **`linear`**, **`quadratic`**) — diffuse and specular scale by **`1 / (c + l·d + q·d²)`** where **`d`** is world-space distance from **`SurfacePoint::position()`** to the light. **`Material::shade`** composes in **linear** space (**`src/lighting/color.rs`**) then encodes to sRGB **`Rgb`**; **sums** per-light diffuse/specular from **`SurfacePoint`** (world position + normal), **emissive** once. **`Shape::render(fb, camera, &[Light])`** passes constant **`toward_eye = −Camera::direction()`** under orthographic projection. **Export bins** use **`default_material()`** (**`0x156289`**, **`0x072534`**, specular **`0x444444`**, **`shininess` 30**), **`default_lights()`** (one directional at **`intensity` 0.5** plus two point lights at **`intensity` 3.0** each with **`DistanceFalloff { constant: 0.5, linear: 0, quadratic: 1.0 }`** — see **`project-breakdown.md`** **Phase 2 reference palette**), **`SCENE_BACKGROUND`** (**`0x444444`**). Residual **equation** parity vs Three.js — **`doc/planning/project-breakdown.md`** **`Lighting parity`** (including point-light falloff model).
-- **Lighting (Phase 2 remaining):** **optional stretch:** **perspective projection (CPU)**. **Lighting parity (tentative, last)** — align shading **equations** with Three.js for the shipped **`default_material()`** palette. **`Scene`** type still deferred — bin wiring stayed direct after **Multi-light**.
+- **Future plans (lighting / projection):** **optional stretch:** **perspective projection (CPU)**. **Lighting parity (tentative)** — align shading **equations** with Three.js for the shipped **`default_material()`** palette. **`Scene`** type still deferred — bin wiring stayed direct after **Multi-light**.
 - **Historical note:** **Gouraud** intensity interpolation was an intermediate milestone; only **Phong** remains in code.
 
 Phase 1 milestone ambition (from earlier discussion): interpolated vertex attributes (**level 3**) before treating phase 1 as complete. **Phase 2** adds explicit material/light colors; **perspective-correct texturing (**level 4**)** remains optional stretch.
@@ -77,7 +77,7 @@ Phase 1 milestone ambition (from earlier discussion): interpolated vertex attrib
 
 - **Current pipeline:** **`geometry::Mesh`** stores indexed **`Facet`**s + **`Vec3`** positions. **`Mesh::visible_triangles(view_direction)`** culls back faces and yields world-space **`Triangle`** records (corners + per-vertex **`UnitVec3`** normals). Scene-level **`Shape`** (**`mesh` + `material`**, **`src/lib.rs`**) projects each **`Triangle`** via **`Camera::transform`** → **`FbPixel`** (pixel **`xy`** + view-space **`depth`**) and draws with **`PhongShadedTriangle`**. **`meshes::{cube,dodecahedron,sphere,torus}`** are procedural builders on that stack.
 - **Depth:** **`FrameBuffer::write_pixel`** keeps the nearer fragment (**smaller view-space **`z`**).
-- **Phase 2 gaps (vs [Three.js TorusGeometry browser](https://threejs.org/docs/scenes/geometry-browser.html#TorusGeometry) reference):** **shading equation** parity (export bins ship mixed directional + point lights via **`default_lights()`** but **`Material::shade`** contrib terms may still differ from Three.js — see **`Lighting parity`**); point-light **distance falloff** uses **OpenGL-style polynomial attenuation**, not Three.js **`PointLight.decay`**. **Out of Phase 2 scope (by choice):** wireframe overlay, flat shading, extended torus API (**`radius`**, **`tube`**, **`arc`**), live **`winit`** viewer / GUI.
+- **Known gaps (vs [Three.js TorusGeometry browser](https://threejs.org/docs/scenes/geometry-browser.html#TorusGeometry) reference):** **shading equation** parity (export bins ship mixed directional + point lights via **`default_lights()`** but **`Material::shade`** contrib terms may still differ from Three.js — see **`Lighting parity`** in **Future plans**); point-light **distance falloff** uses **OpenGL-style polynomial attenuation**, not Three.js **`PointLight.decay`**. **Out of scope (by choice):** wireframe overlay, flat shading, extended torus API (**`radius`**, **`tube`**, **`arc`**), live **`winit`** viewer / GUI.
 - **No separate `Vertex` type:** positions live in **`Mesh`**; normals live on **`Facet`**; surface appearance is **`Shape::material`** via **`Material::shade`**.
 
 ---
@@ -103,7 +103,7 @@ Earlier phase-1 work exercised **wireframe**, **DDA lines**, **quad fill**, **`d
 ## Projection & camera
 
 - **Orthographic (shipped):** **`ortho_camera::Camera`** — **`for_viewport`** / **`move_to`**, look-at toward **`Vec3::ZERO`**, world **+Y** up, **`transform`** → **`FbPixel`** with view-space **`depth`**. Export bins and integration tests use this path through **Phase 2**.
-- **Perspective (optional Phase 2 stretch):** homogeneous **`w`**, divide, near/far guardrails, perspective-correct depth interpolation, per-fragment **`toward_eye`**. **Not** a Phase 3 prerequisite — if skipped on CPU, perspective lands in **`wgpu`** (**Phase 3**). See **`Perspective projection (CPU)`** in **`project-breakdown.md`**.
+- **Perspective (Future plans):** homogeneous **`w`**, divide, near/far guardrails, perspective-correct depth interpolation, per-fragment **`toward_eye`**. **Not** a **`wgpu`** prerequisite — if skipped on CPU, perspective lands in the GPU pipeline. See **`Perspective projection (CPU)`** in **`project-breakdown.md`**.
 
 ---
 
@@ -118,17 +118,17 @@ Earlier phase-1 work exercised **wireframe**, **DDA lines**, **quad fill**, **`d
 
 ---
 
-## Platform (phase 3)
+## Platform (Future plans — wgpu)
 
-- **Mac-only** explicit requirement for **`wgpu`** phase; cross-platform can wait until the renderer core is boring.
+- **Mac-only** explicit requirement for a **`wgpu`** port; cross-platform can wait until the renderer core is boring.
 
 ---
 
 ## Deferred checkpoints (do not lose track)
 
-1. **Phase 2 stretch — perspective projection (CPU)** — optional; only if appetite after **PointLight**.
-2. **Phase 2 — lighting parity (tentative, last)** — align **`Material::shade`** / **`Light`** contrib with Three.js for the shipped **`default_material()`** palette (specular **`0x444444`**, **`shininess` 30**).
-3. **Phase 3 — wgpu** — swapchain/surface, buffers, pipeline state, shaders, depth test, culling; **wgpu convention alignment** (depth range, winding, NDC vs framebuffer); **perspective in GPU** if not done on CPU.
+1. **Future plans — perspective projection (CPU)** — optional stretch.
+2. **Future plans — lighting parity (tentative)** — align **`Material::shade`** / **`Light`** contrib with Three.js for the shipped **`default_material()`** palette (specular **`0x444444`**, **`shininess` 30**).
+3. **Future plans — wgpu** — swapchain/surface, buffers, pipeline state, shaders, depth test, culling; **wgpu convention alignment** (depth range, winding, NDC vs framebuffer); **perspective in GPU** if not done on CPU.
 4. **Animated golden WebP / pixel-diff tests** — adopt when eyeballing saturates for multi-frame exports.
 5. **Cross-platform** — revisit when/if portability becomes a goal.
 6. **Live `winit` viewer** — interactive geometry-browser-style presentation; deferred past Phase 2.
