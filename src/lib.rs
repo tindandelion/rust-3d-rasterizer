@@ -66,9 +66,9 @@ pub fn default_lights() -> [Light; 3] {
         quadratic: 1.0,
     };
     [
-        Light::directional(Vec3::new(0.0, 2.0, 0.0).into(), 0.5),
-        Light::point(Vec3::new(1.0, 2.0, -1.0), 3.0, light_falloff),
-        Light::point(Vec3::new(-1.0, -2.0, 1.0), 3.0, light_falloff),
+        Light::directional(Vec3::new(0.0, 2.0, 0.0).into(), 1.0),
+        Light::point(Vec3::new(1.0, 2.0, -1.0), 6.0, light_falloff),
+        Light::point(Vec3::new(-1.0, -2.0, 1.0), 6.0, light_falloff),
     ]
 }
 
