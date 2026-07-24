@@ -1,3 +1,4 @@
 - [tinyrenderer: Triangle rasterization](https://ssloy.github.io/tinyrenderer/rasterization/)
 - [Implementing a tiny CPU rasterizer - Part 2: Drawing a triangle](https://lisyarus.github.io/blog/posts/implementing-a-tiny-cpu-rasterizer-part-2.html)
 - https://blakesmith.me/
+- [Graphics Programming Virtual Meetup](https://www.youtube.com/@graphicsprogrammingvirtual9971)
