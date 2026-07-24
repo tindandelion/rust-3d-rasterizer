@@ -6,6 +6,10 @@
 
 ![Current render output](https://github.com/tindandelion/rust-3d-rasterizer/releases/latest/download/scene.webp)
 
+## Project diary
+
+Progress and write-ups live on the [project diary](https://www.tindandelion.com/rust-3d-rasterizer/).
+
 ## Running
 
 - `cargo run --bin still-scene` — Phong torus at terminal pixel size; displays centered in a Kitty-compatible terminal (any key to dismiss) and writes `still-scene.webp` in parallel.
@@ -15,7 +19,3 @@
 
 - [`doc/planning/project-spec.md`](doc/planning/project-spec.md) — goals, math, dependencies, coordinate conventions, raster strategy
 - [`doc/planning/project-breakdown.md`](doc/planning/project-breakdown.md) — iterative milestones and expected artifacts
-
-## Project diary
-
-Progress and write-ups live on the [project diary](https://www.tindandelion.com/rust-3d-rasterizer/).
