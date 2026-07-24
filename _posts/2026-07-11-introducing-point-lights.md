@@ -107,7 +107,9 @@ This is roughly the same light setup that three.js Geometry Browser uses, except
 
 Frankly speaking, at this point it feels that we've finished all our major goals [planned for phase 2][post-planning-phase-2]. One notable milestone we haven't approached yet is [perspective projection][perspective-projection]. 
 
-Even though introducing perspective projection would affect the rendering pipeline code, it doesn't look like it's going to change the visual result dramatically. At the moment, we're tempted to push this milestone further down the line and do something more interesting. As it turned out, the next thing we did was [restructure the shading pipeline][post-shaders-without-a-gpu] around a GPU-style shader abstraction. 
+Even though introducing perspective projection would affect the rendering pipeline code, it doesn't look like it's going to change the visual result dramatically. At the moment, we're tempted to push this milestone further down the line and do something more interesting. 
+
+As it turned out, the next thing we did was [restructure the shading pipeline][post-shaders-without-a-gpu] around a GPU-style shader abstraction. 
 
 [post-shaders-without-a-gpu]: {{site.baseurl}}/{% post_url 2026-07-21-shaders-generalize-render-pipeline %}
 [post-three-lights]: {{site.baseurl}}/{% post_url 2026-06-19-three-directional-lights %}
