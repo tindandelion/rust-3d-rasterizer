@@ -5,9 +5,9 @@ permalink: /
 list_title: Project diary
 ---
 
-This is yet another learning project of mine, again in Rust. This time, I'm building a **3D software rasterizer in Rust**. 
+This is yet another learning project of mine, again in Rust. This time, I'm building a **3D software rasterizer**. 
 
-### Our current progress
+## What we've built
 
 <!-- ![Current render output](https://github.com/tindandelion/rust-3d-rasterizer/releases/latest/download/scene.webp) -->
 <div style="text-align: center;">
@@ -16,19 +16,19 @@ This is yet another learning project of mine, again in Rust. This time, I'm buil
 </div>
 
 
-### Motivations
+## Motivations
 
 There are two things I want to learn with this project, running side by side.
 
 The first is **3D rasterization itself**. I started programming in high school, and almost immediately became fascinated by the [demoscene][demoscene]: tiny programs that made very limited PCs draw things that felt nearly impossible at the time. Rotating 3D shapes, lights, shadows, strange graphical effects packed into 64K or even 4K binaries — I had no idea how any of it worked, but I badly wanted to understand it.
 
-Back then, that curiosity had nowhere easy to go. Learning resources were scarce, and I was missing too many basics: mathematics, computer science, and, maybe most importantly, the skill of learning itself. Now, after more than twenty years as a software developer and with the whole internet available as a reference shelf, I can return to that old fascination properly.
+Back then, that curiosity was hard to satisfy. Learning resources were scarce, and I was missing too many basics: mathematics, computer science, and, maybe most importantly, the skill of learning itself. Now, after more than twenty years as a software developer and with the whole internet available as a reference shelf, I can return to that old fascination properly.
 
 In that sense, this project is an homage to my adolescent self: curious, ignorant, and frustrated, but still pulled toward the same questions. So, we'll do some 3D graphics. 
 
 The plan is to build the math and rasterization path on the **CPU** first, then add optional **GPU** rendering with **wgpu** (Metal on Mac) as a stretch goal. Scenes stay small and procedural — working up shapes like a cube, a sphere, and eventually a torus — with lossless **WebP** stills and animations as the main artifacts.
 
-### Working with AI agents
+## Working with AI agents
 
 The second motivation, equally important in the modern day and age, is to deliberately practice **AI-assisted ("agentic") coding**. Tools like Cursor and similar agents have changed the day-to-day of writing software, and I want to develop a real, hands-on intuition for working with them — not as a passive autocomplete user, but as someone delegating meaningful work and reviewing the result.
 
@@ -40,7 +40,7 @@ A few things I want to figure out along the way:
 
 We'll be co-authoring the project diary together: me (**Sergey**) as the project owner and reviewer, **Cursor** as the coding partner who helps capture what happened, explain the trade-offs, and keep the notes connected to the code. Over time, I want to trust Cursor more and more with keeping this diary up to date, while still reading critically and steering the voice.
 
-### Project scope
+## Project scope
 
 I'll consider the project meaningfully accomplished when I can:
 
