@@ -60,11 +60,11 @@ We are going to be working in intentionally [small steps][breakdown], so that th
 ### Major milestones
 
 * [Phase 1: From a Pixel to a Torus][phase-1-recap] — a journey from a single white pixel to a Phong-shaded torus: procedural meshes, orthographic look-at camera, back-face culling, per-pixel depth testing, and lossless WebP still images and animations on the CPU.
-* [Planning Phase 2][planning-phase-2] — sketching the plans for the next phase. 
+* [Phase 2: Materials, Lights, and Shaders][phase-2-recap] — deepening the CPU pipeline: explicit Phong materials, linear color, mixed directional and point lights, and a shader-shaped rasterizer, still under orthographic projection.
 
 
 [phase-1-recap]: {{site.baseurl}}/{% post_url 2026-06-13-from-pixel-to-torus %}
-[planning-phase-2]: {{site.baseurl}}/{% post_url 2026-06-17-planning-phase-2 %}
+[phase-2-recap]: {{site.baseurl}}/{% post_url 2026-08-05-phase-2-materials-lights-shaders %}
 [spec]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/doc/planning/project-spec.md
 [breakdown]: https://github.com/tindandelion/rust-3d-rasterizer/blob/main/doc/planning/project-breakdown.md
 [repo]: https://github.com/tindandelion/rust-3d-rasterizer

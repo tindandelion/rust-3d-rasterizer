@@ -75,7 +75,7 @@ These pictures look very similar, but if you look closely, you can see Gouraud-s
 
 ## Wrapping up phase 2
 
-With that refactoring, we're reaching the end of Phase 2. Next we're going to make a quick recap of what's been done and lay out the plans for the future of this project. 
+With that refactoring, we're reaching the end of Phase 2. We followed up with a [Phase 2 recap][post-phase-2-recap] of materials, lights, and the shader pipeline — and where the project might go next. 
 
 
 [post-point-lights]: {{site.baseurl}}/{% post_url 2026-07-11-introducing-point-lights %}
@@ -83,6 +83,7 @@ With that refactoring, we're reaching the end of Phase 2. Next we're going to ma
 [post-the-sphere-gets-smooth]: {{site.baseurl}}/{% post_url 2026-05-29-the-sphere-gets-smooth %}
 [post-cube-gets-light]: {{site.baseurl}}/{% post_url 2026-05-22-the-cube-gets-light %}
 [post-first-shot-at-glossy-shapes]: {{site.baseurl}}/{% post_url 2026-06-03-first-shot-at-glossy-shapes %}
+[post-phase-2-recap]: {{site.baseurl}}/{% post_url 2026-08-05-phase-2-materials-lights-shaders %}
 [version-0-1-7]: https://github.com/tindandelion/rust-3d-rasterizer/tree/0.1.7
 [source-shader-trait]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.1.7/src/lib.rs#L86
 [source-shade-vertex]: https://github.com/tindandelion/rust-3d-rasterizer/blob/0.1.7/src/lib.rs#L89
